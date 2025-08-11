@@ -2,7 +2,6 @@ import frappe
 from datetime import datetime
 from frappe.utils import now_datetime, get_time,now
 
-
 def before_insert(doc, method):
     pos_invoice_naming(doc, method)
     order_type_update(doc, method)
@@ -102,28 +101,29 @@ def validate_customer(doc, method):
 
 
 def calculate_and_set_times(doc, method):
-    # Ensure arrived_time is set as creation datetime
+    # Ensure arrived_time is stored as datetime
     doc.arrived_time = doc.creation
 
-    # Get current datetime
-    current_time = now_datetime()  # Already returns datetime
+    # Get current datetime (already datetime object)
+    current_time = now_datetime()
 
-    # Convert creation to datetime if it's a string
+    # Convert creation to datetime if string
     if isinstance(doc.creation, str):
-        creation_time = datetime.strptime(doc.creation, "%Y-%m-%d %H:%M:%S.%f")
+        try:
+            creation_time = datetime.strptime(doc.creation, "%Y-%m-%d %H:%M:%S.%f")
+        except ValueError:
+            creation_time = datetime.strptime(doc.creation, "%Y-%m-%d %H:%M:%S")
     else:
         creation_time = doc.creation
 
     # Calculate time difference
     time_difference = current_time - creation_time
-
     total_seconds = int(time_difference.total_seconds())
     hours, remainder = divmod(total_seconds, 3600)
     minutes, seconds = divmod(remainder, 60)
 
-    # Format as HH:MM:SS
-    formatted_spend_time = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
-    doc.total_spend_time = formatted_spend_time
+    # Format HH:MM:SS
+    doc.total_spend_time = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
 
 
 
