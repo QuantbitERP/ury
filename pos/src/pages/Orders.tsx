@@ -12,6 +12,8 @@ import { usePOSStore } from '../store/pos-store';
 import { useNavigate } from 'react-router-dom';
 import PaymentDialog from '../components/PaymentDialog';
 import { printOrder } from '../lib/print';
+import { frappeFetch } from '../lib/frappe-sdk';
+import { v4 as uuidv4 } from 'uuid'; // Import uuidv4 for unique IDs
 
 export default function Orders() {
   const { 
@@ -43,6 +45,7 @@ export default function Orders() {
   const [editLoading, setEditLoading] = React.useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = React.useState(false);
   const [isPrinting, setIsPrinting] = React.useState(false);
+  const [isSplitPaymentMode, setIsSplitPaymentMode] = React.useState(false); // New state for split payment
 
   useEffect(() => {
     fetchOrders();
@@ -99,9 +102,8 @@ export default function Orders() {
     }
     setCancelLoading(true);
     try {
-      const res = await fetch('/api/method/ury.ury.doctype.ury_order.ury_order.cancel_order', {
+      const res = await frappeFetch('/api/method/ury.ury.doctype.ury_order.ury_order.cancel_order', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ invoice_id: selectedOrder.name, reason: cancelReason })
       });
       if (!res.ok) throw new Error('Failed to cancel order');
@@ -121,7 +123,7 @@ export default function Orders() {
     if (!selectedOrder) return;
     setEditLoading(true);
     try {
-      const res = await fetch(`/api/method/frappe.client.get?doctype=POS+Invoice&name=${selectedOrder.name}`);
+      const res = await frappeFetch(`/api/method/frappe.client.get?doctype=POS+Invoice&name=${selectedOrder.name}`);
       if (!res.ok) throw new Error('Failed to fetch order details');
       const data = await res.json();
       const order = data.message;
@@ -141,7 +143,7 @@ export default function Orders() {
         quantity: item.qty,
         amount: item.amount,
         image: item.image || null,
-        uniqueId: item.name,
+        uniqueId: uuidv4(), // Assign a truly unique ID using uuidv4
         item: item.item_code,
         item_name: item.item_name,
         item_image: null,
@@ -149,13 +151,15 @@ export default function Orders() {
         description: item.description || '',
         special_dish: 0,
         tax_rate: 0,
+        custom_dish_type: item.custom_dish_type || null,
       }));
       for (const cartItem of items) {
         await posStore.addToOrder(cartItem);
       }
-      // Redirect to POS page
-      navigate('/');
-    } catch (err) {
+      
+       // Redirect to POS page
+       navigate('/');
+     } catch (err) {
       showToast.error(err instanceof Error ? err.message : 'Failed to edit order');
     } finally {
       setEditLoading(false);
@@ -501,6 +505,15 @@ export default function Orders() {
           owner={posStore.posProfile?.cashier || ''}
           fetchOrders={fetchOrders}
           clearSelectedOrder={clearSelectedOrder}
+          isSplitPayment={isSplitPaymentMode} // Pass the new state
+          splitItems={isSplitPaymentMode ? selectedOrderItems : undefined} // Pass selected order items for splitting
+          onToggleSplitPayment={(enable) => {
+            setIsSplitPaymentMode(enable);
+            setShowPaymentDialog(enable); // Keep dialog open if enabling split payment
+            if (enable) {
+              console.log('Selected Order Items for splitting:', selectedOrderItems);
+            }
+          }}
         />
       )}
     </div>

@@ -101,7 +101,8 @@ const OrderPanel = () => {
           item_name: item.name,
           rate: item.selectedVariant?.price || item.price,
           qty: item.quantity,
-          comment: item.comment || undefined
+          comment: item.comment || undefined,
+          custom_dish_type: item.custom_dish_type || undefined // Add this line
         })),
         no_of_pax: 1,
         pos_profile: posProfile.name,
@@ -212,6 +213,9 @@ const OrderPanel = () => {
                       <p className="text-sm text-gray-500">
                         {item.selectedAddons.map(addon => addon.name).join(', ')}
                       </p>
+                    )}
+                    {item.custom_dish_type && (
+                      <p className="text-sm text-gray-500">Type: {item.custom_dish_type}</p>
                     )}
                     <p className="text-gray-600 text-sm">{formatCurrency(calculateItemTotal(item))}</p>
                   </div>

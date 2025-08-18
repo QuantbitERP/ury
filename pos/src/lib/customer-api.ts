@@ -66,6 +66,11 @@ export async function getCustomerTerritories() {
   return territories;
 }
 
+export async function getCustomerDetails(customerId: string): Promise<Customer> {
+  const customer = await db.getDoc(DOCTYPES.CUSTOMER, customerId);
+  return customer;
+}
+
 export async function addCustomer(customerData: CreateCustomerData): Promise<CreateCustomerResponse> {
   try {
     const response = await db.createDoc(DOCTYPES.CUSTOMER, customerData);

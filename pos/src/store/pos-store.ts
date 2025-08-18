@@ -4,7 +4,7 @@ import { storage } from '../lib/storage';
 import { getRestaurantMenu, getAggregatorMenu, MenuItem as APIMenuItem } from '../lib/menu-api';
 import { getCurrencyInfo, PosProfileCombined, getCombinedPosProfile } from '../lib/pos-profile-api';
 import { getMenuCourses } from '../lib/menu-course-api';
-import { getCustomerGroups, getCustomerTerritories } from '../lib/customer-api';
+import { getCustomerGroups, getCustomerTerritories, getCustomerDetails } from '../lib/customer-api';
 import { DEFAULT_ORDER_TYPE, OrderType } from '../data/order-types';
 import { getTableOrder, TableOrder } from '../lib/order-api';
 import { getPaymentModes } from '../lib/payment-api';
@@ -51,6 +51,7 @@ export interface OrderItem extends MenuItem {
   selectedAddons?: { id: string; name: string; price: number }[];
   uniqueId?: string;
   comment?: string;
+  custom_dish_type?: string | null; // New field for dish type
 }
 
 export interface PaymentMode {
@@ -140,6 +141,7 @@ interface POSStore extends POSState {
   fetchCustomerGroups: () => Promise<void>;
   fetchTerritories: () => Promise<void>;
   fetchCurrencySymbol: () => Promise<void>;
+  fetchCustomerDetails: (customerId: string) => Promise<void>;
   getCartTotals: () => CartTotals;
   itemExistsInCart: (uniqueId: string) => boolean;
   validateQuantity: (quantity: number) => boolean;
@@ -154,12 +156,14 @@ interface POSStore extends POSState {
   resetOrderState: () => void;
   setSelectedAggregator: (aggregator: Aggregator | null) => void;
   setOrderComment: (comment: string) => void;
+  removePaidSplitItems: (uniqueIds: string[]) => void;
 }
 
-const generateUniqueId = (item: OrderItem): string => {
+export const generateUniqueId = (item: OrderItem): string => {
   const variantId = item.selectedVariant?.id || 'default';
   const addonIds = item.selectedAddons?.map(addon => addon.id).sort().join('-') || 'no-addons';
-  return `${item.id}-${variantId}-${addonIds}`;
+  const dishType = item.custom_dish_type || 'no-type'; // Include dish type
+  return `${item.id}-${variantId}-${addonIds}-${dishType}`;
 };
 
 const calculateItemPrice = (item: OrderItem): number => {
@@ -244,6 +248,9 @@ export const usePOSStore = create<POSStore>((set, get) => ({
         if (!storage.getItem('currencySymbol')) {
           await get().fetchCurrencySymbol();
         }
+        if (profile.customer) {
+          await get().fetchCustomerDetails(profile.customer);
+        }
         return;
       }
 
@@ -259,6 +266,9 @@ export const usePOSStore = create<POSStore>((set, get) => ({
       
       if (!storage.getItem('currencySymbol')) {
         await get().fetchCurrencySymbol();
+      }
+      if (combinedProfile.customer) {
+        await get().fetchCustomerDetails(combinedProfile.customer);
       }
     } catch (error) {
       console.error('Error fetching POS profile:', error);
@@ -281,6 +291,22 @@ export const usePOSStore = create<POSStore>((set, get) => ({
       console.error('Error fetching currency symbol:', error);
       set({ currencySymbol: get().currency });
       storage.setItem('currencySymbol', get().currency);
+    }
+  },
+
+  fetchCustomerDetails: async (customerId: string) => {
+    try {
+      const customer = await getCustomerDetails(customerId);
+      set({ 
+        selectedCustomer: {
+          id: customer.name,
+          name: customer.customer_name,
+          phone: customer.mobile_number
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching customer details:', error);
+      set({ error: 'Failed to fetch customer details' });
     }
   },
 
@@ -691,5 +717,11 @@ export const usePOSStore = create<POSStore>((set, get) => ({
   isOrderInteractionDisabled: () => {
     const state = get();
     return state.orderLoading;
+  },
+
+  removePaidSplitItems: (uniqueIds: string[]) => {
+    set(state => ({
+      activeOrders: state.activeOrders.filter(item => !uniqueIds.includes(item.uniqueId!))
+    }));
   }
 })); 

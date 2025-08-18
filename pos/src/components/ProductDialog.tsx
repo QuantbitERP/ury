@@ -4,6 +4,7 @@ import { OrderItem, usePOSStore } from '../store/pos-store';
 import { cn, formatCurrency } from '../lib/utils';
 import { Button, Dialog, DialogContent, Input } from './ui';
 import { db } from '../lib/frappe-sdk';
+import { call } from '../lib/frappe-sdk';
 
 interface Variant {
   id: string;
@@ -25,6 +26,7 @@ interface ProductDialogProps {
   initialAddons?: Array<Omit<Addon, 'category'>>;
   initialQuantity?: number;
   itemToReplace?: OrderItem;
+  initialDishType?: string; // New prop for initial dish type
 }
 
 const ProductDialog: React.FC<ProductDialogProps> = ({
@@ -33,7 +35,8 @@ const ProductDialog: React.FC<ProductDialogProps> = ({
   initialVariant,
   initialAddons = [],
   initialQuantity,
-  itemToReplace
+  itemToReplace,
+  initialDishType // Use new prop
 }) => {
   const { 
     selectedItem, 
@@ -60,12 +63,21 @@ const ProductDialog: React.FC<ProductDialogProps> = ({
   const [isItemLoading, setIsItemLoading] = useState(false);
   const [itemError, setItemError] = useState<string | null>(null);
 
+  // State for dish variants
+  const [dishVariants, setDishVariants] = useState<Array<{ name: string; type: string }>>([]);
+  const [selectedDishType, setSelectedDishType] = useState<string>(initialDishType || ''); // New state for selected dish type
+  const [isDishVariantsLoading, setIsDishVariantsLoading] = useState(false);
+  const [dishVariantsError, setDishVariantsError] = useState<string | null>(null);
+
   // Fetch Item doc when dialog opens or selectedItem changes
   useEffect(() => {
     if (!selectedItem) {
       setItemDoc(null);
       setItemError(null);
       setIsItemLoading(false);
+      setDishVariants([]);
+      setSelectedDishType('');
+      setIsDishVariantsLoading(false);
       return;
     }
     setIsItemLoading(true);
@@ -81,6 +93,31 @@ const ProductDialog: React.FC<ProductDialogProps> = ({
       .finally(() => {
         setIsItemLoading(false);
       });
+
+    // Fetch dish variants
+    setIsDishVariantsLoading(true);
+    setDishVariantsError(null);
+    call.get('ury.ury.doctype.ury_order.ury_order.get_item_dish_variants', { item_code: selectedItem.item })
+      .then((data: any) => {
+        if (data.message && Array.isArray(data.message)) {
+          setDishVariants(data.message);
+          // If there's only one variant, pre-select it
+          if (data.message.length === 1 && !editMode) {
+            setSelectedDishType(data.message[0].type);
+          }
+        } else {
+          setDishVariants([]);
+        }
+      })
+      .catch((err: any) => {
+        console.error('Failed to fetch dish variants:', err);
+        setDishVariantsError('Failed to fetch dish variants');
+        setDishVariants([]);
+      })
+      .finally(() => {
+        setIsDishVariantsLoading(false);
+      });
+
   }, [selectedItem]);
 
   
@@ -251,7 +288,8 @@ const ProductDialog: React.FC<ProductDialogProps> = ({
     const orderItem: OrderItem = {
       ...selectedItem,
       quantity: numericQuantity,
-      price: basePrice
+      price: basePrice,
+      custom_dish_type: selectedDishType || null // Add dish type to order item
     };
     addToOrder(orderItem);
 
@@ -364,6 +402,33 @@ const ProductDialog: React.FC<ProductDialogProps> = ({
               className="resize-none"
             />
           </div>
+
+          {/* Dish Variants Section */}
+          {isDishVariantsLoading ? (
+            <div className="mt-6 flex items-center justify-center text-gray-500">Loading dish variants...</div>
+          ) : dishVariantsError ? (
+            <div className="mt-6 flex items-center justify-center text-red-500">{dishVariantsError}</div>
+          ) : dishVariants.length > 0 && (
+            <div className="mt-6">
+              <h3 className="text-lg font-semibold mb-3">Dish Type</h3>
+              <div className="flex gap-2 flex-wrap">
+                {dishVariants.map(variant => (
+                  <button
+                    key={variant.type}
+                    onClick={() => setSelectedDishType(variant.type)}
+                    className={cn(
+                      'px-4 py-2 rounded-lg border text-sm font-medium transition-colors',
+                      selectedDishType === variant.type
+                        ? 'border-blue-500 bg-blue-50 text-blue-700'
+                        : 'border-gray-200 bg-white hover:bg-gray-50'
+                    )}
+                  >
+                    {variant.type}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="mt-6">
             <h3 className="text-lg font-semibold mb-3">Quantity</h3>

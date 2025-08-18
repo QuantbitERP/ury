@@ -272,6 +272,7 @@ def sync_order(
                     qty=d.get("qty"),
                     **({"custom_course": course} if course else {}),
                     comment=d.get("comment"),
+                    custom_dish_type=d.get("custom_dish_type"),  # Add this line
                     rate = item_prices[0].price_list_rate,
                     price_list_rate = item_prices[0].price_list_rate,
                     base_price_list_rate = item_prices[0].price_list_rate,
@@ -555,7 +556,7 @@ def cancel_order(invoice_id, reason):
 
 # Method for URY POS
 @frappe.whitelist()
-def make_invoice(customer, payments, cashier, pos_profile,owner, additionalDiscount=None, table=None, invoice=None):
+def make_invoice(customer, payments, cashier, pos_profile, owner, additionalDiscount=None, table=None, invoice=None, redeem_loyalty_points=0, loyalty_amount=0, loyalty_program=None, loyalty_points=0, items=None): # Add items parameter
     order_type =  invoice_name = frappe.get_value("POS Invoice",invoice , "order_type")
     invoice = get_order_invoice(table, invoice, order_type, "Payments")
 
@@ -566,6 +567,18 @@ def make_invoice(customer, payments, cashier, pos_profile,owner, additionalDisco
     invoice.customer = customer
     invoice.pos_profile = pos_profile
     invoice.additional_discount_percentage=additionalDiscount
+    invoice.redeem_loyalty_points = redeem_loyalty_points
+    invoice.loyalty_amount = loyalty_amount
+    invoice.loyalty_program = loyalty_program
+    invoice.loyalty_points = loyalty_points
+    frappe.log_error(f"Invoice loyalty fields before save: redeem_loyalty_points={invoice.redeem_loyalty_points}, loyalty_amount={invoice.loyalty_amount}, loyalty_program={invoice.loyalty_program}, loyalty_points={invoice.loyalty_points}", "INVOICE_LOYALTY_DEBUG")
+    
+    # Process items if provided (for split payments)
+    if items:
+        invoice.items = []  # Clear existing items
+        for item_data in items:
+            invoice.append("items", item_data)
+
     invoice.calculate_taxes_and_totals()
 
     for pay in invoice.payments:
@@ -576,7 +589,6 @@ def make_invoice(customer, payments, cashier, pos_profile,owner, additionalDisco
             "payments", dict(mode_of_payment=d["mode_of_payment"], amount=d["amount"])
         )
 
-    invoice.owner = owner
     invoice.save()
     try:
         invoice.submit()
@@ -657,3 +669,46 @@ def change_table_in_kot(invoice, new_table, branch):
         production = frappe.db.get_value("URY KOT", kot.name, "production")
         kot_channel = "{}_{}_{}".format("kot_update", branch, production)
         frappe.publish_realtime(kot_channel)
+
+@frappe.whitelist()
+def get_loyalty_program_details_with_points(customer, loyalty_program=None, silent=False):
+    if not loyalty_program and customer:
+        loyalty_program = frappe.db.get_value("Customer", customer, "loyalty_program")
+
+    if not loyalty_program and not silent:
+        frappe.throw(_("Loyalty Program not found for this customer"))
+
+    if not loyalty_program:
+        return None
+
+    frappe.log_error(f"Fetching loyalty points for customer: {customer}, program: {loyalty_program}", "LOYALTY_DEBUG")
+    loyalty_points_result = frappe.db.sql(
+        """SELECT SUM(loyalty_points) FROM `tabLoyalty Point Entry` WHERE customer = %s AND loyalty_program = %s""",
+        (customer, loyalty_program),
+        as_dict=True
+    )
+    loyalty_points = loyalty_points_result[0]["SUM(loyalty_points)"] if loyalty_points_result and loyalty_points_result[0]["SUM(loyalty_points)"] is not None else 0
+    frappe.log_error(f"Loyalty points fetched: {loyalty_points}", "LOYALTY_DEBUG")
+    
+    conversion_factor = frappe.db.get_value("Loyalty Program", loyalty_program, "conversion_factor")
+
+    return {
+        "loyalty_program": loyalty_program,
+        "loyalty_points": loyalty_points,
+        "conversion_factor": conversion_factor
+    }
+
+@frappe.whitelist()
+def get_item_dish_variants(item_code):
+    """Returns dish variants for a given item."""
+    try:
+        variants = frappe.get_all(
+            "Dish Variants",
+            filters={"parenttype": "Item", "parent": item_code},
+            fields=["name", "type"],
+            order_by="idx asc"
+        )
+        return variants
+    except Exception as e:
+        frappe.log_error(f"Error fetching dish variants for item {item_code}: {e}", "DISH_VARIANT_FETCH_ERROR")
+        return []
