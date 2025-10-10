@@ -42,6 +42,7 @@ const PaymentDialog: React.FC<PaymentDialogProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [discountValue, setDiscountValue] = useState<string>('');
   const [appliedDiscount, setAppliedDiscount] = useState<number>(0);
+  const [discountType, setDiscountType] = useState<'percentage' | 'amount'>('percentage');
   const [paymentInputs, setPaymentInputs] = useState<{ [mode: string]: string }>({});
   const [loyaltyPointsInfo, setLoyaltyPointsInfo] = useState<{
     loyalty_program: string | null;
@@ -104,10 +105,9 @@ const PaymentDialog: React.FC<PaymentDialogProps> = ({
     }
   };
 
-  // Initialize selectedSplitItems when splitItems prop changes and isSplitPayment is true
   useEffect(() => {
     if (isSplitPayment && splitItems) {
-      setSelectedSplitItems([]); // Initialize with no items selected by default
+      setSelectedSplitItems([]);
     } else {
       setSelectedSplitItems([]);
     }
@@ -124,7 +124,6 @@ const PaymentDialog: React.FC<PaymentDialogProps> = ({
     });
   };
 
-  // Calculate split payment total
   const payments = paymentModes
     .map((mode: any) => {
       const id = typeof mode === 'string' ? mode : mode.id;
@@ -140,20 +139,153 @@ const PaymentDialog: React.FC<PaymentDialogProps> = ({
       setError('Please enter a valid discount value');
       return;
     }
-    if (value > 100) {
-      setError('Percentage discount cannot exceed 100%');
-      return;
+
+    let calculatedDiscount = 0;
+
+    if (discountType === 'percentage') {
+      if (value > 100) {
+        setError('Percentage discount cannot exceed 100%');
+        return;
+      }
+      calculatedDiscount = (calculatedGrandTotal * value) / 100;
+    } else { // This handles the 'amount' type
+      if (value > calculatedGrandTotal) {
+        setError('Amount discount cannot be greater than the total');
+        return;
+      }
+      calculatedDiscount = value;
     }
-    const calculatedDiscount = (calculatedGrandTotal * value) / 100; // Use calculatedGrandTotal
+
     setAppliedDiscount(calculatedDiscount);
     setError(null);
   };
 
-  // Order summary logic
-  const subtotal = calculatedGrandTotal; // Use calculatedGrandTotal
+  const handlePayment = async () => {
+    setIsProcessing(true);
+    setError(null);
+    try {
+      let discountPercentageToSend = 0;
+      const value = parseFloat(discountValue);
+
+      if (!isNaN(value) && value > 0) {
+        if (discountType === 'percentage') {
+          discountPercentageToSend = value;
+        } else {
+          if (calculatedGrandTotal > 0) {
+            discountPercentageToSend = (appliedDiscount / calculatedGrandTotal) * 100;
+          }
+        }
+      }
+
+      // Check if this is a split payment
+      const isSplit = isSplitPayment && selectedSplitItems.length > 0;
+
+      const res = await frappeFetch('/api/method/ury.ury.doctype.ury_order.ury_order.make_invoice', {
+        method: 'POST',
+        body: JSON.stringify({
+          customer,
+          payments,
+          cashier,
+          pos_profile: posProfile,
+          owner,
+          additionalDiscount: discountPercentageToSend > 0 ? discountPercentageToSend : null,
+          table,
+          invoice,
+          items: isSplit ? selectedSplitItems.map(item => ({
+            item: item.item_name,
+            item_name: item.item_name,
+            rate: item.qty > 0 ? item.amount / item.qty : 0,
+            qty: item.qty,
+            comment: item.comment || undefined,
+            custom_dish_type: item.custom_dish_type || undefined,
+            description: item.item_name,
+            income_account: '4110 - Sales - QR'
+          })) : undefined,
+          is_split_payment: isSplit ? 1 : 0,
+          original_invoice: isSplit ? invoice : null,
+          redeem_loyalty_points: (redeemLoyaltyPoints && loyaltyPointsInfo?.loyalty_program && parseFloat(loyaltyAmount) > 0) ? 1 : 0,
+          loyalty_amount: (redeemLoyaltyPoints && loyaltyPointsInfo?.loyalty_program && parseFloat(loyaltyAmount) > 0) ? (parseFloat(loyaltyAmount) || 0) : 0,
+          loyalty_program: (redeemLoyaltyPoints && loyaltyPointsInfo?.loyalty_program && parseFloat(loyaltyAmount) > 0) ? loyaltyPointsInfo.loyalty_program : null,
+          loyalty_points: (redeemLoyaltyPoints && loyaltyPointsInfo?.loyalty_program && parseFloat(loyaltyAmount) > 0)
+            ? Math.round(parseFloat(loyaltyAmount) / (loyaltyPointsInfo.conversion_factor || 1))
+            : 0,
+        })
+
+      });
+
+      if (!res.ok) throw new Error('Failed to make payment');
+
+      const responseData = await res.json();
+
+      // NEW CODE: If split payment, create a new order for remaining items
+      if (isSplit && splitItems) {
+        const remainingItems = splitItems.filter(
+          item => !selectedSplitItems.some(selected => selected.item_name === item.item_name)
+        );
+
+        if (remainingItems.length > 0) {
+          // Create a new order/invoice for the remaining items
+          const newOrderRes = await frappeFetch('/api/method/ury.ury.doctype.ury_order.ury_order.create_order', {
+            method: 'POST',
+            body: JSON.stringify({
+              customer,
+              payments,
+              pos_profile: posProfile,
+              table,
+              cashier,
+              owner,
+              original_invoice: invoice,
+              items: remainingItems.map(item => ({
+                item: item.item_name,
+                item_name: item.item_name,
+                rate: item.qty > 0 ? item.amount / item.qty : 0,
+                qty: item.qty,
+                comment: item.comment || undefined,
+                custom_dish_type: item.custom_dish_type || undefined,
+                description: item.item_name,
+                income_account: '4110 - Sales - QR'
+              })),
+            })
+          });
+
+
+          if (!newOrderRes.ok) {
+            console.error('Failed to create order for remaining items');
+            throw new Error('Failed to create order for remaining items');
+          }
+
+          if (typeof window !== 'undefined' && (window as any).showToast) {
+            (window as any).showToast.success('Split payment successful. New order created for remaining items.');
+          }
+        } else {
+          if (typeof window !== 'undefined' && (window as any).showToast) {
+            const message = responseData?.message?.is_draft 
+              ? 'Split payment saved. Complete remaining payments to finalize.'
+              : 'All split payments completed and invoices submitted!';
+            (window as any).showToast.success(message);
+          }
+        }
+
+        removePaidSplitItems(selectedSplitItems.map(item => item.item_name));
+      } else {
+        if (typeof window !== 'undefined' && (window as any).showToast) {
+          (window as any).showToast.success('Payment successful');
+        }
+        clearSelectedOrder();
+      }
+
+      onClose();
+      await fetchOrders();
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const subtotal = calculatedGrandTotal;
   const totalDiscount = appliedDiscount;
   const discountedTotal = Math.max(0, subtotal - totalDiscount);
-  // If discount is applied, round up; else, round normally
   const finalTotalBeforeLoyalty = appliedDiscount > 0 ? Math.ceil(discountedTotal) : Math.round(discountedTotal);
   const finalTotal = redeemLoyaltyPoints && parseFloat(loyaltyAmount) > 0
     ? Math.max(0, finalTotalBeforeLoyalty - parseFloat(loyaltyAmount))
@@ -163,7 +295,6 @@ const PaymentDialog: React.FC<PaymentDialogProps> = ({
   const roundedFinalAdjustment = Math.round(finalAdjustment * 100) / 100;
   const showFinalAdjustment = Math.abs(roundedFinalAdjustment) > 0.001;
 
-  // Helper to calculate remaining balance
   const getRemainingBalance = (currentId: string) => {
     const totalEntered = Object.entries(paymentInputs)
       .filter(([id]) => id !== currentId)
@@ -171,10 +302,8 @@ const PaymentDialog: React.FC<PaymentDialogProps> = ({
     return Math.max(0, finalTotal - totalEntered);
   };
 
-  // Handler for input focus to auto-fill remaining balance
   const handlePaymentInputFocus = (id: string) => {
     setPaymentInputs(inputs => {
-      // Only auto-fill if the field is empty or zero
       if (!inputs[id] || parseFloat(inputs[id]) === 0) {
         const remaining = getRemainingBalance(id);
         return { ...inputs, [id]: remaining > 0 ? String(remaining) : '' };
@@ -183,133 +312,78 @@ const PaymentDialog: React.FC<PaymentDialogProps> = ({
     });
   };
 
-  const handlePayment = async () => {
-    setIsProcessing(true);
-    setError(null);
-    try {
-      const res = await frappeFetch('/api/method/ury.ury.doctype.ury_order.ury_order.make_invoice', {
-        method: 'POST',
-        body: JSON.stringify({
-          customer,
-          payments,
-          cashier,
-          pos_profile: posProfile,
-          owner,
-          additionalDiscount: discountValue ? parseInt(discountValue) : null,
-          table,
-          invoice,
-          // Conditionally send items based on split payment mode (selected split items)
-          items: isSplitPayment && selectedSplitItems.length > 0 ? selectedSplitItems.map(item => ({
-            item: item.item_name, // Use item_name for item code
-            item_name: item.item_name,
-            rate: item.qty > 0 ? item.amount / item.qty : 0, // Calculate rate
-            qty: item.qty, // Ensure this is the correct quantity field
-            comment: item.comment || undefined,
-            custom_dish_type: item.custom_dish_type || undefined,
-            description: item.item_name, // Add description
-            income_account: '4110 - Sales - QR' // Add income_account
-          })) : undefined, // If not split payment, Frappe will use the order in session
-          // Only send loyalty data if redemption is enabled and valid loyalty info exists
-          redeem_loyalty_points: (redeemLoyaltyPoints && loyaltyPointsInfo?.loyalty_program && parseFloat(loyaltyAmount) > 0) ? 1 : 0,
-          loyalty_amount: (redeemLoyaltyPoints && loyaltyPointsInfo?.loyalty_program && parseFloat(loyaltyAmount) > 0) ? (parseFloat(loyaltyAmount) || 0) : 0,
-          loyalty_program: (redeemLoyaltyPoints && loyaltyPointsInfo?.loyalty_program && parseFloat(loyaltyAmount) > 0) ? loyaltyPointsInfo.loyalty_program : null,
-          loyalty_points: (redeemLoyaltyPoints && loyaltyPointsInfo?.loyalty_program && parseFloat(loyaltyAmount) > 0)
-            ? Math.round(parseFloat(loyaltyAmount) / (loyaltyPointsInfo.conversion_factor || 1)) // Add || 1 to prevent division by zero
-            : 0,
-        })
-      });
-      if (!res.ok) throw new Error('Failed to make payment');
-      // Show toast and reload orders (assume showToast and reload available globally)
-      if (typeof window !== 'undefined' && (window as any).showToast) {
-        (window as any).showToast.success('Payment successful');
-      }
-      onClose();
-      if (isSplitPayment && splitItems) {
-        // If it was a split payment, remove only the paid items from the active order
-        removePaidSplitItems(selectedSplitItems.map(item => item.item_name));
-      } else {
-        clearSelectedOrder(); // Clear the entire order if not a split payment
-      }
-      await fetchOrders();
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent variant="xlarge" className="bg-white w-full max-w-4xl max-h-[90vh] flex flex-col md:flex-row p-0" showCloseButton={false}>
-        {/* Left Column - Discount and Payment Mode */}
+        {/* Left Column */}
         <div className="md:w-1/2 p-6 border-b md:border-b-0 md:border-r border-gray-200 overflow-y-auto">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-gray-900">Payment</h2>
-            <Button
-              onClick={onClose}
-              variant="ghost"
-              size="icon"
-              className="p-2"
-            >
+            <Button onClick={onClose} variant="ghost" size="icon" className="p-2">
               <X className="w-5 h-5" />
             </Button>
           </div>
 
-          {/* Split Payment Toggle */}
           <div className="mb-6">
             <label htmlFor="splitPaymentToggle" className="flex items-center justify-between cursor-pointer">
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                <span className="sr-only">Split Bill</span>
-                Split Bill
-              </h3>
+              <h3 className="text-lg font-semibold flex items-center gap-2">Split Bill</h3>
               <Input
                 type="checkbox"
                 id="splitPaymentToggle"
                 checked={isSplitPayment}
                 onChange={(e) => {
                   if (e.target.checked) {
-                    // If enabling split payment, ensure payment inputs are cleared or reset
                     setPaymentInputs({});
                     setAppliedDiscount(0);
                     setDiscountValue('');
                     setRedeemLoyaltyPoints(false);
                     setLoyaltyAmount('');
                   }
-                  onToggleSplitPayment(e.target.checked); // Use the new prop
+                  onToggleSplitPayment(e.target.checked);
                 }}
                 className="w-5 h-5"
               />
             </label>
           </div>
 
-          {/* Discount Section (conditional) */}
           {storePosProfile?.enable_discount === 1 && (
             <div className="space-y-4 mb-6">
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <Percent className="w-5 h-5" />
                 Apply Discount
               </h3>
+              <div className="flex w-full bg-gray-200 rounded-lg p-1">
+                <button
+                  onClick={() => setDiscountType('percentage')}
+                  className={`flex-1 p-2 rounded-md text-sm font-semibold transition-colors ${discountType === 'percentage' ? 'bg-white text-gray-900 shadow' : 'bg-transparent text-gray-600'
+                    }`}
+                >
+                  Percentage
+                </button>
+                <button
+                  onClick={() => setDiscountType('amount')}
+                  className={`flex-1 p-2 rounded-md text-sm font-semibold transition-colors ${discountType === 'amount' ? 'bg-white text-gray-900 shadow' : 'bg-transparent text-gray-600'
+                    }`}
+                >
+                  Amount
+                </button>
+              </div>
               <div className="flex gap-2">
                 <Input
                   type="number"
                   value={discountValue}
                   onChange={(e) => setDiscountValue(e.target.value)}
-                  placeholder={'Enter %'}
+                  placeholder={discountType === 'percentage' ? 'Enter %' : 'Enter Amount (Sh)'}
                   size="sm"
                   className="flex-1"
                 />
-                <Button
-                  onClick={handleApplyDiscount}
-                  variant="default"
-                  size="sm"
-                >
+                <Button onClick={handleApplyDiscount} variant="default" size="sm">
                   Apply
                 </Button>
               </div>
             </div>
           )}
 
-          {/* Loyalty Points Section */}
           {loyaltyPointsInfo?.loyalty_program && (
             <div className="space-y-4 mb-6">
               <h3 className="text-lg font-semibold flex items-center gap-2">
@@ -362,13 +436,11 @@ const PaymentDialog: React.FC<PaymentDialogProps> = ({
                   placeholder={`Enter amount (max ${formatCurrency(loyaltyPointsInfo.max_redeemable_amount)})`}
                   size="sm"
                   className="w-full"
-                  // disabled={!loyaltyPointsInfo.loyalty_points}
                 />
               )}
             </div>
           )}
 
-          {/* Payment Methods Section - Split Payment */}
           <div className="space-y-4 mb-6">
             <h3 className="text-lg font-semibold">Payment Methods</h3>
             <div className="grid grid-cols-1 gap-3">
@@ -387,7 +459,6 @@ const PaymentDialog: React.FC<PaymentDialogProps> = ({
                       placeholder="Amount"
                       className="flex-1"
                       size="sm"
-                      // disabled={isProcessing}
                     />
                   </div>
                 );
@@ -408,39 +479,34 @@ const PaymentDialog: React.FC<PaymentDialogProps> = ({
           </div>
         </div>
 
-        {/* Right Column - Order Summary and Pay Button */}
+        {/* Right Column */}
         <div className="md:w-1/2 p-6 overflow-y-auto">
-          {/* Error Message */}
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-red-700 text-sm">{error}</p>
             </div>
           )}
 
-          {/* Order Summary */}
           <div className="space-y-3 mb-6">
             <h3 className="text-lg font-semibold">Order Summary</h3>
             <div className="space-y-2 text-sm">
-              {/* Subtotal (Grand Total) */}
               <div className="flex justify-between">
                 <span className="text-gray-600">Subtotal</span>
                 <span>{formatCurrency(subtotal)}</span>
               </div>
-              {/* Discount */}
               {appliedDiscount > 0 && (
                 <div className="flex justify-between text-green-600">
                   <span>Discount</span>
                   <span>-{formatCurrency(appliedDiscount)}</span>
                 </div>
               )}
-              {/* Adjustment (if any) */}
               {showFinalAdjustment && (
                 <div className="flex justify-between text-blue-600">
                   <span>Adjustment</span>
                   <span>{roundedFinalAdjustment > 0 ? '+' : ''}{formatCurrency(roundedFinalAdjustment)}</span>
                 </div>
               )}
-              {isSplitPayment && splitItems && ( // Display selectable items in split payment mode
+              {isSplitPayment && splitItems && (
                 <div className="mt-4 p-4 border border-gray-200 rounded-lg bg-gray-50">
                   <h4 className="text-md font-semibold mb-3 text-gray-800">Select Items to Pay</h4>
                   <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
@@ -456,12 +522,6 @@ const PaymentDialog: React.FC<PaymentDialogProps> = ({
                           />
                           <span className="text-sm text-gray-700 flex-1">
                             {item.item_name} (x{item.quantity})
-                            {item.selectedVariant && (
-                              <span className="text-xs text-gray-500 block">Variant: {item.selectedVariant.name}</span>
-                            )}
-                            {item.selectedAddons && item.selectedAddons.length > 0 && (
-                              <span className="text-xs text-gray-500 block">Addons: {item.selectedAddons.map((addon: any) => addon.name).join(', ')}</span>
-                            )}
                           </span>
                         </label>
                         <span className="text-sm font-medium text-gray-900">{formatCurrency(item.amount)}</span>
@@ -470,7 +530,6 @@ const PaymentDialog: React.FC<PaymentDialogProps> = ({
                   </div>
                 </div>
               )}
-              {/* Final Total (Rounded) */}
               <div className="border-t pt-2">
                 <div className="flex justify-between font-semibold text-lg">
                   <span>Total</span>
@@ -480,7 +539,6 @@ const PaymentDialog: React.FC<PaymentDialogProps> = ({
             </div>
           </div>
 
-          {/* Payment Button */}
           <Button
             onClick={handlePayment}
             disabled={isProcessing || payments.length === 0 || (isSplitPayment && selectedSplitItems.length === 0)}
@@ -495,4 +553,4 @@ const PaymentDialog: React.FC<PaymentDialogProps> = ({
   );
 };
 
-export default PaymentDialog; 
+export default PaymentDialog;

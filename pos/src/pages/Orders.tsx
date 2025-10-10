@@ -14,7 +14,7 @@ import PaymentDialog from '../components/PaymentDialog';
 import { printOrder } from '../lib/print';
 import { frappeFetch } from '../lib/frappe-sdk';
 import { v4 as uuidv4 } from 'uuid'; // Import uuidv4 for unique IDs
-
+import TransferWaiterDialog from '../components/TransferWaiterDialog';
 export default function Orders() {
   const { 
     orders,
@@ -46,7 +46,9 @@ export default function Orders() {
   const [showPaymentDialog, setShowPaymentDialog] = React.useState(false);
   const [isPrinting, setIsPrinting] = React.useState(false);
   const [isSplitPaymentMode, setIsSplitPaymentMode] = React.useState(false); // New state for split payment
-
+  const [isTransferMode, setIsTransferMode] = React.useState(false);
+  const [selectedOrdersForTransfer, setSelectedOrdersForTransfer] = React.useState<string[]>([]);
+  const [isTransferDialogOpen, setIsTransferDialogOpen] = React.useState(false);
   useEffect(() => {
     fetchOrders();
   }, [fetchOrders]);
@@ -60,6 +62,14 @@ export default function Orders() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderSearchQuery]);
 
+
+    const handleOrderSelectionChange = (orderName: string) => {
+    setSelectedOrdersForTransfer(prev =>
+      prev.includes(orderName)
+        ? prev.filter(name => name !== orderName)
+        : [...prev, orderName]
+    );
+  };
 
   // Function to format the date and time
   const formatDateTime = (date: string, time: string) => {
@@ -209,6 +219,18 @@ export default function Orders() {
       <OrderStatusSidebar
         selectedStatus={selectedStatus}
         setSelectedStatus={setSelectedStatus}
+        isTransferMode={isTransferMode}
+        onToggleTransferMode={() => {
+            setIsTransferMode(!isTransferMode);
+            setSelectedOrdersForTransfer([]); // Clear selections when toggling
+        }}
+        onProceedWithTransfer={() => {
+          if (selectedOrdersForTransfer.length === 0) {
+            showToast.error("Please select at least one order to transfer.");
+            return;
+          }
+          setIsTransferDialogOpen(true); // This opens the dialog
+        }}
       />
 
       {/* Middle Section - Order Cards */}
@@ -226,12 +248,24 @@ export default function Orders() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-screen-xl mx-auto">
               {orders.map((order) => (
                 <Card 
-                  key={order.name} 
-                  className={`p-0 bg-white hover:shadow-md transition-shadow flex flex-col overflow-hidden cursor-pointer ${
-                    selectedOrder?.name === order.name ? 'ring-2 ring-blue-500 shadow-lg' : ''
-                  }`}
-                  onClick={() => handleOrderClick(order)}
-                >
+                    key={order.name} 
+                    className={`p-0 bg-white hover:shadow-md transition-shadow flex flex-col overflow-hidden relative ${ // Add "relative" class
+                      selectedOrder?.name === order.name ? 'ring-2 ring-blue-500 shadow-lg' : ''
+                    }`}
+                    onClick={() => !isTransferMode && handleOrderClick(order)} // Disable click in transfer mode
+                  >
+                    {/* --- ADD THIS CHECKBOX --- */}
+                    {isTransferMode && (order.status === 'Draft' || order.status === 'Unbilled') && (
+                      <div className="absolute top-2 right-2 z-10">
+                        <input 
+                          type="checkbox"
+                          className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          checked={selectedOrdersForTransfer.includes(order.name)}
+                          onChange={() => handleOrderSelectionChange(order.name)}
+                          onClick={(e) => e.stopPropagation()} // Prevents the card click event
+                        />
+                      </div>
+                    )}
                   <CardContent className="p-0 flex flex-col h-full">
                     <div className="p-3 bg-gray-50 border-b">
                     <h3 className="font-medium text-gray-900 text-sm truncate" title={order.name}>
@@ -516,6 +550,21 @@ export default function Orders() {
           }}
         />
       )}
+
+      <TransferWaiterDialog
+        isOpen={isTransferDialogOpen}
+        onClose={() => setIsTransferDialogOpen(false)}
+        ordersToTransfer={selectedOrdersForTransfer}
+        currentWaiter={
+          orders.find(order => order.name === selectedOrdersForTransfer[0])?.waiter || null
+        }
+        onTransferSuccess={() => {
+          setIsTransferDialogOpen(false);
+          setIsTransferMode(false);
+          setSelectedOrdersForTransfer([]);
+          fetchOrders(); // Refresh the order list
+        }}
+      />
     </div>
   );
 };

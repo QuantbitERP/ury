@@ -84,4 +84,54 @@ const SelectItem = React.forwardRef<
 ))
 SelectItem.displayName = "SelectItem"
 
-export { Select, SelectItem, selectVariants, RadixSelect } 
+const SelectTrigger = React.forwardRef<
+  React.ElementRef<typeof RadixSelect.Trigger>,
+  React.ComponentPropsWithoutRef<typeof RadixSelect.Trigger>
+>(({ className, children, ...props }, ref) => (
+  <RadixSelect.Trigger
+    ref={ref}
+    className={cn(selectVariants({ className }))}
+    {...props}
+  >
+    {children}
+    <RadixSelect.Icon asChild>
+      <ChevronDown className="h-4 w-4 opacity-50" />
+    </RadixSelect.Icon>
+  </RadixSelect.Trigger>
+))
+SelectTrigger.displayName = RadixSelect.Trigger.displayName
+
+const SelectContent = React.forwardRef<
+  React.ElementRef<typeof RadixSelect.Content>,
+  React.ComponentPropsWithoutRef<typeof RadixSelect.Content>
+>(({ className, children, position = "popper", sideOffset = 4, ...props }, ref) => (
+  <RadixSelect.Portal>
+    <RadixSelect.Content
+      ref={ref}
+      className={cn(
+        "z-50 w-[var(--radix-select-trigger-width)] bg-white border border-gray-200 rounded-lg shadow-lg mt-2 max-h-80 overflow-y-auto px-0 py-2 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500",
+        className
+      )}
+      position={position}
+      sideOffset={sideOffset}
+      {...props}
+    >
+      <RadixSelect.Viewport>
+        {children}
+      </RadixSelect.Viewport>
+    </RadixSelect.Content>
+  </RadixSelect.Portal>
+))
+SelectContent.displayName = RadixSelect.Content.displayName
+
+const SelectValue = RadixSelect.Value;
+
+export {
+  Select,
+  SelectItem,
+  selectVariants,
+  RadixSelect,
+  SelectTrigger,
+  SelectContent,
+  SelectValue,
+};

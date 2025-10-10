@@ -1,4 +1,4 @@
-import { FileText } from 'lucide-react';
+import { FileText, ArrowRight, X, Users } from 'lucide-react'; // Import new icons
 import { cn } from '../lib/utils';
 import { Button } from './ui';
 import { getOrderStatusTypes, OrderStatusType } from '../data/order-types';
@@ -9,16 +9,23 @@ interface OrderStatusSidebarProps {
   selectedStatus: OrderStatusType;
   setSelectedStatus: (status: OrderStatusType) => void;
   getStatusCount?: (status: OrderStatusType) => number;
+  // --- ADD THESE NEW PROPS ---
+  isTransferMode: boolean;
+  onToggleTransferMode: () => void;
+  onProceedWithTransfer: () => void;
 }
 
 const OrderStatusSidebar = ({ 
   disabled,
   selectedStatus,
   setSelectedStatus,
+  // --- DESTRUCTURE NEW PROPS ---
+  isTransferMode,
+  onToggleTransferMode,
+  onProceedWithTransfer,
 }: OrderStatusSidebarProps) => {
   const { posProfile } = usePOSStore();
   
-  // Get the appropriate status types based on POS profile settings
   const statusTypes = getOrderStatusTypes(posProfile?.view_all_status, posProfile?.paid_limit);
 
   return (
@@ -28,12 +35,9 @@ const OrderStatusSidebar = ({
     )}>
       <nav className="flex-1 p-6 overflow-y-auto">
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-          {/* Section Title */}
           <h2 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3 px-1">
             Order Status
           </h2>
-
-          {/* Status Items */}
           <div className="space-y-1">
             {statusTypes.map((status) => (
               <Button
@@ -46,9 +50,8 @@ const OrderStatusSidebar = ({
                     ? 'bg-white text-gray-900 shadow-sm font-semibold'
                     : 'text-gray-700 hover:bg-white/60 hover:text-gray-900'
                 )}
-                disabled={disabled}
+                disabled={disabled || isTransferMode} // Disable status change during transfer mode
               >
-                {/* Active indicator bar */}
                 {selectedStatus === status.value && (
                   <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-blue-600 rounded-r-full" />
                 )}
@@ -60,9 +63,46 @@ const OrderStatusSidebar = ({
             ))}
           </div>
         </div>
+
+        {/* --- ADDED TRANSFER WAITER SECTION --- */}
+        <div className="mt-6 space-y-2">
+          {isTransferMode ? (
+            <>
+              <Button
+                variant="default"
+                className="w-full justify-start gap-3 bg-blue-600 hover:bg-blue-700"
+                onClick={onProceedWithTransfer}
+              >
+                <ArrowRight className="w-4 h-4" />
+                <span>Proceed</span>
+              </Button>
+              <Button
+                variant="ghost"
+                className="w-full justify-start gap-3 text-red-600 hover:text-red-700"
+                onClick={onToggleTransferMode}
+              >
+                <X className="w-4 h-4" />
+                <span>Cancel</span>
+              </Button>
+            </>
+          ) : (
+            <Button
+              variant="outline"
+              className="w-full justify-start gap-3"
+              onClick={onToggleTransferMode}
+              disabled={disabled}
+            >
+              <Users className="w-4 h-4" />
+              <span>Transfer Waiter</span>
+            </Button>
+          )}
+        </div>
       </nav>
     </div>
   );
 };
 
-export default OrderStatusSidebar; 
+
+
+
+export default OrderStatusSidebar;

@@ -556,44 +556,95 @@ def cancel_order(invoice_id, reason):
 
 # Method for URY POS
 @frappe.whitelist()
-def make_invoice(customer, payments, cashier, pos_profile, owner, additionalDiscount=None, table=None, invoice=None, redeem_loyalty_points=0, loyalty_amount=0, loyalty_program=None, loyalty_points=0, items=None): # Add items parameter
+def make_invoice(customer, payments, cashier, pos_profile, owner, additionalDiscount=None, table=None, invoice=None, redeem_loyalty_points=0, loyalty_amount=0, loyalty_program=None, loyalty_points=0, items=None, is_split_payment=0, original_invoice=None): # Add items parameter
     order_type =  invoice_name = frappe.get_value("POS Invoice",invoice , "order_type")
-    invoice = get_order_invoice(table, invoice, order_type, "Payments")
+    invoice_doc = get_order_invoice(table, invoice, order_type, "Payments")
+    
+    is_split = int(is_split_payment) == 1
 
     if table:
         restaurant = get_restaurant_and_menu_name(table)
-        invoice.restaurant = restaurant
+        invoice_doc.restaurant = restaurant
 
-    invoice.customer = customer
-    invoice.pos_profile = pos_profile
-    invoice.additional_discount_percentage=additionalDiscount
-    invoice.redeem_loyalty_points = redeem_loyalty_points
-    invoice.loyalty_amount = loyalty_amount
-    invoice.loyalty_program = loyalty_program
-    invoice.loyalty_points = loyalty_points
-    frappe.log_error(f"Invoice loyalty fields before save: redeem_loyalty_points={invoice.redeem_loyalty_points}, loyalty_amount={invoice.loyalty_amount}, loyalty_program={invoice.loyalty_program}, loyalty_points={invoice.loyalty_points}", "INVOICE_LOYALTY_DEBUG")
+    invoice_doc.customer = customer
+    invoice_doc.pos_profile = pos_profile
+    invoice_doc.additional_discount_percentage=additionalDiscount
+    invoice_doc.redeem_loyalty_points = redeem_loyalty_points
+    invoice_doc.loyalty_amount = loyalty_amount
+    invoice_doc.loyalty_program = loyalty_program
+    invoice_doc.loyalty_points = loyalty_points
+    frappe.log_error(f"Invoice loyalty fields before save: redeem_loyalty_points={invoice_doc.redeem_loyalty_points}, loyalty_amount={invoice_doc.loyalty_amount}, loyalty_program={invoice_doc.loyalty_program}, loyalty_points={invoice_doc.loyalty_points}", "INVOICE_LOYALTY_DEBUG")
     
     # Process items if provided (for split payments)
     if items:
-        invoice.items = []  # Clear existing items
+        invoice_doc.items = []  # Clear existing items
         for item_data in items:
-            invoice.append("items", item_data)
+            invoice_doc.append("items", item_data)
 
-    invoice.calculate_taxes_and_totals()
+    invoice_doc.calculate_taxes_and_totals()
 
-    for pay in invoice.payments:
+    for pay in invoice_doc.payments:
         pay.delete(pay.mode_of_payment)
 
     for d in payments:
-        invoice.append(
+        invoice_doc.append(
             "payments", dict(mode_of_payment=d["mode_of_payment"], amount=d["amount"])
         )
 
-    invoice.save()
-    try:
-        invoice.submit()
-    except Exception as e:
-        frappe.throw(f"Error while settling order: {e}")
+    # If this is a split payment, save as draft and mark it
+    if is_split:
+        # Set custom field to track this is a split payment invoice
+        if hasattr(invoice_doc, 'custom_is_split_payment'):
+            invoice_doc.custom_is_split_payment = 1
+        if hasattr(invoice_doc, 'custom_original_invoice') and original_invoice:
+            invoice_doc.custom_original_invoice = original_invoice
+        
+        # Save as draft first
+        invoice_doc.submit()
+        
+        # Check if payment is complete and submit if so
+        total_paid = sum([p.amount for p in invoice_doc.payments])
+        if total_paid >= invoice_doc.grand_total:
+            try:
+                invoice_doc.submit()
+                frappe.db.commit()
+                
+                # Check if all related split invoices are now paid and submit them
+                if original_invoice:
+                    check_and_submit_split_invoices(original_invoice)
+                else:
+                    check_and_submit_split_invoices(invoice_doc.name)
+                
+                return {
+                    "status": "success",
+                    "message": "Split payment completed and invoice submitted",
+                    "invoice_name": invoice_doc.name,
+                    "is_draft": False
+                }
+            except Exception as e:
+                frappe.log_error(f"Error submitting split invoice: {e}", "SPLIT_INVOICE_SUBMIT")
+                frappe.db.commit()
+                return {
+                    "status": "success",
+                    "message": "Split payment saved as draft",
+                    "invoice_name": invoice_doc.name,
+                    "is_draft": True
+                }
+        else:
+            frappe.db.commit()
+            return {
+                "status": "success",
+                "message": "Split payment invoice saved as draft",
+                "invoice_name": invoice_doc.name,
+                "is_draft": True
+            }
+    else:
+        # Normal payment - submit invoice
+        invoice_doc.save()
+        try:
+            invoice_doc.submit()
+        except Exception as e:
+            frappe.throw(f"Error while settling order: {e}")
     
     
 
@@ -712,3 +763,145 @@ def get_item_dish_variants(item_code):
     except Exception as e:
         frappe.log_error(f"Error fetching dish variants for item {item_code}: {e}", "DISH_VARIANT_FETCH_ERROR")
         return []
+
+
+import frappe
+from frappe import _
+from frappe.utils import now_datetime
+
+@frappe.whitelist()
+def check_and_submit_split_invoices(original_invoice):
+    """
+    Check if all split payment invoices are paid and auto-submit them
+    """
+    try:
+        # Get all invoices related to this split payment (including original)
+        split_invoices = frappe.get_all(
+            "POS Invoice",
+            filters={
+                "custom_original_invoice": original_invoice,
+                "docstatus": 0
+            },
+            fields=["name", "grand_total"]
+        )
+        
+        # Also check the original invoice
+        original_doc = frappe.get_doc("POS Invoice", original_invoice)
+        
+        # If original is still draft, include it
+        if original_doc.docstatus == 0:
+            split_invoices.append({
+                "name": original_invoice,
+                "grand_total": original_doc.grand_total
+            })
+        
+        # If no draft invoices left, all are paid - submit them all
+        if len(split_invoices) == 0:
+            return {"status": "success", "message": "All invoices already submitted"}
+        
+        # Check if this is the last one - if so, submit all
+        # For now, we'll submit each invoice as it's paid
+        for inv in split_invoices:
+            try:
+                inv_doc = frappe.get_doc("POS Invoice", inv["name"])
+                # Check if payment is complete
+                total_paid = sum([p.amount for p in inv_doc.payments])
+                if total_paid >= inv_doc.grand_total:
+                    inv_doc.submit()
+                    frappe.db.commit()
+            except Exception as e:
+                frappe.log_error(f"Error submitting split invoice {inv['name']}: {e}", "SPLIT_INVOICE_SUBMIT_ERROR")
+        
+        return {"status": "success", "message": "Split invoices processed"}
+    except Exception as e:
+        frappe.log_error(f"Error in check_and_submit_split_invoices: {e}", "SPLIT_INVOICE_CHECK_ERROR")
+        return {"status": "error", "message": str(e)}
+
+@frappe.whitelist()
+def create_order(customer,payments, pos_profile, table=None, cashier=None, owner=None, items=None, original_invoice=None):
+    # Standard Frappe imports needed for this function
+    from frappe.utils import now_datetime
+    from frappe import _ # Assuming _ is imported for translation
+
+    invoice = frappe.new_doc("POS Invoice")
+    invoice.customer = customer
+    invoice.pos_profile = pos_profile
+    # ... (other invoice fields)
+
+    invoice.company = frappe.db.get_value("POS Profile", pos_profile, "company")
+    invoice.is_pos = 1
+    invoice.set_posting_time = 1
+    invoice.posting_date = now_datetime().date()
+    invoice.posting_time = now_datetime().time()
+    invoice.owner = owner or frappe.session.user
+
+    if cashier:
+        invoice.cashier = cashier
+
+    if table:
+        invoice.restaurant_table = table
+        # Set restaurant if applicable
+        try:
+            branch, menu, restaurant = get_restaurant_and_menu_name(table)
+            invoice.restaurant = restaurant
+            invoice.branch = branch
+        except:
+            pass
+
+    # Link to original invoice if this is a split payment continuation
+    if original_invoice and hasattr(invoice, 'custom_original_invoice'):
+        invoice.custom_original_invoice = original_invoice
+        invoice.custom_is_split_payment = 1
+
+    # 1. Initialize Loyalty Fields to avoid custom validation errors
+    # This explicitly sets the fields, satisfying the custom check/log
+    invoice.redeem_loyalty_points = 0
+    invoice.loyalty_amount = 0
+    invoice.loyalty_program = None
+    invoice.loyalty_points = 0
+    # End of new loyalty field initialization
+
+    # Add items
+    # Ensure items is not None before attempting to parse
+    items_list = frappe.parse_json(items) if items else []
+
+    for item_data in items_list:
+        # Note: Frontend now sends 'item_code' for new items, but the backend accepts 'item' or 'item_name'
+        item_code = item_data.get("item_code") or item_data.get("item") or item_data.get("item_name")
+        qty = item_data.get("qty") or 1
+
+        if not item_code:
+            frappe.throw(_("Missing Item Code for one of the items"))
+        if qty <= 0:
+            frappe.throw(_("Invalid quantity for item {0}").format(item_code))
+
+        invoice.append("items", {
+            "item_code": item_code,
+            "item_name": item_data.get("item_name"),
+            "qty": qty,
+            "rate": item_data.get("rate", 0),
+            "description": item_data.get("description"),
+            "custom_dish_type": item_data.get("custom_dish_type"),
+            "income_account": item_data.get("income_account") or "4110 - Sales - QR",
+            "comment": item_data.get("comment"),
+            # Ensure uom is included if required by standard POS Invoice
+            "uom": item_data.get("uom"), 
+        })
+
+    for d in payments:
+        invoice.append(
+            "payments", dict(mode_of_payment=d["mode_of_payment"], amount=d["amount"])
+        )
+    # Calculate totals
+    invoice.calculate_taxes_and_totals()
+    invoice.save(ignore_permissions=True)
+
+    frappe.db.commit()
+
+    frappe.msgprint(_("New POS Invoice created successfully: {0}").format(invoice.name))
+
+    return {
+        "status": "success",
+        "message": "New POS Invoice created successfully",
+        "invoice_name": invoice.name
+    }
