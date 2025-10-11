@@ -18,7 +18,9 @@ app_include_js = [
     "/assets/ury/js/quick_entry.js",
     "/assets/ury/js/pos_print.js",
     "/assets/ury/js/restrict_qty_edit_pos.js",
-    "/assets/ury/js/ury_pos_kot.js"
+    "/assets/ury/js/ury_pos_kot.js",
+    "/assets/ury/js/close_sidebar.js",
+    "/assets/ury/js/router.js",
 ]
 
 # include js, css files in header of web template
@@ -121,7 +123,7 @@ doc_events = {
     "POS Invoice": {
         "before_insert": "ury.ury.hooks.ury_pos_invoice.before_insert",
         "validate": "ury.ury.hooks.ury_pos_invoice.validate",
-        "after_insert":"ury.ury.api.ury_kot_order_number.set_order_number",
+        "after_insert": "ury.ury.api.ury_kot_order_number.set_order_number",
         "before_submit": "ury.ury.hooks.ury_pos_invoice.before_submit",
         "on_cancel": "ury.ury.hooks.ury_pos_invoice.on_trash",
         "on_trash": "ury.ury.hooks.ury_pos_invoice.on_trash",
@@ -129,48 +131,44 @@ doc_events = {
     "POS Profile": {"validate": "ury.ury.hooks.ury_pos_profile.validate"},
     "Sales Invoice": {
         "before_insert": "ury.ury.hooks.ury_sales_invoice.before_insert",
-        "on_update":"ury.ury.hooks.ury_sales_invoice.on_update",
-        },
+        "on_update": "ury.ury.hooks.ury_sales_invoice.on_update",
+    },
     "Customer": {"before_save": "ury.ury.hooks.ury_customer.before_insert"},
     "Item": {"validate": "ury.ury.hooks.ury_item.validate"},
     "POS Opening Entry": {
-        "validate":"ury.ury.hooks.ury_pos_opening_entry.set_cashier_room",
+        "validate": "ury.ury.hooks.ury_pos_opening_entry.set_cashier_room",
         "before_save": "ury.ury.hooks.ury_pos_opening_entry.before_save",
-        "before_insert":"ury.ury.api.ury_kot_order_number.set_last_invoice_in_pos_open",
-        },
+        "before_insert": "ury.ury.api.ury_kot_order_number.set_last_invoice_in_pos_open",
+    },
     "POS Closing Entry": {
         "before_save": "ury.ury.hooks.ury_pos_closing_entry.before_save",
-        "validate":"ury.ury.hooks.ury_pos_closing_entry.validate"
-        },
+        "validate": "ury.ury.hooks.ury_pos_closing_entry.validate",
+    },
     "URY Menu Course": {
-		"validate": "ury.ury.api.ury_menu_course_validation.validate_priority",
-	}    
+        "validate": "ury.ury.api.ury_menu_course_validation.validate_priority",
+    },
 }
 
 # Scheduled Tasks
 # ---------------
 
 scheduler_events = {
-    "cron":{
-		"* * * * *":[
-			"ury.ury.api.ury_kot_validation.kotValidationThread"
-		]
-	}
-# 	"all": [
-# 		"ury.tasks.all"
-# 	],
-# 	"daily": [
-# 		"ury.tasks.daily"
-# 	],
-# 	"hourly": [
-# 		"ury.tasks.hourly"
-# 	],
-# 	"weekly": [
-# 		"ury.tasks.weekly"
-# 	],
-# 	"monthly": [
-# 		"ury.tasks.monthly"
-# 	],
+    "cron": {"* * * * *": ["ury.ury.api.ury_kot_validation.kotValidationThread"]}
+    # 	"all": [
+    # 		"ury.tasks.all"
+    # 	],
+    # 	"daily": [
+    # 		"ury.tasks.daily"
+    # 	],
+    # 	"hourly": [
+    # 		"ury.tasks.hourly"
+    # 	],
+    # 	"weekly": [
+    # 		"ury.tasks.weekly"
+    # 	],
+    # 	"monthly": [
+    # 		"ury.tasks.monthly"
+    # 	],
 }
 
 # Testing
@@ -354,22 +352,14 @@ fixtures = [
                     "POS Profile-custom_table_order_printer",
                     "POS Profile-custom_reprint_kot_format",
                     "Employee-payment_amount",
-                    "Employee-payment_type"
+                    "Employee-payment_type",
                 },
             ]
         ],
     },
     {
         "dt": "Property Setter",
-        "filters": [
-            [
-                "name",
-                "in",
-                {
-                    "POS Closing Entry Detail-closing_amount-label"
-                }
-            ]
-        ],
+        "filters": [["name", "in", {"POS Closing Entry Detail-closing_amount-label"}]],
     },
     {"dt": "Role", "filters": [["role_name", "like", "URY %"]]},
     "Client Script",
