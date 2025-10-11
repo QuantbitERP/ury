@@ -199,7 +199,6 @@ const PaymentDialog: React.FC<PaymentDialogProps> = ({
             comment: item.comment || undefined,
             custom_dish_type: item.custom_dish_type || undefined,
             description: item.item_name,
-            income_account: '4110 - Sales - QR'
           })) : undefined,
           is_split_payment: isSplit ? 1 : 0,
           original_invoice: isSplit ? invoice : null,
@@ -243,7 +242,6 @@ const PaymentDialog: React.FC<PaymentDialogProps> = ({
                 comment: item.comment || undefined,
                 custom_dish_type: item.custom_dish_type || undefined,
                 description: item.item_name,
-                income_account: '4110 - Sales - QR'
               })),
             })
           });
