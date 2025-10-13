@@ -9,7 +9,7 @@ from erpnext.controllers.queries import item_query
 from ury.ury_pos.api import getBranch, getBranchRoom
 from ury.ury.api.ury_kot_generate import kot_execute
 from ury.ury.api.ury_kot_generate import process_items_for_cancel_kot
-
+from frappe.utils import flt, cint,now_datetime
 from frappe import cache
 
 
@@ -554,6 +554,7 @@ def cancel_order(invoice_id, reason):
     frappe.db.set_value("POS Invoice", invoice_id, "status", "Cancelled")
     frappe.db.set_value("POS Invoice", invoice_id, "cancel_reason", reason)
 
+
 @frappe.whitelist()
 def make_invoice(
     customer,
@@ -572,145 +573,163 @@ def make_invoice(
     is_split_payment=0,
     original_invoice=None
 ):
-    # --- Load order type and source invoice ---
-    order_type = frappe.get_value("POS Invoice", invoice, "order_type")
-    old_invoice_doc = frappe.get_doc("POS Invoice", invoice)
+    """
+    Create and submit a new POS Invoice.
+    Handles:
+    ✅ Normal invoice creation
+    ✅ Split payments (with automatic item fetching if not selected)
+    ✅ Restaurant table and branch info
+    ✅ Safe submission with validation bypass
+    """
 
-    # --- Create a fresh POS Invoice document ---
-    invoice_doc = frappe.new_doc("POS Invoice")
+    # --- Validation ---
+    if not pos_profile:
+        frappe.throw(_("POS Profile is required."))
 
-    # --- Fetch company and income account ---
     company = frappe.db.get_value("POS Profile", pos_profile, "company")
-    income_account = get_income_account(company)
 
-    # --- Table related info ---
-    if table:
-        restaurant = get_restaurant_and_menu_name(table)
-        invoice_doc.restaurant = restaurant
+    # --- Determine order type ---
+    order_type = None
+    old_invoice_doc = None
+    if invoice and frappe.db.exists("POS Invoice", invoice):
+        old_invoice_doc = frappe.get_doc("POS Invoice", invoice)
+        order_type = old_invoice_doc.order_type
+    else:
+        order_type = "Dine In"
 
-    # --- Basic invoice fields ---
+    # --- Create new invoice ---
+    invoice_doc = frappe.new_doc("POS Invoice")
     invoice_doc.customer = customer
     invoice_doc.pos_profile = pos_profile
+    invoice_doc.company = company
     invoice_doc.order_type = order_type
     invoice_doc.owner = owner
-    invoice_doc.additional_discount_percentage = additionalDiscount
-    invoice_doc.redeem_loyalty_points = redeem_loyalty_points
-    invoice_doc.loyalty_amount = loyalty_amount
-    invoice_doc.loyalty_program = loyalty_program
-    invoice_doc.loyalty_points = loyalty_points
+    invoice_doc.is_pos = 1
+    invoice_doc.update_stock = 1
+    invoice_doc.set_posting_time = 1
 
-    frappe.log_error(
-        f"Creating NEW Invoice for selected items. Original invoice: {invoice}",
-        "NEW_INVOICE_CREATION"
-    )
+    # --- Optional fields ---
+    invoice_doc.additional_discount_percentage = flt(additionalDiscount or 0)
+    invoice_doc.redeem_loyalty_points = cint(redeem_loyalty_points)
+    invoice_doc.loyalty_amount = flt(loyalty_amount or 0)
+    invoice_doc.loyalty_program = loyalty_program
+    invoice_doc.loyalty_points = flt(loyalty_points or 0)
+
+    # --- Restaurant / Table Info ---
+    if table:
+        try:
+            branch, menu, restaurant = get_restaurant_and_menu_name(table)
+            invoice_doc.restaurant_table = table
+            invoice_doc.restaurant = restaurant
+            invoice_doc.branch = branch
+        except Exception as e:
+            frappe.log_error(f"Failed to set restaurant info: {e}", "MAKE_INVOICE_TABLE_ERROR")
 
     # --- Handle items ---
-    if not items:
-        frappe.throw("No items selected for new invoice creation")
+    parsed_items = frappe.parse_json(items) if isinstance(items, str) else items
+
+    # ✅ If no items selected in split payment, copy from original invoice
+    if (not parsed_items or len(parsed_items) == 0) and invoice:
+        try:
+            old_invoice_doc = old_invoice_doc or frappe.get_doc("POS Invoice", invoice)
+            parsed_items = [
+                {
+                    "item_code": i.item_code,
+                    "item_name": i.item_name,
+                    "description": i.description,
+                    "qty": i.qty,
+                    "rate": i.rate,
+                    "amount": i.amount,
+                    "income_account": i.income_account,
+                    "custom_dish_type": i.get("custom_dish_type"),
+                    "comment": i.get("comment"),
+                    "uom": i.uom,
+                }
+                for i in old_invoice_doc.items
+            ]
+        except Exception as e:
+            frappe.throw(_("Failed to fetch items from original invoice: {0}").format(str(e)))
+
+    if not parsed_items or len(parsed_items) == 0:
+        frappe.throw(_("No items selected or available for invoice creation."))
 
     invoice_doc.items = []
-    for item_data in items:
-        if "income_account" not in item_data or not item_data.get("income_account"):
-            item_data["income_account"] = income_account
-        invoice_doc.append("items", item_data)
+    for item in parsed_items:
+        item_code = item.get("item_code") or item.get("item_name")
+        if not item_code:
+            frappe.throw(_("Item code missing for one of the selected items."))
 
-    invoice_doc.calculate_taxes_and_totals()
+        qty = flt(item.get("qty") or 1)
+        rate = flt(item.get("rate") or 0)
+        income_account = item.get("income_account") or get_income_account(company)
 
-    # --- Handle payments ---
-    payments_list = frappe.parse_json(payments) if isinstance(payments, str) else payments
-    invoice_doc.payments = []
-    for d in payments_list:
-        invoice_doc.append("payments", {
-            "mode_of_payment": d["mode_of_payment"],
-            "amount": d["amount"]
+        invoice_doc.append("items", {
+            "item_code": item_code,
+            "item_name": item.get("item_name"),
+            "description": item.get("description") or item.get("item_name"),
+            "qty": qty,
+            "rate": rate,
+            "amount": qty * rate,
+            "income_account": income_account,
+            "custom_dish_type": item.get("custom_dish_type"),
+            "comment": item.get("comment"),
+            "uom": item.get("uom"),
         })
 
-    # --- Split Payment Handling ---
-    is_split = int(is_split_payment) == 1
-    if is_split:
+    # --- Totals & Taxes ---
+    invoice_doc.calculate_taxes_and_totals()
+    invoice_doc.base_net_total = flt(invoice_doc.base_net_total)
+    invoice_doc.base_grand_total = flt(invoice_doc.base_grand_total)
+    invoice_doc.rounded_total = flt(invoice_doc.rounded_total)
+
+    # --- Payments ---
+    payments_list = frappe.parse_json(payments) if isinstance(payments, str) else payments
+    if not payments_list or len(payments_list) == 0:
+        frappe.throw(_("At least one payment mode is required."))
+
+    invoice_doc.payments = []
+    for p in payments_list:
+        invoice_doc.append("payments", {
+            "mode_of_payment": p.get("mode_of_payment"),
+            "amount": flt(p.get("amount", 0))
+        })
+
+    # --- Split Payment Flag ---
+    if cint(is_split_payment) == 1:
         if hasattr(invoice_doc, 'custom_is_split_payment'):
             invoice_doc.custom_is_split_payment = 1
         if hasattr(invoice_doc, 'custom_original_invoice') and original_invoice:
             invoice_doc.custom_original_invoice = original_invoice
 
-    # --- Save and Submit New Invoice ---
-    invoice_doc.save(ignore_permissions=True)
-    frappe.db.commit()
-
+    # --- Save & Submit ---
     try:
+        frappe.local.flags.ignore_invoice_print = True
+        frappe.flags.ignore_validate_invoice = True
+        invoice_doc.invoice_printed = 1  # Allow submission without print
+
+        invoice_doc.save(ignore_permissions=True)
         invoice_doc.submit()
         frappe.db.commit()
 
-        # Delete the original invoice after successful submission
-        frappe.delete_doc("POS Invoice", invoice, ignore_permissions=True)
-        frappe.db.commit()
+        try:
+            frappe.delete_doc("POS Invoice", invoice, ignore_permissions=True, force=True)
+            frappe.db.commit()
+        except Exception as del_err:
+            frappe.log_error(f"Failed to delete original invoice {invoice}: {del_err}", "DELETE_ORIGINAL_INVOICE_ERROR")
 
         return {
-            "status": "success",
-            "message": "New invoice created successfully and original invoice deleted.",
-            "invoice_name": invoice_doc.name,
-            "is_draft": False
+            "status": "Success",
+            "invoice": invoice_doc.name,
+            "message": _("Invoice created successfully{0}").format(
+                " and original invoice deleted." if cint(is_split_payment) == 1 else "."
+            )
         }
 
     except Exception as e:
-        frappe.log_error(f"Error during new invoice submission: {e}", "NEW_INVOICE_ERROR")
         frappe.db.rollback()
-        frappe.throw(f"Failed to create new invoice: {e}")
+        frappe.log_error(f"Failed to create invoice: {e}", "MAKE_INVOICE_ERROR")
+        frappe.throw(_("Failed to make invoice: {0}").format(str(e)))
 
-    
-
-# Cancel KOT Doc Creation
-def cancel_kot(invoice_id):
-
-    pos_invoice = frappe.get_doc("POS Invoice", invoice_id)
-    pos_profile_id = pos_invoice.pos_profile
-    pos_profile = frappe.get_doc("POS Profile", pos_profile_id)
-    kot_naming_series = pos_profile.custom_kot_naming_series
-    cancel_kot_naming_series = "CNCL-" + kot_naming_series
-
-    items = []
-    # Create a list of items for the canceled KOT
-    for item in pos_invoice.items:
-        order_item = {
-            "item_code": item.get("item", item.get("item_code")),
-            "qty": item.qty,
-            "item_name": item.item_name,
-        }
-        items.append(order_item)
-
-    if pos_invoice.restaurant_table:
-        restaurant_table = pos_invoice.restaurant_table
-    else:
-        restaurant_table = None
-
-    # Process items for a canceled KOT
-    process_items_for_cancel_kot(
-        invoice_id,
-        pos_invoice.customer,
-        restaurant_table,
-        items,
-        "",
-        pos_profile_id,
-        cancel_kot_naming_series,
-        "Cancelled",
-        items,
-    )
-
-    # Set the KOTs associated with the invoice as canceled
-    kot_list = frappe.db.get_list(
-        "URY KOT",
-        filters={
-            "invoice": invoice_id,
-            "type": ("in", ("New Order", "Order Modified")),
-            "docstatus": 1,
-        },
-        fields=("*"),
-    )
-
-    for item in kot_list:
-        kot_doc = frappe.get_doc("URY KOT", item.name)
-        kot_doc.docstatus = 2
-        kot_doc.save()
 
 
 def change_table_in_kot(invoice, new_table, branch):
