@@ -9,9 +9,80 @@
   <script type="module" crossorigin src="/assets/ury/index-gcTg7_JB.js"></script>
   <link rel="stylesheet" crossorigin href="/assets/ury/index-BksKkttd.css">
 </head>
+{% extends "templates/base.html" %}
+{% block content %}
+{% block script %}
+<script>
+  frappe.ready(function () {
+    setTimeout(() => {
+      const navbarNav = document.querySelector('.navbar-nav');
+      if (navbarNav && !navbarNav.querySelector('.dropdown-notifications')) {
+        const notificationLi = `
+        <li class="nav-item dropdown dropdown-notifications">
+          <button class="btn-reset nav-link notifications-icon text-muted" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <span class="notifications-seen">
+              <i class="fa fa-bell" style="font-size: 1.2em;"></i>
+            </span>
+            <span class="notifications-unseen d-none">
+              <i class="fa fa-bell" style="font-size: 1.2em;"></i>
+              <span class="badge badge-danger ml-1">!</span>
+            </span>
+          </button>
+          <div class="dropdown-menu notifications-list dropdown-menu-right" role="menu" style="width: 400px; max-height: 500px; overflow-y: auto;">
+            <div class="notification-list-header p-2 border-bottom d-flex justify-content-between">
+              <h6 class="mb-0">{{ _("Notifications") }}</h6>
+              <button class="btn btn-sm btn-outline-secondary mark-all">{{ _("Mark all read") }}</button>
+            </div>
+            <div class="notification-list-body p-2">
+              <div class="panel-notifications">
+                <div class="alert alert-info">{{ _("Loading notifications...") }}</div>
+              </div>
+            </div>
+          </div>
+        </li>
+      `;
+        navbarNav.insertAdjacentHTML('beforeend', notificationLi);
+
+        const unseenSpan = navbarNav.querySelector('.notifications-unseen');
+        frappe.call({
+          method: 'frappe.desk.notifications.get_notifications',
+          callback: function (r) {
+            if (r.message && r.message.count > 0) {
+              unseenSpan.classList.remove('d-none');
+              unseenSpan.querySelector('.badge').textContent = r.message.count;
+            }
+          }
+        });
+
+        frappe.call({
+          method: 'frappe.desk.doctype.notification_log.notification_log.get_notification_logs',
+          args: { limit: 10 },
+          callback: function (r) {
+            const panel = navbarNav.querySelector('.panel-notifications');
+            if (r.message && r.message.length) {
+              panel.innerHTML = r.message.map(n => `
+              <div class="notification-item p-2 border-bottom">
+                <strong>${n.subject || n.type}</strong><br>
+                <small class="text-muted">${frappe.datetime.prettyDate(n.creation)}</small>
+              </div>
+            `).join('');
+            } else {
+              panel.innerHTML = `<div class="alert alert-info">{{ _("No notifications yet.") }}</div>`;
+            }
+          }
+        });
+      }
+    }, 500);
+  });
+</script>
+{% endblock %}
 
 <body>
   <div id="root"></div>
 </body>
+{% block footer %}
+{% endblock %}
+{% endblock %}
+
 
 </html>
