@@ -15,6 +15,7 @@ import { printOrder } from '../lib/print';
 import { frappeFetch } from '../lib/frappe-sdk';
 import { v4 as uuidv4 } from 'uuid'; // Import uuidv4 for unique IDs
 import TransferWaiterDialog from '../components/TransferWaiterDialog';
+import MergeBillsDialog from '../components/MergeBillsDialog';
 export default function Orders() {
   const { 
     orders,
@@ -49,6 +50,8 @@ export default function Orders() {
   const [isTransferMode, setIsTransferMode] = React.useState(false);
   const [selectedOrdersForTransfer, setSelectedOrdersForTransfer] = React.useState<string[]>([]);
   const [isTransferDialogOpen, setIsTransferDialogOpen] = React.useState(false);
+  const [isMergeMode, setIsMergeMode] = React.useState(false);
+  const [isMergeBillsDialogOpen, setIsMergeBillsDialogOpen] = React.useState(false);
   useEffect(() => {
     fetchOrders();
   }, [fetchOrders]);
@@ -231,6 +234,13 @@ export default function Orders() {
           }
           setIsTransferDialogOpen(true); // This opens the dialog
         }}
+        isMergeMode={isMergeMode}
+        onToggleMergeMode={() => {
+          setIsMergeMode(!isMergeMode);
+        }}
+        onProceedWithMerge={() => {
+          setIsMergeBillsDialogOpen(true);
+        }}
       />
 
       {/* Middle Section - Order Cards */}
@@ -252,7 +262,7 @@ export default function Orders() {
                     className={`p-0 bg-white hover:shadow-md transition-shadow flex flex-col overflow-hidden relative ${ // Add "relative" class
                       selectedOrder?.name === order.name ? 'ring-2 ring-blue-500 shadow-lg' : ''
                     }`}
-                    onClick={() => !isTransferMode && handleOrderClick(order)} // Disable click in transfer mode
+                    onClick={() => !isTransferMode && !isMergeMode && handleOrderClick(order)} // Disable click in transfer/merge mode
                   >
                     {/* --- ADD THIS CHECKBOX --- */}
                     {isTransferMode && (order.status === 'Draft' || order.status === 'Unbilled') && (
@@ -562,6 +572,17 @@ export default function Orders() {
           setIsTransferDialogOpen(false);
           setIsTransferMode(false);
           setSelectedOrdersForTransfer([]);
+          fetchOrders(); // Refresh the order list
+        }}
+      />
+
+      <MergeBillsDialog
+        isOpen={isMergeBillsDialogOpen}
+        onClose={() => setIsMergeBillsDialogOpen(false)}
+        onMergeSuccess={(newBillName: string) => {
+          setIsMergeBillsDialogOpen(false);
+          setIsMergeMode(false);
+          showToast.success(`Bills merged successfully! New invoice: ${newBillName}`);
           fetchOrders(); // Refresh the order list
         }}
       />

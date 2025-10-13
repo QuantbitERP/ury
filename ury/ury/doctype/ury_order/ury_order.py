@@ -572,11 +572,12 @@ def make_invoice(
     is_split_payment=0,
     original_invoice=None
 ):
-    # --- Fetch order type and load existing invoice doc ---
+    # --- Load order type and source invoice ---
     order_type = frappe.get_value("POS Invoice", invoice, "order_type")
-    invoice_doc = get_order_invoice(table, invoice, order_type, "Payments")
+    old_invoice_doc = frappe.get_doc("POS Invoice", invoice)
 
-    is_split = int(is_split_payment) == 1
+    # --- Create a fresh POS Invoice document ---
+    invoice_doc = frappe.new_doc("POS Invoice")
 
     # --- Fetch company and income account ---
     company = frappe.db.get_value("POS Profile", pos_profile, "company")
@@ -590,6 +591,8 @@ def make_invoice(
     # --- Basic invoice fields ---
     invoice_doc.customer = customer
     invoice_doc.pos_profile = pos_profile
+    invoice_doc.order_type = order_type
+    invoice_doc.owner = owner
     invoice_doc.additional_discount_percentage = additionalDiscount
     invoice_doc.redeem_loyalty_points = redeem_loyalty_points
     invoice_doc.loyalty_amount = loyalty_amount
@@ -597,94 +600,63 @@ def make_invoice(
     invoice_doc.loyalty_points = loyalty_points
 
     frappe.log_error(
-        f"Invoice loyalty fields before save: redeem_loyalty_points={invoice_doc.redeem_loyalty_points}, "
-        f"loyalty_amount={invoice_doc.loyalty_amount}, loyalty_program={invoice_doc.loyalty_program}, "
-        f"loyalty_points={invoice_doc.loyalty_points}",
-        "INVOICE_LOYALTY_DEBUG"
+        f"Creating NEW Invoice for selected items. Original invoice: {invoice}",
+        "NEW_INVOICE_CREATION"
     )
 
     # --- Handle items ---
-    if items:
-        invoice_doc.items = []  # Clear old items
-        for item_data in items:
-            # Ensure each item gets an income account
-            if "income_account" not in item_data or not item_data.get("income_account"):
-                item_data["income_account"] = income_account
-            invoice_doc.append("items", item_data)
+    if not items:
+        frappe.throw("No items selected for new invoice creation")
+
+    invoice_doc.items = []
+    for item_data in items:
+        if "income_account" not in item_data or not item_data.get("income_account"):
+            item_data["income_account"] = income_account
+        invoice_doc.append("items", item_data)
 
     invoice_doc.calculate_taxes_and_totals()
 
     # --- Handle payments ---
-    invoice_doc.payments = []  # Clear old payments safely
     payments_list = frappe.parse_json(payments) if isinstance(payments, str) else payments
+    invoice_doc.payments = []
     for d in payments_list:
         invoice_doc.append("payments", {
             "mode_of_payment": d["mode_of_payment"],
             "amount": d["amount"]
         })
 
-    # --- Handle Split Payment Case ---
+    # --- Split Payment Handling ---
+    is_split = int(is_split_payment) == 1
     if is_split:
         if hasattr(invoice_doc, 'custom_is_split_payment'):
             invoice_doc.custom_is_split_payment = 1
         if hasattr(invoice_doc, 'custom_original_invoice') and original_invoice:
             invoice_doc.custom_original_invoice = original_invoice
 
-        # Save and handle split draft
-        invoice_doc.save(ignore_permissions=True)
+    # --- Save and Submit New Invoice ---
+    invoice_doc.save(ignore_permissions=True)
+    frappe.db.commit()
+
+    try:
+        invoice_doc.submit()
         frappe.db.commit()
 
-        total_paid = sum([p.amount for p in invoice_doc.payments])
-        if total_paid >= invoice_doc.grand_total:
-            try:
-                invoice_doc.submit()
-                frappe.db.commit()
-
-                if original_invoice:
-                    check_and_submit_split_invoices(original_invoice)
-                else:
-                    check_and_submit_split_invoices(invoice_doc.name)
-
-                return {
-                    "status": "success",
-                    "message": "Split payment completed and invoice submitted",
-                    "invoice_name": invoice_doc.name,
-                    "is_draft": False
-                }
-            except Exception as e:
-                frappe.log_error(f"Error submitting split invoice: {e}", "SPLIT_INVOICE_SUBMIT")
-                frappe.db.commit()
-                return {
-                    "status": "success",
-                    "message": "Split payment saved as draft",
-                    "invoice_name": invoice_doc.name,
-                    "is_draft": True
-                }
-        else:
-            invoice_doc.submit()
-            frappe.db.commit()
-            return {
-                "status": "success",
-                "message": "Split payment invoice saved as draft",
-                "invoice_name": invoice_doc.name,
-                "is_draft": True
-            }
-
-    # --- Normal Invoice Case ---
-    else:
-        invoice_doc.save(ignore_permissions=True)
-        try:
-            invoice_doc.submit()
-            frappe.db.commit()
-        except Exception as e:
-            frappe.throw(f"Error while settling order: {e}")
+        # Delete the original invoice after successful submission
+        frappe.delete_doc("POS Invoice", invoice, ignore_permissions=True)
+        frappe.db.commit()
 
         return {
             "status": "success",
-            "message": "Invoice submitted successfully",
+            "message": "New invoice created successfully and original invoice deleted.",
             "invoice_name": invoice_doc.name,
             "is_draft": False
         }
+
+    except Exception as e:
+        frappe.log_error(f"Error during new invoice submission: {e}", "NEW_INVOICE_ERROR")
+        frappe.db.rollback()
+        frappe.throw(f"Failed to create new invoice: {e}")
+
     
 
 # Cancel KOT Doc Creation
@@ -953,4 +925,5 @@ def get_income_account(company):
     income_account = frappe.db.get_value("Company", company, "default_income_account")
     if not income_account:
         frappe.throw(_("No default income account found for company {0}").format(company))
+
     return income_account

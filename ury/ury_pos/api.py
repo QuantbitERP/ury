@@ -372,9 +372,9 @@ def searchPosInvoice(query,status):
     # Add additional conditions for Unbilled status
     if status == "Unbilled":
         filters.update({
-            "status":"draft",
-            "restaurant_table": ["not in", [None, ""]],  # Check if restaurant_table has value
-            "invoice_printed": 0  # Check if invoice_printed is 0
+            "docstatus": 0,
+            "restaurant_table": ["not in", [None, ""]],
+            "invoice_printed": 0
         })
     pos_invoices = frappe.get_all(
         "POS Invoice",
