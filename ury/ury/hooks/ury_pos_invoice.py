@@ -1,7 +1,6 @@
 import frappe
-import datetime
-from frappe.utils import now_datetime, get_time
-
+from datetime import datetime
+from frappe.utils import now_datetime, get_time, now
 
 def before_insert(doc, method):
     pos_invoice_naming(doc, method)
@@ -28,6 +27,75 @@ def on_trash(doc, method):
 def validate_invoice(doc, method):
     if doc.waiter == None or doc.waiter == "":
         doc.waiter = doc.modified_by
+    
+    remove_items = frappe.db.get_value("POS Profile", doc.pos_profile, "remove_items")
+    
+    # Only validate item modifications if:
+    # 1. Invoice is printed
+    # 2. Remove items is disabled
+    # 3. Document exists in database (not a new document)
+    # 4. Not bypassing validation with flags
+    if (doc.invoice_printed == 1 and 
+        remove_items == 0 and 
+        doc.name and 
+        frappe.db.exists("POS Invoice", doc.name) and
+        not frappe.local.flags.get('ignore_invoice_print')):
+        
+        try:
+            # Get the original items from db
+            original_doc = frappe.get_doc("POS Invoice", doc.name)
+            
+            # Create dictionaries to store both quantities and names
+            original_items = {
+                item.item_code: {"qty": item.qty, "name": item.item_name} 
+                for item in original_doc.items
+            }
+            current_items = {
+                item.item_code: {"qty": item.qty, "name": item.item_name} 
+                for item in doc.items
+            }
+              
+            # Check for removed items
+            removed_items = set(original_items.keys()) - set(current_items.keys())
+            
+            # Check for quantity reductions
+            reduced_qty_items = []
+            for item_code, item_data in original_items.items():
+                if (item_code in current_items and 
+                    current_items[item_code]["qty"] < item_data["qty"]):
+                    reduced_qty_items.append(
+                        f"{item_data['name']} (qty reduced from {item_data['qty']} "
+                        f"to {current_items[item_code]['qty']})"
+                    )
+            
+            if removed_items or reduced_qty_items:
+                error_msg = []
+                if removed_items:
+                    removed_item_names = [
+                        original_items[item_code]["name"] 
+                        for item_code in removed_items
+                    ]
+                    error_msg.append(f"Removed items: {', '.join(removed_item_names)}")
+                if reduced_qty_items:
+                    error_msg.append(f"Modified quantities: {', '.join(reduced_qty_items)}")
+                    
+                frappe.throw(
+                    ("Cannot modify items after invoice is printed.\n{0}")
+                    .format("\n".join(error_msg))
+                )
+        except frappe.DoesNotExistError:
+            # Document doesn't exist in database yet - this is normal for new documents
+            # Skip validation for new documents
+            pass
+        except Exception as e:
+            # Log unexpected errors but don't block the operation
+            frappe.log_error(
+                f"Error in validate_invoice for {doc.name}: {str(e)}", 
+                "POS Invoice Validation Error"
+            )
+            # Only re-raise if it's not a DoesNotExistError
+            if not isinstance(e, frappe.DoesNotExistError):
+                raise
 
 
 def validate_customer(doc, method):
@@ -40,23 +108,29 @@ def validate_customer(doc, method):
 
 
 def calculate_and_set_times(doc, method):
+    # Ensure arrived_time is stored as datetime
     doc.arrived_time = doc.creation
 
-    today = datetime.datetime.now()
-    current_time = today.strftime("%H:%M:%S")
-    start_time = frappe.utils.data.get_datetime(doc.arrived_time).time()
-    current_time_obj = datetime.datetime.strptime(current_time, "%H:%M:%S").time()
+    # Get current datetime (already datetime object)
+    current_time = now_datetime()
 
-    minutes = (
-        datetime.datetime.combine(datetime.date.min, current_time_obj)
-        - datetime.datetime.combine(datetime.date.min, start_time)
-    ).total_seconds() / 60
-    hours = int(minutes // 60)
+    # Convert creation to datetime if string
+    if isinstance(doc.creation, str):
+        try:
+            creation_time = datetime.strptime(doc.creation, "%Y-%m-%d %H:%M:%S.%f")
+        except ValueError:
+            creation_time = datetime.strptime(doc.creation, "%Y-%m-%d %H:%M:%S")
+    else:
+        creation_time = doc.creation
 
-    remaining_minutes = int(minutes % 60)
-    formatted_spend_time = f"{hours}:{remaining_minutes:02d}"
+    # Calculate time difference
+    time_difference = current_time - creation_time
+    total_seconds = int(time_difference.total_seconds())
+    hours, remainder = divmod(total_seconds, 3600)
+    minutes, seconds = divmod(remainder, 60)
 
-    doc.total_spend_time = formatted_spend_time
+    # Format HH:MM:SS
+    doc.total_spend_time = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
 
 
 def validate_invoice_print(doc, method):
@@ -64,7 +138,10 @@ def validate_invoice_print(doc, method):
     invoice_printed = frappe.db.get_value("POS Invoice", doc.name, "invoice_printed")
 
     # If the invoice is associated with a restaurant table and hasn't been printed
-    if doc.restaurant_table and invoice_printed == 0:
+    # Skip check if bypassing validation
+    if (doc.restaurant_table and 
+        invoice_printed == 0 and 
+        not frappe.local.flags.get('ignore_invoice_print')):
         frappe.throw(
             "Printing the invoice is mandatory before submitting. Please print the invoice."
         )
@@ -87,17 +164,23 @@ def pos_invoice_naming(doc, method):
         doc.naming_series = frappe.db.get_value(
             "URY Restaurant", restaurant, "invoice_series_prefix"
         )
+        
+        if doc.order_type == "Aggregators":
+            doc.naming_series = frappe.db.get_value(
+                "URY Restaurant", restaurant, "aggregator_series_prefix"
+            )
 
 
 def order_type_update(doc, method):
     if doc.restaurant_table:
-        is_take_away = frappe.db.get_value(
-            "URY Table", doc.restaurant_table, "is_take_away"
-        )
-        if is_take_away == 1:
-            doc.order_type = "Take Away"
-        else:
-            doc.order_type = "Dine In"
+        if not doc.order_type:
+            is_take_away = frappe.db.get_value(
+                "URY Table", doc.restaurant_table, "is_take_away"
+            )
+            if is_take_away == 1:
+                doc.order_type = "Take Away"
+            else:
+                doc.order_type = "Dine In"
 
 
 # reload restaurant order page if submitted invoice is open there
@@ -107,20 +190,42 @@ def ro_reload_submit(doc, method):
 
 def validate_price_list(doc, method):
     if doc.restaurant:
-        room = frappe.db.get_value("URY Table", doc.restaurant_table, "restaurant_room")
-        menu_name = (
-            frappe.db.get_value("URY Restaurant", doc.restaurant, "active_menu")
-            if not frappe.db.get_value(
-                "URY Restaurant", doc.restaurant, "room_wise_menu"
+        if doc.restaurant_table:
+            room = frappe.db.get_value("URY Table", doc.restaurant_table, "restaurant_room")
+            menu_name = (
+                frappe.db.get_value("URY Restaurant", doc.restaurant, "active_menu")
+                if not frappe.db.get_value(
+                    "URY Restaurant", doc.restaurant, "room_wise_menu"
+                )
+                else frappe.db.get_value(
+                    "Menu for Room", {"parent": doc.restaurant, "room": room}, "menu"
+                )
             )
-            else frappe.db.get_value(
-                "Menu for Room", {"parent": doc.restaurant, "room": room}, "menu"
-            )
-        )
 
-        doc.selling_price_list = frappe.db.get_value(
-            "Price List", dict(restaurant_menu=menu_name, enabled=1)
-        )
+            doc.selling_price_list = frappe.db.get_value(
+                "Price List", dict(restaurant_menu=menu_name, enabled=1)
+            )
+        
+        if doc.order_type == "Aggregators":
+            price_list = frappe.db.get_value(
+                "Aggregator Settings",
+                {"customer": doc.customer, "parent": doc.branch, "parenttype": "Branch"},
+                "price_list",
+            )
+            
+            if not price_list:
+                frappe.throw(
+                    f"Price list for customer {doc.customer} in branch {doc.branch} "
+                    f"not found in Aggregator Settings."
+                )
+                
+            doc.selling_price_list = price_list
+        else:
+            menu_name = frappe.db.get_value("URY Restaurant", doc.restaurant, "active_menu") 
+
+            doc.selling_price_list = frappe.db.get_value(
+                "Price List", dict(restaurant_menu=menu_name, enabled=1)
+            )
 
 
 def restrict_existing_order(doc, event):
