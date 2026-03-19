@@ -1,0 +1,110 @@
+SPLIT BILL PAYMENT FLOW
+========================
+
+Initial Order: 3 Items (A, B, C) - Total: $30
+┌─────────────────────────────────────────┐
+│  Original Invoice (Draft)               │
+│  - Item A: $10                          │
+│  - Item B: $10                          │
+│  - Item C: $10                          │
+│  Status: Draft                          │
+│  Paid: $0                               │
+└─────────────────────────────────────────┘
+
+STEP 1: Pay for Item A ($10)
+═══════════════════════════════════════════
+User Action: Select Item A → Make Payment
+                    ↓
+┌─────────────────────────────────────────┐
+│  Invoice #1 (Draft)                     │
+│  - Item A: $10                          │
+│  - Payment: $10 ✓                       │
+│  Status: Draft (NOT SUBMITTED)          │
+│  custom_is_split_payment: 1             │
+│  custom_original_invoice: Original      │
+└─────────────────────────────────────────┘
+                    +
+┌─────────────────────────────────────────┐
+│  New Order Created (Draft)              │
+│  - Item B: $10                          │
+│  - Item C: $10                          │
+│  Status: Draft                          │
+│  custom_original_invoice: Original      │
+└─────────────────────────────────────────┘
+
+Result: Invoice #1 saved as DRAFT ❌ Not Submitted
+
+
+STEP 2: Pay for Item B ($10)
+═══════════════════════════════════════════
+User Action: Select Item B → Make Payment
+                    ↓
+┌─────────────────────────────────────────┐
+│  Invoice #2 (Draft)                     │
+│  - Item B: $10                          │
+│  - Payment: $10 ✓                       │
+│  Status: Draft (NOT SUBMITTED)          │
+│  custom_is_split_payment: 1             │
+│  custom_original_invoice: Original      │
+└─────────────────────────────────────────┘
+                    +
+┌─────────────────────────────────────────┐
+│  New Order Created (Draft)              │
+│  - Item C: $10                          │
+│  Status: Draft                          │
+│  custom_original_invoice: Original      │
+└─────────────────────────────────────────┘
+
+Result: Invoice #2 saved as DRAFT ❌ Not Submitted
+
+
+STEP 3: Pay for Item C ($10) - FINAL PAYMENT
+═══════════════════════════════════════════
+User Action: Select Item C → Make Payment
+                    ↓
+┌─────────────────────────────────────────┐
+│  Invoice #3 (Submitted)                 │
+│  - Item C: $10                          │
+│  - Payment: $10 ✓                       │
+│  Status: Paid ✓                         │
+│  custom_is_split_payment: 1             │
+│  custom_original_invoice: Original      │
+└─────────────────────────────────────────┘
+                    ↓
+        AUTO-SUBMIT TRIGGERED!
+                    ↓
+┌─────────────────────────────────────────┐
+│  System checks all related invoices     │
+│  with custom_original_invoice = Original│
+└─────────────────────────────────────────┘
+                    ↓
+        ┌───────────┴───────────┐
+        ↓                       ↓
+┌──────────────────┐   ┌──────────────────┐
+│  Invoice #1      │   │  Invoice #2      │
+│  Status: Paid ✓  │   │  Status: Paid ✓  │
+│  (Auto-Submitted)│   │  (Auto-Submitted)│
+└──────────────────┘   └──────────────────┘
+
+Result: ALL invoices now SUBMITTED with PAID status ✓✓✓
+
+
+FINAL STATE
+═══════════════════════════════════════════
+┌─────────────────────────────────────────┐
+│  Invoice #1: Item A - PAID ✓            │
+│  Invoice #2: Item B - PAID ✓            │
+│  Invoice #3: Item C - PAID ✓            │
+│                                         │
+│  All invoices submitted automatically   │
+│  when final payment completed!          │
+└─────────────────────────────────────────┘
+
+
+KEY POINTS
+═══════════════════════════════════════════
+✓ Invoices stay in DRAFT until ALL items paid
+✓ Last payment triggers auto-submit for ALL
+✓ No invoice is submitted prematurely
+✓ All invoices linked via custom_original_invoice
+✓ System handles auto-submission automatically

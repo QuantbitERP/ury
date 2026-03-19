@@ -7,6 +7,12 @@ import {
   Monitor,
   LogOut,
   RefreshCw,
+  Utensils,
+  Wine,
+  Building,
+  Users,
+  DoorOpen,
+  Table,
 } from 'lucide-react';
 import { Button, Input } from './ui';
 import { useRootStore } from '../store/root-store';
@@ -105,8 +111,8 @@ const Header = () => {
   return (
     <header className="bg-white border-b border-gray-200">
       <div className="flex items-center justify-between h-16 px-6">
-        {/* Logo */}
-        <div className="flex items-center">
+        {/* Logo and Navigation */}
+        <div className="flex items-center space-x-6">
         <Link to="/" className="flex items-center space-x-3">
             <img 
               src="/assets/ury/pos/ury_pos.png" 
@@ -114,6 +120,52 @@ const Header = () => {
               className="h-10 w-auto"
             />
           </Link>
+          
+          {/* Navigation Links */}
+          <nav className="flex items-center space-x-4">
+            <Link
+              to="/"
+              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                location.pathname === '/' 
+                  ? 'bg-blue-100 text-blue-700' 
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              }`}
+            >
+              POS
+            </Link>
+            <Link
+              to="/orders"
+              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                location.pathname === '/orders' 
+                  ? 'bg-blue-100 text-blue-700' 
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              }`}
+            >
+              Orders
+            </Link>
+            <Link
+              to="/kot"
+              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center space-x-2 ${
+                location.pathname === '/kot' 
+                  ? 'bg-blue-100 text-blue-700' 
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              }`}
+            >
+              <Utensils className="w-4 h-4" />
+              <span>KOT System</span>
+            </Link>
+            <Link
+              to="/bar-display"
+              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center space-x-2 ${
+                location.pathname === '/bar-display' 
+                  ? 'bg-blue-100 text-blue-700' 
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              }`}
+            >
+              <Wine className="w-4 h-4" />
+              <span>Bar Orders</span>
+            </Link>
+          </nav>
         </div>
 
         {/* Search Bar */}
@@ -162,6 +214,46 @@ const Header = () => {
                   >
                     <Monitor className="w-4 h-4 mr-3" />
                     Switch To Desk
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="flex justify-start items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    onClick={() => window.location.href = '/pos/branch-setup'}
+                  >
+                    <Building className="w-4 h-4 mr-3" />
+                    Branch Setup
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="flex justify-start items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    onClick={() => window.location.href = '/pos/restaurant-setup'}
+                  >
+                    <Utensils className="w-4 h-4 mr-3" />
+                    Restaurant Setup
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="flex justify-start items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    onClick={() => window.location.href = '/pos/user-setup'}
+                  >
+                    <Users className="w-4 h-4 mr-3" />
+                    User Setup
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="flex justify-start items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    onClick={() => window.location.href = '/pos/room-setup'}
+                  >
+                    <DoorOpen className="w-4 h-4 mr-3" />
+                    Room Setup
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="flex justify-start items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    onClick={() => window.location.href = '/pos/table-setup'}
+                  >
+                    <Table className="w-4 h-4 mr-3" />
+                    Table Setup
                   </Button>
                   <Button
                     variant="ghost"

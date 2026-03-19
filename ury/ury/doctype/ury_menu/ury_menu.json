@@ -56,8 +56,8 @@
   }
  ],
  "links": [],
- "modified": "2025-07-17 11:30:26.485161",
- "modified_by": "Administrator",
+ "modified": "2026-03-07 07:45:02.272667",
+ "modified_by": "kiranupadhye@erpdata.in",
  "module": "URY",
  "name": "URY Menu",
  "naming_rule": "Set by user",
@@ -90,14 +90,18 @@
    "write": 1
   },
   {
+   "create": 1,
+   "delete": 1,
    "email": 1,
    "print": 1,
    "read": 1,
    "report": 1,
    "role": "URY Captain",
-   "select": 1
+   "select": 1,
+   "write": 1
   },
   {
+   "delete": 1,
    "print": 1,
    "read": 1,
    "role": "URY Cashier",

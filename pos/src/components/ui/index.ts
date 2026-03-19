@@ -5,3 +5,7 @@ export * from './select';
 export * from './badge';
 export * from './spinner';
 export * from './card';
+export * from './label';
+export * from './table';
+export * from './tabs';
+export * from './textarea';

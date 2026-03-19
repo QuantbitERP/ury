@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, ChangeEvent } from 'react';
-import { X, Plus, Minus } from 'lucide-react';
+import { X, Plus, Minus, CheckCircle2, ShoppingCart } from 'lucide-react';
 import { OrderItem, usePOSStore } from '../store/pos-store';
 import { cn, formatCurrency } from '../lib/utils';
 import { Button, Dialog, DialogContent, Input } from './ui';
@@ -26,7 +26,7 @@ interface ProductDialogProps {
   initialAddons?: Array<Omit<Addon, 'category'>>;
   initialQuantity?: number;
   itemToReplace?: OrderItem;
-  initialDishType?: string; // New prop for initial dish type
+  initialDishType?: string;
 }
 
 const ProductDialog: React.FC<ProductDialogProps> = ({
@@ -36,106 +36,123 @@ const ProductDialog: React.FC<ProductDialogProps> = ({
   initialAddons = [],
   initialQuantity,
   itemToReplace,
-  initialDishType // Use new prop
+  initialDishType,
 }) => {
-  const { 
-    selectedItem, 
-    addToOrder, 
-    removeFromOrder, 
-    setSelectedItem, 
+  const {
+    selectedItem,
+    addToOrder,
+    removeFromOrder,
+    setSelectedItem,
     getItemQuantityFromCart,
     activeOrders,
-    menuItems
+    menuItems,
   } = usePOSStore();
-  
-  // Find existing item in cart
-  const existingCartItem = selectedItem ? activeOrders.find(
-    order => order.id === selectedItem.id &&
-    (!order.selectedVariant || order.selectedVariant.id === initialVariant?.id) &&
-    (!order.selectedAddons || order.selectedAddons.length === initialAddons.length && 
-      order.selectedAddons.every(addon => 
-        initialAddons.some(initAddon => initAddon.id === addon.id)
-      ))
-  ) : null;
 
-  // State for the full item doc (used for all dialog content)
-  const [itemDoc, setItemDoc] = useState<any | null>(null);
-  const [isItemLoading, setIsItemLoading] = useState(false);
-  const [itemError, setItemError] = useState<string | null>(null);
+  const existingCartItem = selectedItem
+    ? activeOrders.find(
+        order =>
+          order.id === selectedItem.id &&
+          (!order.selectedVariant || order.selectedVariant.id === initialVariant?.id) &&
+          (!order.selectedAddons ||
+            (order.selectedAddons.length === initialAddons.length &&
+              order.selectedAddons.every(addon =>
+                initialAddons.some(initAddon => initAddon.id === addon.id)
+              )))
+      )
+    : null;
 
-  // State for dish variants
-  const [dishVariants, setDishVariants] = useState<Array<{ name: string; type: string }>>([]);
-  const [selectedDishType, setSelectedDishType] = useState<string>(initialDishType || ''); // New state for selected dish type
-  const [isDishVariantsLoading, setIsDishVariantsLoading] = useState(false);
-  const [dishVariantsError, setDishVariantsError] = useState<string | null>(null);
+  const [itemDoc,              setItemDoc]              = useState<any | null>(null);
+  const [isItemLoading,        setIsItemLoading]        = useState(false);
+  const [itemError,            setItemError]            = useState<string | null>(null);
+  const [dishVariants,         setDishVariants]         = useState<Array<{ name: string; type: string }>>([]);
+  const [selectedDishType,     setSelectedDishType]     = useState<string>(initialDishType || '');
+  const [isDishVariantsLoading,setIsDishVariantsLoading]= useState(false);
+  const [dishVariantsError,    setDishVariantsError]    = useState<string | null>(null);
+  const [selectedAddons,       setSelectedAddons]       = useState<Array<{ id: string; name: string; price: number }>>([]);
+  const [quantity,             setQuantity]             = useState<string>(editMode ? initialQuantity?.toString() || '0' : '0');
+  const [comments,             setComments]             = useState<string>(itemToReplace?.comment || existingCartItem?.comment || '');
+  const [addonItemCodes,       setAddonItemCodes]       = useState<string[]>([]);
+  const [isAddonLoading,       setIsAddonLoading]       = useState(false);
+  const [addonError,           setAddonError]           = useState<string | null>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
 
-  // Fetch Item doc when dialog opens or selectedItem changes
+  // Fetch item doc + dish variants
   useEffect(() => {
     if (!selectedItem) {
-      setItemDoc(null);
-      setItemError(null);
-      setIsItemLoading(false);
-      setDishVariants([]);
-      setSelectedDishType('');
-      setIsDishVariantsLoading(false);
+      setItemDoc(null); setItemError(null); setIsItemLoading(false);
+      setDishVariants([]); setSelectedDishType(''); setIsDishVariantsLoading(false);
       return;
     }
-    setIsItemLoading(true);
-    setItemError(null);
+    setIsItemLoading(true); setItemError(null);
     db.getDoc('Item', selectedItem.item)
-      .then((doc: any) => {
-        setItemDoc(doc);
-      })
-      .catch(() => {
-        setItemError('Failed to fetch item details');
-        setItemDoc(null);
-      })
-      .finally(() => {
-        setIsItemLoading(false);
-      });
+      .then((doc: any) => setItemDoc(doc))
+      .catch(() => { setItemError('Failed to fetch item details'); setItemDoc(null); })
+      .finally(() => setIsItemLoading(false));
 
-    // Fetch dish variants
-    setIsDishVariantsLoading(true);
-    setDishVariantsError(null);
+    setIsDishVariantsLoading(true); setDishVariantsError(null);
     call.get('ury.ury.doctype.ury_order.ury_order.get_item_dish_variants', { item_code: selectedItem.item })
       .then((data: any) => {
         if (data.message && Array.isArray(data.message)) {
           setDishVariants(data.message);
-          // If there's only one variant, pre-select it
-          if (data.message.length === 1 && !editMode) {
-            setSelectedDishType(data.message[0].type);
-          }
-        } else {
-          setDishVariants([]);
-        }
+          if (data.message.length === 1 && !editMode) setSelectedDishType(data.message[0].type);
+        } else setDishVariants([]);
       })
-      .catch((err: any) => {
-        console.error('Failed to fetch dish variants:', err);
-        setDishVariantsError('Failed to fetch dish variants');
-        setDishVariants([]);
-      })
-      .finally(() => {
-        setIsDishVariantsLoading(false);
-      });
-
+      .catch(() => { setDishVariantsError('Failed to fetch dish variants'); setDishVariants([]); })
+      .finally(() => setIsDishVariantsLoading(false));
   }, [selectedItem]);
 
-  
+  // Fetch add-on item codes
+  useEffect(() => {
+    if (!selectedItem) { setAddonItemCodes([]); setAddonError(null); setIsAddonLoading(false); return; }
+    setIsAddonLoading(true); setAddonError(null);
+    db.getDoc('Item', selectedItem.item)
+      .then((doc: any) => {
+        if (Array.isArray(doc.custom_pos_add_on_items)) {
+          setAddonItemCodes(doc.custom_pos_add_on_items.map((e: any) => e.item).filter(Boolean));
+        } else setAddonItemCodes([]);
+      })
+      .catch(() => { setAddonError('Failed to fetch add-ons'); setAddonItemCodes([]); })
+      .finally(() => setIsAddonLoading(false));
+  }, [selectedItem]);
+
+  // Sync quantity from cart
+  useEffect(() => {
+    if (!editMode && selectedItem) {
+      if (existingCartItem) {
+        setQuantity(existingCartItem.quantity.toString());
+        setComments(existingCartItem.comment || '');
+      } else {
+        setQuantity(getItemQuantityFromCart(selectedItem).toString());
+      }
+    }
+  }, [selectedItem, editMode, getItemQuantityFromCart, existingCartItem]);
+
+  // Click-outside close
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dialogRef.current && !dialogRef.current.contains(e.target as Node)) handleClose();
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Escape close
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') handleClose(); };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, []);
+
+  if (!selectedItem) return null;
+
+  // Derived data
   const addonDetails = Array.isArray(itemDoc?.custom_pos_add_on_items)
     ? itemDoc.custom_pos_add_on_items
         .map((entry: any) => {
-          const menuAddon = menuItems.find((menuItem: any) => menuItem.item === entry.item);
-          return menuAddon
-            ? {
-                id: menuAddon.item,
-                name: menuAddon.item_name,
-                price: Number(menuAddon.price)
-              }
-            : {
-                id: entry.item,
-                name: entry.item,
-                price: 0
-              };
+          const m = menuItems.find((mi: any) => mi.item === entry.item);
+          return m
+            ? { id: m.item, name: m.item_name, price: Number(m.price) }
+            : { id: entry.item, name: entry.item, price: 0 };
         })
         .filter(Boolean)
     : [];
@@ -143,348 +160,222 @@ const ProductDialog: React.FC<ProductDialogProps> = ({
   const variantDetails = Array.isArray(itemDoc?.custom_pos_item_variants)
     ? itemDoc.custom_pos_item_variants
         .map((entry: any) => {
-          const menuVariant = menuItems.find((menuItem: any) => menuItem.item === entry.item);
-          return menuVariant
-            ? {
-                id: menuVariant.item,
-                name: menuVariant.item_name,
-                price: Number(menuVariant.price)
-              }
-            : {
-                id: entry.item,
-                name: entry.item,
-                price: 0
-              };
+          const m = menuItems.find((mi: any) => mi.item === entry.item);
+          return m
+            ? { id: m.item, name: m.item_name, price: Number(m.price) }
+            : { id: entry.item, name: entry.item, price: 0 };
         })
         .filter(Boolean)
     : [];
 
-  const [selectedAddons, setSelectedAddons] = useState<Array<{ id: string; name: string; price: number }>>([]);
-  const [quantity, setQuantity] = useState<string>(editMode ? initialQuantity?.toString() || '0' : '0');
-  const [comments, setComments] = useState<string>(itemToReplace?.comment || existingCartItem?.comment || '');
-  const dialogRef = useRef<HTMLDivElement>(null);
-
-  const [addonItemCodes, setAddonItemCodes] = useState<string[]>([]);
-  const [isAddonLoading, setIsAddonLoading] = useState(false);
-  const [addonError, setAddonError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!selectedItem) {
-      setAddonItemCodes([]);
-      setAddonError(null);
-      setIsAddonLoading(false);
-      return;
-    }
-    setIsAddonLoading(true);
-    setAddonError(null);
-    db.getDoc('Item', selectedItem.item)
-      .then((doc: any) => {
-        if (Array.isArray(doc.custom_pos_add_on_items)) {
-          const codes = doc.custom_pos_add_on_items
-            .map((entry: any) => entry.item)
-            .filter(Boolean);
-          setAddonItemCodes(codes);
-        } else {
-          setAddonItemCodes([]);
-        }
-      })
-      .catch((err: any) => {
-        setAddonError('Failed to fetch add-ons');
-        setAddonItemCodes([]);
-      })
-      .finally(() => {
-        setIsAddonLoading(false);
-      });
-  }, [selectedItem]);
-
-  // Initialize quantity and comments from cart if not in edit mode
-  useEffect(() => {
-    if (!editMode && selectedItem) {
-      if (existingCartItem) {
-        setQuantity(existingCartItem.quantity.toString());
-        setComments(existingCartItem.comment || '');
-      } else {
-        const cartQuantity = getItemQuantityFromCart(selectedItem);
-        setQuantity(cartQuantity.toString());
-      }
-    }
-  }, [selectedItem, editMode, getItemQuantityFromCart, existingCartItem]);
-
-  // Handle click outside to close dialog
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dialogRef.current && !dialogRef.current.contains(event.target as Node)) {
-        handleClose();
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
-  // Handle escape key to close dialog
-  useEffect(() => {
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        handleClose();
-      }
-    };
-
-    document.addEventListener('keydown', handleEscape);
-    return () => {
-      document.removeEventListener('keydown', handleEscape);
-    };
-  }, []);
-
-  if (!selectedItem) return null;
-
-  // Always get price from menuItems for the main item
-  const basePrice = selectedItem?.price ? Number(selectedItem.price) : 0;
+  const basePrice      = selectedItem?.price ? Number(selectedItem.price) : 0;
   const numericQuantity = quantity === '' ? 0 : parseInt(quantity, 10);
-  const addonsTotal = selectedAddons.reduce((sum, addon) => sum + addon.price, 0);
-  const total = (basePrice + addonsTotal) * numericQuantity;
+  const addonsTotal    = selectedAddons.reduce((s, a) => s + a.price, 0);
+  const total          = (basePrice + addonsTotal) * numericQuantity;
 
   const handleQuantityChange = (value: string) => {
-    // Allow empty string or numbers
-    if (value === '') {
-      setQuantity('');
-      return;
-    }
-
-    const num = parseInt(value, 10);
-    if (!isNaN(num) && num >= 0 && num <= 99) {
-      setQuantity(num.toString());
-    }
+    if (value === '') { setQuantity(''); return; }
+    const n = parseInt(value, 10);
+    if (!isNaN(n) && n >= 0 && n <= 99) setQuantity(n.toString());
   };
-
   const handleIncrement = () => {
-    const currentNum = quantity === '' ? 0 : parseInt(quantity, 10);
-    if (currentNum < 99) {
-      setQuantity((currentNum + 1).toString());
-    }
+    const n = quantity === '' ? 0 : parseInt(quantity, 10);
+    if (n < 99) setQuantity((n + 1).toString());
   };
-
   const handleDecrement = () => {
-    const currentNum = quantity === '' ? 0 : parseInt(quantity, 10);
-    if (currentNum > 0) {
-      setQuantity((currentNum - 1).toString());
-    }
+    const n = quantity === '' ? 0 : parseInt(quantity, 10);
+    if (n > 0) setQuantity((n - 1).toString());
   };
-
-  const handleAddToOrder = () => {
-    const numericQuantity = typeof quantity === 'string' ? parseInt(quantity, 10) : quantity;
-    if (isNaN(numericQuantity) || numericQuantity === 0) {
-      return; // Don't add to order if quantity is 0 or invalid
-    }
-
-    if (editMode && itemToReplace?.uniqueId) {
-      // Remove the old item first
-      removeFromOrder(itemToReplace.uniqueId);
-    }
-
-    // Add main item as a cart line
-    const orderItem: OrderItem = {
-      ...selectedItem,
-      quantity: numericQuantity,
-      price: basePrice,
-      custom_dish_type: selectedDishType || null // Add dish type to order item
-    };
-    addToOrder(orderItem);
-
-    // Add each selected add-on as a separate cart line
-    selectedAddons.forEach(addon => {
-      // Find the full menu item details for the add-on
-      const menuAddon = menuItems.find(item => item.item === addon.id);
-      const addonOrderItem: OrderItem = menuAddon
-        ? {
-            ...menuAddon,
-            quantity: numericQuantity,
-            price: addon.price
-          }
-        : {
-            id: addon.id,
-            name: addon.name,
-            price: addon.price,
-            quantity: numericQuantity,
-            image: null,
-            item: addon.id,
-            item_name: addon.name,
-            course: '',
-            description: '',
-            special_dish: 0 as 0 | 1,
-            tax_rate: 0
-          } as OrderItem;
-      addToOrder(addonOrderItem);
-    });
-
-    handleClose();
-  };
-
-  const handleClose = () => {
-    setSelectedItem(null);
-    onClose();
-  };
-
   const handleAddonToggle = (addon: Omit<Addon, 'category'>) => {
-    setSelectedAddons(current => 
-      current.some(item => item.id === addon.id)
-        ? current.filter(item => item.id !== addon.id)
-        : [...current, addon]
+    setSelectedAddons(cur =>
+      cur.some(i => i.id === addon.id) ? cur.filter(i => i.id !== addon.id) : [...cur, addon]
     );
   };
-
-  // Handler to switch to a variant item
   const handleVariantClick = (variantId: string) => {
-    const menuVariant = menuItems.find((m: any) => m.item === variantId);
-    if (menuVariant) {
-      setSelectedItem(menuVariant);
-    }
+    const m = menuItems.find((mi: any) => mi.item === variantId);
+    if (m) setSelectedItem(m);
   };
+  const handleAddToOrder = () => {
+    const qty = typeof quantity === 'string' ? parseInt(quantity, 10) : quantity;
+    if (isNaN(qty) || qty === 0) return;
+    if (editMode && itemToReplace?.uniqueId) removeFromOrder(itemToReplace.uniqueId);
+    const orderItem: OrderItem = { ...selectedItem, quantity: qty, price: basePrice, custom_dish_type: selectedDishType || null };
+    addToOrder(orderItem);
+    selectedAddons.forEach(addon => {
+      const m = menuItems.find((mi: any) => mi.item === addon.id);
+      const addonItem: OrderItem = m
+        ? { ...m, quantity: qty, price: addon.price }
+        : { id: addon.id, name: addon.name, price: addon.price, quantity: qty, image: null, item: addon.id, item_name: addon.name, course: '', description: '', special_dish: 0 as 0 | 1, tax_rate: 0 } as OrderItem;
+      addToOrder(addonItem);
+    });
+    handleClose();
+  };
+  const handleClose = () => { setSelectedItem(null); onClose(); };
+
+  // ── Section label helper ──────────────────────────────────────────────────
+  const SectionLabel = ({ children }: { children: React.ReactNode }) => (
+    <h3 className="text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-2.5">{children}</h3>
+  );
 
   return (
     <Dialog open={true} onOpenChange={handleClose}>
-      <DialogContent 
+      <DialogContent
         ref={dialogRef}
         variant="xlarge"
-        className="bg-white w-full max-w-[90rem] max-h-[90vh] overflow-y-auto flex flex-col md:flex-row p-0"
+        className="bg-white w-full max-w-[90rem] max-h-[90vh] overflow-y-auto flex flex-col md:flex-row p-0 rounded-2xl shadow-2xl"
         showCloseButton={false}
       >
-        {/* Left Column - Image  */}
-        <div className="md:w-1/3 relative">
+        {/* ── Left: Image ──────────────────────────────────────────────── */}
+        <div className="md:w-[38%] relative bg-gray-100 shrink-0">
           {itemDoc?.image ? (
             <img
               src={itemDoc.image}
               alt={itemDoc.name}
-              className="w-full min-h-96 h-full object-cover rounded-t-lg md:rounded-l-lg md:rounded-tr-none filter saturate-75 brightness-95"
-              style={{ filter: 'saturate(0.7) brightness(0.95)' }}
+              className="w-full min-h-80 h-full object-cover rounded-t-2xl md:rounded-l-2xl md:rounded-tr-none"
+              style={{ filter: 'saturate(0.82) brightness(0.96)' }}
               onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.style.display = 'none';
-                const parent = target.parentElement;
+                const t = e.target as HTMLImageElement;
+                t.style.display = 'none';
+                const parent = t.parentElement;
                 if (parent) {
-                  const placeholder = document.createElement('div');
-                  placeholder.className = 'w-full h-96 bg-gray-200 flex items-center justify-center text-[8rem] text-gray-400 font-medium rounded-t-lg md:rounded-l-lg md:rounded-tr-none';
-                  placeholder.textContent = itemDoc.name.slice(0, 2).toUpperCase();
-                  parent.insertBefore(placeholder, target);
+                  const ph = document.createElement('div');
+                  ph.className = 'w-full min-h-80 h-full bg-[#E4B315]/10 flex items-center justify-center text-[7rem] text-[#C69A11] font-extrabold rounded-t-2xl md:rounded-l-2xl md:rounded-tr-none';
+                  ph.textContent = (itemDoc?.name || '??').slice(0, 2).toUpperCase();
+                  parent.insertBefore(ph, t);
                 }
               }}
             />
           ) : (
-            <div className="w-full min-h-96 h-full bg-gray-200 flex items-center justify-center text-[8rem] text-gray-400 font-medium rounded-t-lg md:rounded-l-lg md:rounded-tr-none">
-              {itemDoc?.name.slice(0, 2).toUpperCase()}
+            <div className="w-full min-h-80 h-full bg-[#E4B315]/10 flex items-center justify-center text-[7rem] text-[#C69A11] font-extrabold rounded-t-2xl md:rounded-l-2xl md:rounded-tr-none">
+              {itemDoc?.name?.slice(0, 2).toUpperCase() ?? '??'}
             </div>
           )}
-          <Button
-            onClick={handleClose}
-            variant="outline"
-            size="icon"
-            className="absolute top-4 right-4 bg-white shadow-lg"
-          >
-            <X className="w-5 h-5" />
-          </Button>
-        </div>
 
-        {/* Middle Column - Variants and Quantity */}
-        <div className="md:w-1/3 p-6 overflow-y-auto">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">{selectedItem?.item_name}</h2>
-            <p className="text-sm text-gray-500 mt-1">{selectedItem?.item}</p>
+          {/* Price badge overlaid on image */}
+          <div className="absolute bottom-4 left-4">
+            <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-[#E4B315] text-white text-sm font-extrabold shadow-lg shadow-[#E4B315]/30">
+              {formatCurrency(basePrice)}
+            </span>
           </div>
 
-          <div className="mt-6">
-            <h3 className="text-lg font-semibold mb-3">Special Instructions</h3>
+          {/* Close button */}
+          <button
+            onClick={handleClose}
+            className="absolute top-3 right-3 w-9 h-9 rounded-xl bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-md hover:bg-white transition-colors"
+          >
+            <X className="w-4 h-4 text-gray-600" />
+          </button>
+        </div>
+
+        {/* ── Middle: Instructions + Variants + Quantity ────────────────── */}
+        <div className="md:w-[31%] p-6 overflow-y-auto border-r border-gray-100 space-y-6">
+          {/* Item name & code */}
+          <div>
+            <h2 className="text-xl font-extrabold text-[#2D2A26] leading-tight">
+              {selectedItem?.item_name}
+            </h2>
+            <p className="text-xs text-gray-400 mt-1 font-mono">{selectedItem?.item}</p>
+          </div>
+
+          {/* Special Instructions */}
+          <div>
+            <SectionLabel>Special Instructions</SectionLabel>
             <Input
-              placeholder="Add any special instructions or notes for this item..."
+              placeholder="Any notes or special requests…"
               value={comments}
               onChange={(e: ChangeEvent<HTMLInputElement>) => setComments(e.target.value)}
-              className="resize-none"
+              className="border-gray-200 focus-visible:ring-[#E4B315]/40 focus-visible:border-[#E4B315]/50 rounded-xl text-sm"
             />
           </div>
 
-          {/* Dish Variants Section */}
+          {/* Dish Type */}
           {isDishVariantsLoading ? (
-            <div className="mt-6 flex items-center justify-center text-gray-500">Loading dish variants...</div>
+            <div className="flex items-center gap-2 text-sm text-gray-400">
+              <div className="h-4 w-4 rounded-full border-2 border-[#E4B315] border-t-transparent animate-spin" />
+              Loading dish types…
+            </div>
           ) : dishVariantsError ? (
-            <div className="mt-6 flex items-center justify-center text-red-500">{dishVariantsError}</div>
-          ) : dishVariants.length > 0 && (
-            <div className="mt-6">
-              <h3 className="text-lg font-semibold mb-3">Dish Type</h3>
-              <div className="flex gap-2 flex-wrap">
-                {dishVariants.map(variant => (
+            <p className="text-xs text-red-500">{dishVariantsError}</p>
+          ) : dishVariants.length > 0 ? (
+            <div>
+              <SectionLabel>Dish Type</SectionLabel>
+              <div className="flex flex-wrap gap-2">
+                {dishVariants.map(v => (
                   <button
-                    key={variant.type}
-                    onClick={() => setSelectedDishType(variant.type)}
+                    key={v.type}
+                    onClick={() => setSelectedDishType(v.type)}
                     className={cn(
-                      'px-4 py-2 rounded-lg border text-sm font-medium transition-colors',
-                      selectedDishType === variant.type
-                        ? 'border-blue-500 bg-blue-50 text-blue-700'
-                        : 'border-gray-200 bg-white hover:bg-gray-50'
+                      'px-3.5 py-1.5 rounded-xl border text-sm font-semibold transition-all duration-150',
+                      selectedDishType === v.type
+                        ? 'bg-gradient-to-r from-[#E4B315] to-[#C69A11] border-transparent text-white shadow-sm shadow-[#E4B315]/25'
+                        : 'border-gray-200 bg-white text-gray-600 hover:border-[#E4B315]/40 hover:text-[#C69A11]'
                     )}
                   >
-                    {variant.type}
+                    {v.type}
                   </button>
                 ))}
               </div>
             </div>
-          )}
+          ) : null}
 
-          <div className="mt-6">
-            <h3 className="text-lg font-semibold mb-3">Quantity</h3>
-            <div className="flex items-center space-x-2">
-              <Button
+          {/* Quantity */}
+          <div>
+            <SectionLabel>Quantity</SectionLabel>
+            <div className="flex items-center gap-3">
+              <button
                 onClick={handleDecrement}
-                variant="outline"
-                size="icon"
-                className="h-8 w-8 rounded-full"
+                className="w-9 h-9 rounded-xl border border-gray-200 bg-white flex items-center justify-center hover:border-[#E4B315]/40 hover:bg-[#E4B315]/5 transition-colors"
               >
-                <Minus className="h-4 w-4" />
-              </Button>
+                <Minus className="h-4 w-4 text-gray-600" />
+              </button>
               <Input
                 type="number"
                 min="0"
                 max="99"
                 value={quantity}
                 onChange={(e) => handleQuantityChange(e.target.value)}
-                onBlur={() => {
-                  // If empty on blur, set to 0
-                  if (quantity === '') {
-                    setQuantity('0');
-                  }
-                }}
-                className="w-16 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                onBlur={() => { if (quantity === '') setQuantity('0'); }}
+                className="w-16 text-center font-bold text-[#2D2A26] border-gray-200 focus-visible:ring-[#E4B315]/40 rounded-xl [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
-              <Button
+              <button
                 onClick={handleIncrement}
-                variant="outline"
-                size="icon"
-                className="h-8 w-8 rounded-full"
+                className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#E4B315] to-[#C69A11] flex items-center justify-center shadow-sm shadow-[#E4B315]/25 hover:opacity-90 transition-opacity"
               >
-                <Plus className="h-4 w-4" />
-              </Button>
+                <Plus className="h-4 w-4 text-white" />
+              </button>
             </div>
           </div>
-          {/* Variants Section  */}
+
+          {/* Variants */}
           {variantDetails.length > 0 && (
-            <div className="mt-6">
-              <h3 className="text-lg font-semibold mb-3">Variants</h3>
-              <div className="flex gap-2 flex-wrap">
+            <div>
+              <SectionLabel>Variants</SectionLabel>
+              <div className="space-y-2">
                 {variantDetails.map((variant: any) => {
                   const menuVariant = menuItems.find((m: any) => m.item === variant.id);
+                  const isSelected = variant.id === itemDoc?.item;
                   return (
                     <button
                       key={variant.id}
                       onClick={() => handleVariantClick(variant.id)}
                       className={cn(
-                        'p-2 rounded-lg border text-left w-full flex justify-between items-center',
-                        variant.id === itemDoc?.item
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-200 hover:border-blue-200'
+                        'w-full px-3.5 py-2.5 rounded-xl border text-left flex items-center justify-between transition-all duration-150',
+                        isSelected
+                          ? 'border-[#E4B315] bg-[#E4B315]/8'
+                          : 'border-gray-200 hover:border-[#E4B315]/40 hover:bg-[#E4B315]/4'
                       )}
                     >
-                      <div className="font-medium">{variant.name}</div>
-                      <div className="text-sm text-gray-500">{formatCurrency(menuVariant ? Number(menuVariant.price) : 0)}</div>
+                      <div className="flex items-center gap-2">
+                        {isSelected && (
+                          <CheckCircle2 className="h-4 w-4 text-[#C69A11] shrink-0" />
+                        )}
+                        <span className={cn('text-sm font-semibold', isSelected ? 'text-[#C69A11]' : 'text-[#2D2A26]')}>
+                          {variant.name}
+                        </span>
+                      </div>
+                      <span className="text-xs text-gray-400 tabular-nums">
+                        {formatCurrency(menuVariant ? Number(menuVariant.price) : 0)}
+                      </span>
                     </button>
                   );
                 })}
@@ -493,55 +384,112 @@ const ProductDialog: React.FC<ProductDialogProps> = ({
           )}
         </div>
 
-
-        {/* Right Column - Add-ons and Order Button */}
-        <div className="h-auto md:w-1/3 p-6 border-t md:border-t-0 md:border-l border-gray-200 overflow-y-auto flex flex-col">
-          <div className="overflow-y-auto mb-6">
+        {/* ── Right: Add-ons + Total + CTA ─────────────────────────────── */}
+        <div className="md:w-[31%] p-6 flex flex-col overflow-y-auto">
+          {/* Add-ons */}
+          <div className="flex-1 overflow-y-auto">
             {isAddonLoading ? (
-              <div className="mb-6 flex items-center justify-center text-gray-500">Loading add-ons...</div>
+              <div className="flex items-center gap-2 text-sm text-gray-400 mb-4">
+                <div className="h-4 w-4 rounded-full border-2 border-[#E4B315] border-t-transparent animate-spin" />
+                Loading add-ons…
+              </div>
             ) : addonError ? (
-              <div className="flex items-center justify-center text-red-500">{addonError}</div>
+              <p className="text-xs text-red-500 mb-4">{addonError}</p>
             ) : addonDetails.length > 0 ? (
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold mb-3">Add-ons</h3>
+              <div className="mb-4">
+                <SectionLabel>Add-ons</SectionLabel>
                 <div className="space-y-2">
-                  {addonDetails.map((addon: any) => (
-                    <button
-                      key={addon.id}
-                      onClick={() => handleAddonToggle({ id: addon.id, name: addon.name, price: Number(addon.price) })}
-                      className={cn(
-                        'w-full p-3 rounded-lg border text-left',
-                        selectedAddons.some(item => item.id === addon.id)
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-200 hover:border-blue-200'
-                      )}
-                    >
-                      <div className="flex justify-between items-center">
-                        <span>{addon.name}</span>
-                        <span className="text-sm text-gray-500">+{formatCurrency(Number(addon.price))}</span>
-                      </div>
-                    </button>
-                  ))}
+                  {addonDetails.map((addon: any) => {
+                    const isSelected = selectedAddons.some(i => i.id === addon.id);
+                    return (
+                      <button
+                        key={addon.id}
+                        onClick={() => handleAddonToggle({ id: addon.id, name: addon.name, price: Number(addon.price) })}
+                        className={cn(
+                          'w-full px-3.5 py-2.5 rounded-xl border text-left flex items-center justify-between transition-all duration-150',
+                          isSelected
+                            ? 'border-[#E4B315] bg-[#E4B315]/8'
+                            : 'border-gray-200 hover:border-[#E4B315]/40 hover:bg-[#E4B315]/4'
+                        )}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className={cn(
+                            'w-4 h-4 rounded flex items-center justify-center border shrink-0 transition-colors',
+                            isSelected
+                              ? 'bg-gradient-to-br from-[#E4B315] to-[#C69A11] border-transparent'
+                              : 'border-gray-300 bg-white'
+                          )}>
+                            {isSelected && (
+                              <svg viewBox="0 0 10 8" className="w-2.5 h-2.5 fill-none stroke-white stroke-[1.8] stroke-linecap-round stroke-linejoin-round">
+                                <polyline points="1 4 4 7 9 1" />
+                              </svg>
+                            )}
+                          </span>
+                          <span className={cn('text-sm font-medium truncate', isSelected ? 'text-[#C69A11]' : 'text-[#2D2A26]')}>
+                            {addon.name}
+                          </span>
+                        </div>
+                        <span className="text-xs text-gray-400 tabular-nums shrink-0 ml-2">
+                          +{formatCurrency(Number(addon.price))}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             ) : (
-              <div className="flex items-center justify-center text-gray-400 text-sm">No add ons</div>
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center mb-2">
+                  <Plus className="h-5 w-5 text-gray-300" />
+                </div>
+                <p className="text-xs text-gray-400">No add-ons available</p>
+              </div>
             )}
           </div>
-          {/* Always show total section at the end */}
-          <div className="mt-auto pt-2 border-t border-gray-200">
-            <div className="flex justify-between items-center text-lg font-semibold">
-              <span>Total&nbsp;</span>
-              <span>{formatCurrency(total)}</span>
+
+          {/* Total + CTA */}
+          <div className="pt-4 border-t border-gray-100 space-y-3 mt-auto">
+            {/* Breakdown */}
+            {selectedAddons.length > 0 && (
+              <div className="space-y-1 text-xs text-gray-400">
+                <div className="flex justify-between">
+                  <span>Base ({numericQuantity}×)</span>
+                  <span className="tabular-nums">{formatCurrency(basePrice * numericQuantity)}</span>
+                </div>
+                {selectedAddons.map(a => (
+                  <div key={a.id} className="flex justify-between">
+                    <span className="truncate pr-2">{a.name}</span>
+                    <span className="tabular-nums shrink-0">+{formatCurrency(a.price * numericQuantity)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Total row */}
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-bold text-[#2D2A26]">Total</span>
+              <span className="text-lg font-extrabold text-[#C69A11] tabular-nums">{formatCurrency(total)}</span>
             </div>
-            <Button
+
+            {/* Add to order button */}
+            <button
               onClick={handleAddToOrder}
-              className="w-full mt-4"
-              size="lg"
               disabled={numericQuantity === 0}
+              className={cn(
+                'w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all duration-200',
+                numericQuantity > 0
+                  ? 'bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white shadow-md shadow-[#E4B315]/25 hover:opacity-90 hover:-translate-y-0.5 active:translate-y-0'
+                  : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+              )}
             >
+              <ShoppingCart className="h-4 w-4" />
               {editMode || existingCartItem ? 'Update Order' : 'Add to Order'}
-            </Button>
+              {numericQuantity > 0 && (
+                <span className="ml-1 bg-white/20 rounded-full px-1.5 py-0.5 text-[11px] font-extrabold">
+                  ×{numericQuantity}
+                </span>
+              )}
+            </button>
           </div>
         </div>
       </DialogContent>
@@ -549,4 +497,4 @@ const ProductDialog: React.FC<ProductDialogProps> = ({
   );
 };
 
-export default ProductDialog; 
+export default ProductDialog;

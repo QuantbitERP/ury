@@ -5,7 +5,7 @@ import { formatCurrency } from '../lib/utils';
 import { Button, Input, Dialog, DialogContent } from './ui';
 import { frappeFetch } from '../lib/frappe-sdk';
 
-interface PaymentDialogProps {
+interface  mentDialogProps {
   onClose: () => void;
   grandTotal: number;
   roundedTotal: number;
@@ -22,7 +22,7 @@ interface PaymentDialogProps {
   onToggleSplitPayment: (enable: boolean) => void; // New prop for toggling split payment
 }
 
-const PaymentDialog: React.FC<PaymentDialogProps> = ({
+const PaymentDialog: React.FC<mentDialogProps> = ({
   onClose,
   grandTotal,
   invoice,

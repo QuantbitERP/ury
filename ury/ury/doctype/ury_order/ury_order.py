@@ -540,7 +540,6 @@ def cancel_order(invoice_id, reason):
         cancel_kot(invoice_id)
 
     except Exception as e:
-        # If an exception occurs (e.g., "kot" app not found), it will be caught here without effecting execution
         pass
 
     # Update invoice status
@@ -588,7 +587,6 @@ def make_invoice(
 
     company = frappe.db.get_value("POS Profile", pos_profile, "company")
 
-    # --- Determine order type ---
     order_type = None
     old_invoice_doc = None
     if invoice and frappe.db.exists("POS Invoice", invoice):
@@ -597,7 +595,7 @@ def make_invoice(
     else:
         order_type = "Dine In"
 
-    # --- Create new invoice ---
+
     invoice_doc = frappe.new_doc("POS Invoice")
     invoice_doc.customer = customer
     invoice_doc.pos_profile = pos_profile
@@ -608,14 +606,12 @@ def make_invoice(
     invoice_doc.update_stock = 1
     invoice_doc.set_posting_time = 1
 
-    # --- Optional fields ---
     invoice_doc.additional_discount_percentage = flt(additionalDiscount or 0)
     invoice_doc.redeem_loyalty_points = cint(redeem_loyalty_points)
     invoice_doc.loyalty_amount = flt(loyalty_amount or 0)
     invoice_doc.loyalty_program = loyalty_program
     invoice_doc.loyalty_points = flt(loyalty_points or 0)
 
-    # --- Restaurant / Table Info ---
     if table:
         try:
             branch, menu, restaurant = get_restaurant_and_menu_name(table)

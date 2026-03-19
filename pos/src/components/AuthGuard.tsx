@@ -45,17 +45,17 @@ const AuthGuard: React.FC<Props> = ({ children }) => {
     );
   }
 
-  if (authError || configError) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="text-red-600 text-xl mb-4">⚠️</div>
-          <h2 className="text-xl font-semibold text-gray-800 mb-2">Access Denied</h2>
-          <p className="text-gray-600">{authError || configError}</p>
-        </div>
-      </div>
-    );
-  }
+  // if (authError || configError) {
+  //   return (
+  //     <div className="flex items-center justify-center min-h-screen">
+  //       <div className="text-center">
+  //         <div className="text-red-600 text-xl mb-4">⚠️</div>
+  //         <h2 className="text-xl font-semibold text-gray-800 mb-2">Access Denied</h2>
+  //         <p className="text-gray-600">{authError || configError}</p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   if (!user) {
     // The checkAuth function will handle the redirect to login

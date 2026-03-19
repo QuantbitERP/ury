@@ -17,6 +17,8 @@ export interface POSInvoice {
   posting_date: string;
   rounded_total: number;
   order_type: OrderType;
+  total_items?: number;
+  payment_status?: string;
 }
 
 export interface POSInvoiceItem {
