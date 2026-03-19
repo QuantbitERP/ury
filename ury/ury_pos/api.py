@@ -681,5 +681,256 @@ def validate_pos_close(pos_profile):
         
         return "Success"
     
-    return "Success"
+
+@frappe.whitelist()
+def create_simplified_invoice(**kwargs):
+    """
+    Create a simplified Sales Invoice from frontend payload
+    """
+    try:
+        # Extract data from kwargs
+        customer_name = kwargs.get('customer_name')
+        customer_email = kwargs.get('customer_email')
+        customer_phone = kwargs.get('customer_phone')
+        invoice_date = kwargs.get('invoice_date')
+        due_date = kwargs.get('due_date')
+        subtotal = float(kwargs.get('subtotal', 0))
+        vat_amount = float(kwargs.get('vat_amount', 0))
+        notes = kwargs.get('notes', '')
+        
+        if not customer_name:
+            frappe.throw("Customer Name is required")
+        
+        if not invoice_date:
+            frappe.throw("Invoice Date is required")
+        
+        # Check if customer exists, if not create one
+        customer = None
+        if frappe.db.exists("Customer", customer_name):
+            customer = customer_name
+        else:
+            # Create new customer
+            customer_doc = frappe.new_doc("Customer")
+            customer_doc.customer_name = customer_name
+            customer_doc.customer_group = "Commercial"
+            customer_doc.territory = "All Territories"
+            customer_doc.email_id = customer_email
+            customer_doc.mobile_no = customer_phone
+            customer_doc.insert(ignore_permissions=True)
+            customer = customer_doc.name
+            
+            # Create contact if email or phone provided
+            if customer_email or customer_phone:
+                contact_doc = frappe.new_doc("Contact")
+                contact_doc.first_name = customer_name
+                contact_doc.is_primary_contact = 1
+                contact_doc.links = [{
+                    "link_doctype": "Customer",
+                    "link_name": customer
+                }]
+                
+                if customer_email:
+                    contact_doc.email_ids = [{
+                        "email_id": customer_email,
+                        "is_primary": 1
+                    }]
+                
+                if customer_phone:
+                    contact_doc.phone_nos = [{
+                        "phone": customer_phone,
+                        "is_primary": 1
+                    }]
+                
+                contact_doc.insert(ignore_permissions=True)
+        
+        # Get company for invoice
+        company = frappe.db.get_single_value("Global Defaults", "default_company")
+        if not company:
+            company = frappe.db.get_value("Company", {}, "name")
+        
+        # Create Sales Invoice
+        sales_invoice = frappe.new_doc("Sales Invoice")
+        sales_invoice.customer = customer
+        sales_invoice.posting_date = invoice_date
+        sales_invoice.due_date = due_date if due_date else invoice_date
+        sales_invoice.company = company
+        sales_invoice.remarks = notes
+        sales_invoice.currency = "KES"  # Kenyan Shilling
+        
+        # Add item (using a generic service item)
+        # Try to find a default service item, otherwise create a generic one
+        default_item_code = "General Sales"
+        if not frappe.db.exists("Item", default_item_code):
+            # Create a generic service item if it doesn't exist
+            item_doc = frappe.new_doc("Item")
+            item_doc.item_code = default_item_code
+            item_doc.item_name = "General Sales"
+            item_doc.item_group = "Services"
+            item_doc.is_stock_item = 0
+            item_doc.include_item_in_manufacturing = 0
+            item_doc.stock_uom = "Nos"
+            item_doc.insert(ignore_permissions=True)
+        
+        # Add item to invoice
+        sales_invoice.append("items", {
+            "item_code": default_item_code,
+            "item_name": "Standard Billing",
+            "description": "Standard billing service",
+            "qty": 1,
+            "rate": subtotal,
+            "income_account": f"ales - {frappe.db.get_value('Company', company, 'abbr')}"
+        })
+        
+        # Add VAT if applicable
+        if vat_amount > 0:
+            # Try to find VAT account
+            vat_account = f"VAT - {frappe.db.get_value('Company', company, 'abbr')}"
+            if not frappe.db.exists("Account", vat_account):
+                vat_account = frappe.db.get_value("Account", {"account_type": "Tax", "company": company}, "name")
+            
+            if vat_account:
+                sales_invoice.append("taxes", {
+                    "charge_type": "Actual",
+                    "account_head": vat_account,
+                    "tax_amount": vat_amount,
+                    "description": "VAT"
+                })
+        
+        # Submit invoice
+        sales_invoice.insert(ignore_permissions=True)
+        sales_invoice.submit()
+        
+        return {
+            "success": True,
+            "invoice_name": sales_invoice.name,
+            "message": f"Sales Invoice {sales_invoice.name} created successfully"
+        }
+        
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Sales Invoice Creation Error")
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+
+@frappe.whitelist()
+def get_ar_dashboard():
+    """
+    Get Accounts Receivable dashboard data including summary stats and invoice list
+    """
+    try:
+        # Get company
+        company = frappe.db.get_single_value("Global Defaults", "default_company")
+        if not company:
+            company = frappe.db.get_value("Company", {}, "name")
+        
+        # Summary Stats
+        total_receivable = 0.0
+        overdue = 0.0
+        total_invoices = 0
+        
+        # Calculate total receivable (sum of outstanding amounts)
+        total_receivable_result = frappe.db.sql("""
+            SELECT SUM(outstanding_amount) as total
+            FROM `tabSales Invoice`
+            WHERE docstatus != 2 
+            AND status not in ('Draft', 'Cancelled')
+            AND company = %s
+        """, company, as_dict=True)
+        
+        if total_receivable_result and total_receivable_result[0].total:
+            total_receivable = float(total_receivable_result[0].total)
+        
+        # Calculate overdue amount
+        overdue_result = frappe.db.sql("""
+            SELECT SUM(outstanding_amount) as total
+            FROM `tabSales Invoice`
+            WHERE docstatus != 2 
+            AND status not in ('Draft', 'Cancelled', 'Paid')
+            AND due_date < CURDATE()
+            AND outstanding_amount > 0
+            AND company = %s
+        """, company, as_dict=True)
+        
+        if overdue_result and overdue_result[0].total:
+            overdue = float(overdue_result[0].total)
+        
+        # Count total invoices
+        total_invoices_result = frappe.db.sql("""
+            SELECT COUNT(name) as total
+            FROM `tabSales Invoice`
+            WHERE docstatus != 2 
+            AND status != 'Cancelled'
+            AND company = %s
+        """, company, as_dict=True)
+        
+        if total_invoices_result and total_invoices_result[0].total:
+            total_invoices = int(total_invoices_result[0].total)
+        
+        # Get invoice list
+        invoice_list = frappe.db.sql("""
+            SELECT 
+                name,
+                customer_name,
+                posting_date,
+                due_date,
+                grand_total,
+                base_paid_amount,
+                outstanding_amount,
+                status,
+                docstatus
+            FROM `tabSales Invoice`
+            WHERE docstatus != 2 
+            AND status != 'Cancelled'
+            AND company = %s
+            ORDER BY posting_date DESC
+            LIMIT 50
+        """, company, as_dict=True)
+        
+        # Format results
+        formatted_invoices = []
+        for invoice in invoice_list:
+            # Determine display status
+            display_status = invoice.status
+            if invoice.due_date and invoice.due_date < frappe.utils.today() and invoice.outstanding_amount > 0:
+                display_status = "Overdue"
+            elif invoice.outstanding_amount == 0 and invoice.grand_total > 0:
+                display_status = "Paid"
+            elif invoice.outstanding_amount > 0 and invoice.outstanding_amount < invoice.grand_total:
+                display_status = "Partly Paid"
+            elif invoice.outstanding_amount > 0:
+                display_status = "Unpaid"
+                
+            formatted_invoices.append({
+                "name": invoice.name,
+                "customer_name": invoice.customer_name,
+                "posting_date": str(invoice.posting_date),
+                "due_date": str(invoice.due_date) if invoice.due_date else "",
+                "grand_total": float(invoice.grand_total or 0),
+                "base_paid_amount": float(invoice.base_paid_amount or 0),
+                "outstanding_amount": float(invoice.outstanding_amount or 0),
+                "status": display_status,
+                "docstatus": invoice.docstatus
+            })
+        
+        return {
+            "summary_stats": {
+                "total_receivable": total_receivable,
+                "overdue": overdue,
+                "total_invoices": total_invoices
+            },
+            "invoice_list": formatted_invoices
+        }
+        
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "AR Dashboard Error")
+        return {
+            "summary_stats": {
+                "total_receivable": 0,
+                "overdue": 0,
+                "total_invoices": 0
+            },
+            "invoice_list": []
+        }
 

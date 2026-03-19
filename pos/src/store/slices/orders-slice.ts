@@ -20,6 +20,8 @@ export interface POSInvoice {
   posting_date: string;
   rounded_total: number;
   order_type: OrderType;
+  total_items?: number;
+  payment_status?: string;
 }
 
 export interface OrdersState {
@@ -53,7 +55,7 @@ export interface OrdersActions {
 
 export type OrdersSlice = OrdersState & OrdersActions;
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 50;
 
 export const createOrdersSlice: StateCreator<
   OrdersSlice,

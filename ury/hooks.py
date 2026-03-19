@@ -13,7 +13,7 @@ required_apps = ["erpnext"]
 # ------------------
 
 # include js, css files in header of desk.html
-# app_include_css = "/assets/ury/css/ury.css"
+# app_include_css = "/assets/ury/css/output.css"
 app_include_js = [
     "/assets/ury/js/quick_entry.js",
     "/assets/ury/js/pos_print.js",
