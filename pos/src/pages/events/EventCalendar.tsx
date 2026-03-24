@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar as CalendarIcon, Plus, ChevronLeft, ChevronRight, Users, DollarSign, Clock, AlertCircle } from 'lucide-react';
+import { PageLayout } from '../../components/PageLayout';
 
 interface Event {
     name: string;
@@ -45,10 +46,10 @@ interface MonthStats {
 // ─── Status badge ─────────────────────────────────────────────────────────────
 const statusMap: Record<string, string> = {
     'Completed': 'bg-green-50 text-green-700 border-green-200',
-    'Open':      'bg-[#E4B315]/10 text-[#C69A11] border-[#E4B315]/30',
+    'Open': 'bg-[#E4B315]/10 text-[#C69A11] border-[#E4B315]/30',
     'Confirmed': 'bg-green-50 text-green-700 border-green-200',
     'Cancelled': 'bg-red-50 text-red-700 border-red-200',
-    'Closed':    'bg-sky-50 text-sky-700 border-sky-200',
+    'Closed': 'bg-sky-50 text-sky-700 border-sky-200',
 };
 
 const StatusBadge = ({ status }: { status: string }) => (
@@ -65,8 +66,8 @@ const EventCalendar: React.FC = () => {
     const [loading, setLoading] = useState(true);
 
     const monthNames = [
-        "January","February","March","April","May","June",
-        "July","August","September","October","November","December"
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
     ];
 
     const getDaysInMonth = (date: Date) =>
@@ -220,169 +221,167 @@ const EventCalendar: React.FC = () => {
     }
 
     return (
-        <div className="p-6 space-y-5">
-
-            {/* ── Header ── */}
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-extrabold text-[#2D2A26] tracking-tight">Event Calendar</h1>
-                    <p className="text-sm text-gray-400 mt-1">Manage and view all your events in one place</p>
-                </div>
+        <PageLayout
+            title="Event Calendar"
+            subtitle="Manage and view all your events in one place"
+            actions={
                 <button
                     onClick={() => window.location.href = '/'}
                     className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 bg-white hover:border-[#E4B315]/40 hover:text-[#C69A11] transition-colors shadow-sm">
                     <ChevronLeft className="h-4 w-4" /> Back to POS
                 </button>
-            </div>
+            }
+        >
+            <div className="p-6 space-y-5">
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-5">
 
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-5">
+                    {/* ── Calendar ── */}
+                    <div className="lg:col-span-3 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
 
-                {/* ── Calendar ── */}
-                <div className="lg:col-span-3 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-
-                    {/* Calendar nav */}
-                    <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <CalendarIcon className="h-4 w-4 text-[#C69A11]" />
-                            <p className="text-sm font-bold text-[#2D2A26]">
-                                {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
-                            </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <button onClick={() => navigateMonth(-1)}
-                                className="p-1.5 hover:bg-gray-100 rounded-xl transition-colors text-gray-500">
-                                <ChevronLeft className="h-4 w-4" />
-                            </button>
-                            <button onClick={() => navigateMonth(1)}
-                                className="p-1.5 hover:bg-gray-100 rounded-xl transition-colors text-gray-500">
-                                <ChevronRight className="h-4 w-4" />
-                            </button>
-                            <button
-                                onClick={() => window.location.href = '/pos/events/all-events?action=new'}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white shadow-sm shadow-[#E4B315]/20 hover:opacity-90 transition-opacity ml-2">
-                                <Plus className="h-3.5 w-3.5" /> Add Event
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Day headers */}
-                    <div className="grid grid-cols-7 border-b border-gray-50">
-                        {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(day => (
-                            <div key={day} className="text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest py-2.5 px-1">
-                                {day}
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* Calendar grid */}
-                    <div className="grid grid-cols-7">
-                        {renderCalendarDays()}
-                    </div>
-
-                    {/* Legend */}
-                    <div className="px-5 py-3 border-t border-gray-50 flex items-center gap-4 text-xs text-gray-400">
-                        <span className="flex items-center gap-1.5">
-                            <span className="w-2.5 h-2.5 rounded-full bg-gradient-to-br from-[#E4B315] to-[#C69A11]" /> Today
-                        </span>
-                        <span className="flex items-center gap-1.5">
-                            <span className="w-2.5 h-2.5 rounded-sm bg-[#E4B315]/15" /> Event
-                        </span>
-                        <span className="flex items-center gap-1.5">
-                            <span className="w-2.5 h-2.5 rounded-sm bg-green-50 border border-green-200" /> Confirmed
-                        </span>
-                    </div>
-                </div>
-
-                {/* ── Sidebar ── */}
-                <div className="space-y-4">
-
-                    {/* Selected date detail */}
-                    {selectedDate && (
-                        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                            <div className="px-5 py-3.5 border-b border-gray-50">
-                                <p className="text-xs font-bold uppercase tracking-wider text-[#C69A11]">
-                                    {selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                        {/* Calendar nav */}
+                        <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <CalendarIcon className="h-4 w-4 text-[#C69A11]" />
+                                <p className="text-sm font-bold text-[#2D2A26]">
+                                    {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
                                 </p>
                             </div>
-                            <div className="p-4">
-                                {selectedDateEvents.length === 0 ? (
-                                    <div className="text-center py-6">
-                                        <div className="w-10 h-10 rounded-2xl bg-[#E4B315]/10 flex items-center justify-center mx-auto mb-3">
-                                            <AlertCircle className="h-5 w-5 text-[#C69A11]" />
-                                        </div>
-                                        <p className="text-sm text-gray-500 mb-3">No events for this date</p>
-                                        <button
-                                            onClick={() => window.location.href = `/pos/events/all-events?action=new&date=${selectedDate.toISOString().split('T')[0]}`}
-                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white shadow-sm hover:opacity-90 transition-opacity">
-                                            <Plus className="h-3.5 w-3.5" /> Add Event
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-3">
-                                        {selectedDateEvents.map((event, idx) => (
-                                            <div key={idx}
-                                                className="p-3 rounded-xl border border-gray-100 hover:border-[#E4B315]/30 hover:bg-[#E4B315]/5 cursor-pointer transition-colors"
-                                                onClick={() => window.location.href = `/pos/events/all-events?id=${event.name}`}>
-                                                <div className="flex justify-between items-start mb-2">
-                                                    <p className="text-sm font-semibold text-[#2D2A26]">{event.subject}</p>
-                                                    <StatusBadge status={event.status} />
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                                                        <Clock className="h-3 w-3 text-gray-400" />
-                                                        {safeFormatTime(event.starts_on)}
-                                                    </div>
-                                                    <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                                                        <Users className="h-3 w-3 text-gray-400" />
-                                                        {event.custom_capacity || '0'} guests
-                                                    </div>
-                                                    <div className="flex items-center gap-1.5 text-xs font-semibold text-[#C69A11]">
-                                                        <DollarSign className="h-3 w-3" />
-                                                        KSh {event.custom_final_amount ? event.custom_final_amount.toLocaleString() : '0'}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
+                            <div className="flex items-center gap-2">
+                                <button onClick={() => navigateMonth(-1)}
+                                    className="p-1.5 hover:bg-gray-100 rounded-xl transition-colors text-gray-500">
+                                    <ChevronLeft className="h-4 w-4" />
+                                </button>
+                                <button onClick={() => navigateMonth(1)}
+                                    className="p-1.5 hover:bg-gray-100 rounded-xl transition-colors text-gray-500">
+                                    <ChevronRight className="h-4 w-4" />
+                                </button>
+                                <button
+                                    onClick={() => window.location.href = '/pos/events/all-events?action=new'}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white shadow-sm shadow-[#E4B315]/20 hover:opacity-90 transition-opacity ml-2">
+                                    <Plus className="h-3.5 w-3.5" /> Add Event
+                                </button>
                             </div>
                         </div>
-                    )}
 
-                    {/* Month Statistics */}
-                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                        <div className="px-5 py-3.5 border-b border-gray-50">
-                            <p className="text-xs font-bold uppercase tracking-wider text-[#C69A11]">This Month</p>
+                        {/* Day headers */}
+                        <div className="grid grid-cols-7 border-b border-gray-50">
+                            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                                <div key={day} className="text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest py-2.5 px-1">
+                                    {day}
+                                </div>
+                            ))}
                         </div>
-                        <div className="p-4 space-y-3">
-                            <div className="flex justify-between items-center py-1.5 border-b border-gray-50">
-                                <span className="text-sm text-gray-500">Total Events</span>
-                                <span className="text-sm font-bold text-[#2D2A26]">{monthStats.total_events}</span>
-                            </div>
-                            <div className="flex justify-between items-center py-1.5 border-b border-gray-50">
-                                <span className="text-sm text-gray-500">Confirmed</span>
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-50 text-green-700 border border-green-200">
-                                    {monthStats.confirmed}
-                                </span>
-                            </div>
-                            <div className="flex justify-between items-center py-1.5 border-b border-gray-50">
-                                <span className="text-sm text-gray-500">Pending</span>
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#E4B315]/10 text-[#C69A11] border border-[#E4B315]/30">
-                                    {monthStats.pending}
-                                </span>
-                            </div>
-                            <div className="flex justify-between items-center pt-1">
-                                <span className="text-sm text-gray-500">Revenue</span>
-                                <span className="text-sm font-bold text-[#C69A11]">
-                                    KSh {monthStats.revenue ? monthStats.revenue.toLocaleString() : '0'}
-                                </span>
-                            </div>
+
+                        {/* Calendar grid */}
+                        <div className="grid grid-cols-7">
+                            {renderCalendarDays()}
+                        </div>
+
+                        {/* Legend */}
+                        <div className="px-5 py-3 border-t border-gray-50 flex items-center gap-4 text-xs text-gray-400">
+                            <span className="flex items-center gap-1.5">
+                                <span className="w-2.5 h-2.5 rounded-full bg-gradient-to-br from-[#E4B315] to-[#C69A11]" /> Today
+                            </span>
+                            <span className="flex items-center gap-1.5">
+                                <span className="w-2.5 h-2.5 rounded-sm bg-[#E4B315]/15" /> Event
+                            </span>
+                            <span className="flex items-center gap-1.5">
+                                <span className="w-2.5 h-2.5 rounded-sm bg-green-50 border border-green-200" /> Confirmed
+                            </span>
                         </div>
                     </div>
 
+                    {/* ── Sidebar ── */}
+                    <div className="space-y-4">
+
+                        {/* Selected date detail */}
+                        {selectedDate && (
+                            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                                <div className="px-5 py-3.5 border-b border-gray-50">
+                                    <p className="text-xs font-bold uppercase tracking-wider text-[#C69A11]">
+                                        {selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                                    </p>
+                                </div>
+                                <div className="p-4">
+                                    {selectedDateEvents.length === 0 ? (
+                                        <div className="text-center py-6">
+                                            <div className="w-10 h-10 rounded-2xl bg-[#E4B315]/10 flex items-center justify-center mx-auto mb-3">
+                                                <AlertCircle className="h-5 w-5 text-[#C69A11]" />
+                                            </div>
+                                            <p className="text-sm text-gray-500 mb-3">No events for this date</p>
+                                            <button
+                                                onClick={() => window.location.href = `/pos/events/all-events?action=new&date=${selectedDate.toISOString().split('T')[0]}`}
+                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white shadow-sm hover:opacity-90 transition-opacity">
+                                                <Plus className="h-3.5 w-3.5" /> Add Event
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-3">
+                                            {selectedDateEvents.map((event, idx) => (
+                                                <div key={idx}
+                                                    className="p-3 rounded-xl border border-gray-100 hover:border-[#E4B315]/30 hover:bg-[#E4B315]/5 cursor-pointer transition-colors"
+                                                    onClick={() => window.location.href = `/pos/events/all-events?id=${event.name}`}>
+                                                    <div className="flex justify-between items-start mb-2">
+                                                        <p className="text-sm font-semibold text-[#2D2A26]">{event.subject}</p>
+                                                        <StatusBadge status={event.status} />
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                                                            <Clock className="h-3 w-3 text-gray-400" />
+                                                            {safeFormatTime(event.starts_on)}
+                                                        </div>
+                                                        <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                                                            <Users className="h-3 w-3 text-gray-400" />
+                                                            {event.custom_capacity || '0'} guests
+                                                        </div>
+                                                        <div className="flex items-center gap-1.5 text-xs font-semibold text-[#C69A11]">
+                                                            <DollarSign className="h-3 w-3" />
+                                                            KSh {event.custom_final_amount ? event.custom_final_amount.toLocaleString() : '0'}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Month Statistics */}
+                        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                            <div className="px-5 py-3.5 border-b border-gray-50">
+                                <p className="text-xs font-bold uppercase tracking-wider text-[#C69A11]">This Month</p>
+                            </div>
+                            <div className="p-4 space-y-3">
+                                <div className="flex justify-between items-center py-1.5 border-b border-gray-50">
+                                    <span className="text-sm text-gray-500">Total Events</span>
+                                    <span className="text-sm font-bold text-[#2D2A26]">{monthStats.total_events}</span>
+                                </div>
+                                <div className="flex justify-between items-center py-1.5 border-b border-gray-50">
+                                    <span className="text-sm text-gray-500">Confirmed</span>
+                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-50 text-green-700 border border-green-200">
+                                        {monthStats.confirmed}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between items-center py-1.5 border-b border-gray-50">
+                                    <span className="text-sm text-gray-500">Pending</span>
+                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#E4B315]/10 text-[#C69A11] border border-[#E4B315]/30">
+                                        {monthStats.pending}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between items-center pt-1">
+                                    <span className="text-sm text-gray-500">Revenue</span>
+                                    <span className="text-sm font-bold text-[#C69A11]">
+                                        KSh {monthStats.revenue ? monthStats.revenue.toLocaleString() : '0'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
                 </div>
             </div>
-        </div>
+        </PageLayout>
     );
 };
 

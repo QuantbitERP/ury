@@ -51,6 +51,33 @@ interface Branch {
 const BranchSetup: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+
+  // ── Enhanced CSS animations injected at component level ──────────────────
+  React.useEffect(() => {
+    const id = 'qs-setup-styles';
+    if (!document.getElementById(id)) {
+      const s = document.createElement('style');
+      s.id = id;
+      s.textContent = `
+        @keyframes qs-fadeIn    { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+        @keyframes qs-slideRight{ from { opacity:0; transform:translateX(-12px); } to { opacity:1; transform:none; } }
+        @keyframes qs-popIn     { from { opacity:0; transform:scale(.95); } to { opacity:1; transform:scale(1); } }
+        .qs-card       { animation: qs-fadeIn .28s ease both; }
+        .qs-slide-r    { animation: qs-slideRight .25s ease both; }
+        .qs-pop        { animation: qs-popIn .22s cubic-bezier(.34,1.56,.64,1) both; }
+        .qs-row        { transition: background .15s, box-shadow .15s; }
+        .qs-row:hover  { box-shadow: inset 3px 0 0 #E4B315; }
+        .qs-input:focus{ box-shadow: 0 0 0 3px rgba(228,179,21,.15); }
+        ::-webkit-scrollbar       { width:5px; height:5px; }
+        ::-webkit-scrollbar-track { background:transparent; }
+        ::-webkit-scrollbar-thumb { background:#f0e8c8; border-radius:99px; }
+        ::-webkit-scrollbar-thumb:hover { background:#E4B315; }
+      `;
+      document.head.appendChild(s);
+    }
+    return () => { };
+  }, []);
+
   const [saving, setSaving] = useState(false);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
@@ -150,9 +177,9 @@ const BranchSetup: React.FC = () => {
     setSaving(true);
     try {
       const isUpdate = selectedBranch?.name;
-      
+
       let response;
-      
+
       if (isUpdate) {
         // Update existing branch
         response = await fetch('/api/method/frappe.client.save', {
@@ -183,12 +210,12 @@ const BranchSetup: React.FC = () => {
       if (response.ok) {
         const data = await response.json();
         showToast.success(isUpdate ? 'Branch updated successfully!' : 'Branch created successfully!');
-        
+
         if (!isUpdate) {
           setSelectedBranch(data.message);
           setFormData(prev => ({ ...prev, name: data.message.name }));
         }
-        
+
         fetchBranches(); // Refresh the list
       } else {
         const errorData = await response.json();
@@ -474,11 +501,11 @@ const BranchSetup: React.FC = () => {
   }, []);
 
   return (
-    <div className="p-6 max-w-6xl mx-auto h-screen flex flex-col overflow-y-auto">
+    <div className="p-6 max-w-6xl mx-auto h-screen flex flex-col overflow-y-auto bg-gray-50/80">
       <div className="flex justify-between items-center mb-6 flex-shrink-0">
         <div className="flex items-center space-x-3">
-          <Building className="w-8 h-8 text-blue-600" />
-          <h1 className="text-3xl font-bold text-gray-900">Branch Setup</h1>
+          <Building className="w-8 h-8 text-[#C69A11]" />
+          <h1 className="text-xl font-extrabold text-[#2D2A26] tracking-tight">Branch Setup</h1>
         </div>
         <Button
           variant="outline"
@@ -493,10 +520,10 @@ const BranchSetup: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 overflow-hidden">
         {/* Branch List */}
         <div className="lg:col-span-1 flex flex-col">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col h-full">
-            <div className="p-4 border-b border-gray-200 flex-shrink-0">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col h-full">
+            <div className="px-5 py-3.5 border-b border-gray-100 bg-gray-50/50 flex-shrink-0">
               <div className="flex justify-between items-center">
-                <h2 className="text-lg font-semibold text-gray-900">Branches</h2>
+                <h2 className="text-sm font-extrabold text-[#2D2A26]">Branches</h2>
                 <Button
                   variant="outline"
                   size="sm"
@@ -511,9 +538,8 @@ const BranchSetup: React.FC = () => {
               {branches.map((branch) => (
                 <div
                   key={branch.name}
-                  className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${
-                    selectedBranch?.name === branch.name ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
-                  }`}
+                  className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${selectedBranch?.name === branch.name ? 'bg-[#E4B315]/8 border-l-4 border-l-[#E4B315]' : ''
+                    }`}
                   onClick={() => fetchBranchDetails(branch.name || '')}
                 >
                   <div className="flex items-center justify-between">
@@ -521,13 +547,13 @@ const BranchSetup: React.FC = () => {
                       <div className="font-medium text-gray-900">
                         {branch.custom_branch_name || branch.branch}
                         {selectedBranch?.name === branch.name && (
-                          <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Editing</span>
+                          <span className="ml-2 text-xs bg-[#E4B315]/15 text-[#C69A11] px-2 py-1 rounded">Editing</span>
                         )}
                       </div>
-                      <div className="text-sm text-gray-500">{branch.custom_branch_code}</div>
+                      <div className="text-xs text-gray-400">{branch.custom_branch_code}</div>
                     </div>
                     {selectedBranch?.name === branch.name && (
-                      <div className="text-blue-500">
+                      <div className="text-[#C69A11]">
                         <Building className="w-5 h-5" />
                       </div>
                     )}
@@ -541,14 +567,14 @@ const BranchSetup: React.FC = () => {
             <div className="p-4 border-t border-gray-200 bg-gray-50 flex-shrink-0">
               <Button
                 onClick={resetForm}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white h-10"
+                className="w-full bg-[#E4B315]/12 hover:bg-[#E4B315]/12 text-white h-10"
                 variant={selectedBranch ? "outline" : "default"}
               >
                 <Plus className="w-4 h-4 mr-2" />
                 {selectedBranch ? 'Create New Branch' : 'Add New Branch'}
               </Button>
               {selectedBranch && (
-                <div className="mt-2 text-xs text-gray-500 text-center bg-blue-50 p-2 rounded">
+                <div className="mt-2 text-xs text-gray-500 text-center bg-[#E4B315]/8 p-2 rounded">
                   Currently editing: <strong>{selectedBranch.custom_branch_name || selectedBranch.branch}</strong>
                 </div>
               )}
@@ -558,14 +584,14 @@ const BranchSetup: React.FC = () => {
 
         {/* Branch Form */}
         <div className="lg:col-span-2 flex flex-col">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col h-full">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col h-full">
             <div className="p-6 border-b border-gray-200 flex-shrink-0">
               <div className="flex justify-between items-center">
                 <h2 className="text-xl font-semibold text-gray-900">
                   {selectedBranch ? 'Edit Branch' : 'Create New Branch'}
                 </h2>
                 {!selectedBranch && (
-                  <div className="text-sm text-gray-500">
+                  <div className="text-xs text-gray-400">
                     Fill in the details below to create a new branch
                   </div>
                 )}
@@ -583,11 +609,10 @@ const BranchSetup: React.FC = () => {
                         <button
                           key={tab.id}
                           onClick={() => setActiveTab(tab.id)}
-                          className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
-                            activeTab === tab.id
-                              ? 'border-blue-500 text-blue-600'
+                          className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${activeTab === tab.id
+                              ? 'border-[#E4B315] text-[#C69A11]'
                               : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                          }`}
+                            }`}
                         >
                           <Icon className="w-4 h-4 flex-shrink-0" />
                           <span>{tab.label}</span>
@@ -603,54 +628,54 @@ const BranchSetup: React.FC = () => {
                 {/* Basic Information Tab */}
                 {activeTab === 'basic' && (
                   <div className="bg-white rounded-lg border border-gray-200 p-6">
-                    <h3 className="text-lg font-medium text-gray-900 mb-6 flex items-center">
-                      <Building className="w-5 h-5 mr-2 text-blue-600" />
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-[#C69A11] mb-6 flex items-center">
+                      <Building className="w-5 h-5 mr-2 text-[#C69A11]" />
                       Basic Information
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-2">
                           Branch Name
                         </label>
                         <input
                           type="text"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E4B315]/40"
                           value={formData.custom_branch_name || ''}
                           onChange={(e) => handleInputChange('custom_branch_name', e.target.value)}
                           placeholder="Enter branch name"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-2">
                           Branch Code
                         </label>
                         <input
                           type="text"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E4B315]/40"
                           value={formData.custom_branch_code || ''}
                           onChange={(e) => handleInputChange('custom_branch_code', e.target.value)}
                           placeholder="Enter branch code"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-2">
                           Branch
                         </label>
                         <input
                           type="text"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E4B315]/40"
                           value={formData.branch || ''}
                           onChange={(e) => handleInputChange('branch', e.target.value)}
                           placeholder="Enter branch"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-2">
                           PIN
                         </label>
                         <input
                           type="text"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E4B315]/40"
                           value={formData.custom_pin || ''}
                           onChange={(e) => handleInputChange('custom_pin', e.target.value)}
                           placeholder="Enter PIN"
@@ -663,30 +688,30 @@ const BranchSetup: React.FC = () => {
                 {/* Location Information Tab */}
                 {activeTab === 'location' && (
                   <div className="bg-white rounded-lg border border-gray-200 p-6">
-                    <h3 className="text-lg font-medium text-gray-900 mb-6 flex items-center">
-                      <MapPin className="w-5 h-5 mr-2 text-blue-600" />
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-[#C69A11] mb-6 flex items-center">
+                      <MapPin className="w-5 h-5 mr-2 text-[#C69A11]" />
                       Location Information
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-2">
                           County Name
                         </label>
                         <input
                           type="text"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E4B315]/40"
                           value={formData.custom_county_name || ''}
                           onChange={(e) => handleInputChange('custom_county_name', e.target.value)}
                           placeholder="Enter county name"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-2">
                           Tax Locality Name
                         </label>
                         <input
                           type="text"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E4B315]/40"
                           value={formData.custom_tax_locality_name || ''}
                           onChange={(e) => handleInputChange('custom_tax_locality_name', e.target.value)}
                           placeholder="Enter tax locality name"
@@ -699,54 +724,54 @@ const BranchSetup: React.FC = () => {
                 {/* Manager Information Tab */}
                 {activeTab === 'manager' && (
                   <div className="bg-white rounded-lg border border-gray-200 p-6">
-                    <h3 className="text-lg font-medium text-gray-900 mb-6 flex items-center">
-                      <User className="w-5 h-5 mr-2 text-blue-600" />
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-[#C69A11] mb-6 flex items-center">
+                      <User className="w-5 h-5 mr-2 text-[#C69A11]" />
                       Manager Information
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-2">
                           Manager Name
                         </label>
                         <input
                           type="text"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E4B315]/40"
                           value={formData.custom_manager_name || ''}
                           onChange={(e) => handleInputChange('custom_manager_name', e.target.value)}
                           placeholder="Enter manager name"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-2">
                           Manager Email
                         </label>
                         <input
                           type="email"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E4B315]/40"
                           value={formData.custom_manager_email || ''}
                           onChange={(e) => handleInputChange('custom_manager_email', e.target.value)}
                           placeholder="Enter manager email"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-2">
                           Manager Contact
                         </label>
                         <input
                           type="tel"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E4B315]/40"
                           value={formData.custom_manager_contact || ''}
                           onChange={(e) => handleInputChange('custom_manager_contact', e.target.value)}
                           placeholder="Enter manager contact"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-2">
                           Branch Status Code
                         </label>
                         <input
                           type="text"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E4B315]/40"
                           value={formData.custom_branch_status_code || ''}
                           onChange={(e) => handleInputChange('custom_branch_status_code', e.target.value)}
                           placeholder="Enter branch status code"
@@ -759,15 +784,15 @@ const BranchSetup: React.FC = () => {
                 {/* Settings Tab */}
                 {activeTab === 'settings' && (
                   <div className="bg-white rounded-lg border border-gray-200 p-6">
-                    <h3 className="text-lg font-medium text-gray-900 mb-6 flex items-center">
-                      <Settings className="w-5 h-5 mr-2 text-blue-600" />
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-[#C69A11] mb-6 flex items-center">
+                      <Settings className="w-5 h-5 mr-2 text-[#C69A11]" />
                       Settings
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="flex items-center space-x-3">
                         <input
                           type="checkbox"
-                          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                          className="w-4 h-4 text-[#C69A11] border-gray-300 rounded focus:ring-[#E4B315]/40"
                           checked={formData.custom_make_unpaid === 1}
                           onChange={(e) => handleInputChange('custom_make_unpaid', e.target.checked ? 1 : 0)}
                         />
@@ -778,7 +803,7 @@ const BranchSetup: React.FC = () => {
                       <div className="flex items-center space-x-3">
                         <input
                           type="checkbox"
-                          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                          className="w-4 h-4 text-[#C69A11] border-gray-300 rounded focus:ring-[#E4B315]/40"
                           checked={formData.custom_no_taxes === 1}
                           onChange={(e) => handleInputChange('custom_no_taxes', e.target.checked ? 1 : 0)}
                         />
@@ -789,7 +814,7 @@ const BranchSetup: React.FC = () => {
                       <div className="flex items-center space-x-3">
                         <input
                           type="checkbox"
-                          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                          className="w-4 h-4 text-[#C69A11] border-gray-300 rounded focus:ring-[#E4B315]/40"
                           checked={formData.custom_is_head_office === 'Y'}
                           onChange={(e) => handleInputChange('custom_is_head_office', e.target.checked ? 'Y' : 'N')}
                         />
@@ -800,7 +825,7 @@ const BranchSetup: React.FC = () => {
                       <div className="flex items-center space-x-3">
                         <input
                           type="checkbox"
-                          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                          className="w-4 h-4 text-[#C69A11] border-gray-300 rounded focus:ring-[#E4B315]/40"
                           checked={formData.custom_is_etims_branch === 1}
                           onChange={(e) => handleInputChange('custom_is_etims_branch', e.target.checked ? 1 : 0)}
                         />
@@ -815,13 +840,13 @@ const BranchSetup: React.FC = () => {
                 {/* Aggregator Settings Tab */}
                 {activeTab === 'aggregator' && (
                   <div className="bg-white rounded-lg border border-gray-200 p-6">
-                    <h3 className="text-lg font-medium text-gray-900 mb-6 flex items-center">
-                      <CreditCard className="w-5 h-5 mr-2 text-blue-600" />
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-[#C69A11] mb-6 flex items-center">
+                      <CreditCard className="w-5 h-5 mr-2 text-[#C69A11]" />
                       Aggregator Settings
                     </h3>
                     {loadingOptions ? (
                       <div className="flex items-center justify-center py-8">
-                        <RefreshCw className="w-6 h-6 animate-spin text-blue-500 mr-2" />
+                        <RefreshCw className="w-6 h-6 animate-spin text-[#C69A11] mr-2" />
                         <span className="text-gray-600">Loading options...</span>
                       </div>
                     ) : (
@@ -830,11 +855,11 @@ const BranchSetup: React.FC = () => {
                           <div key={index} className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg">
                             <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-3">
                               <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-2">
                                   Customer
                                 </label>
                                 <select
-                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E4B315]/40"
                                   value={setting.customer}
                                   onChange={(e) => updateAggregatorSetting(index, 'customer', e.target.value)}
                                 >
@@ -847,11 +872,11 @@ const BranchSetup: React.FC = () => {
                                 </select>
                               </div>
                               <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-2">
                                   Price List
                                 </label>
                                 <select
-                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E4B315]/40"
                                   value={setting.price_list}
                                   onChange={(e) => updateAggregatorSetting(index, 'price_list', e.target.value)}
                                 >
@@ -864,11 +889,11 @@ const BranchSetup: React.FC = () => {
                                 </select>
                               </div>
                               <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-2">
                                   Mode of Payment
                                 </label>
                                 <select
-                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E4B315]/40"
                                   value={setting.mode_of_payments}
                                   onChange={(e) => updateAggregatorSetting(index, 'mode_of_payments', e.target.value)}
                                 >
@@ -907,13 +932,13 @@ const BranchSetup: React.FC = () => {
                 {/* Users Tab */}
                 {activeTab === 'users' && (
                   <div className="bg-white rounded-lg border border-gray-200 p-6">
-                    <h3 className="text-lg font-medium text-gray-900 mb-6 flex items-center">
-                      <Users className="w-5 h-5 mr-2 text-blue-600" />
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-[#C69A11] mb-6 flex items-center">
+                      <Users className="w-5 h-5 mr-2 text-[#C69A11]" />
                       Users
                     </h3>
                     {loadingOptions ? (
                       <div className="flex items-center justify-center py-8">
-                        <RefreshCw className="w-6 h-6 animate-spin text-blue-500 mr-2" />
+                        <RefreshCw className="w-6 h-6 animate-spin text-[#C69A11] mr-2" />
                         <span className="text-gray-600">Loading options...</span>
                       </div>
                     ) : (
@@ -922,11 +947,11 @@ const BranchSetup: React.FC = () => {
                           <div key={index} className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg">
                             <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3">
                               <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-2">
                                   User
                                 </label>
                                 <select
-                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E4B315]/40"
                                   value={user.user}
                                   onChange={(e) => updateUser(index, 'user', e.target.value)}
                                 >
@@ -939,11 +964,11 @@ const BranchSetup: React.FC = () => {
                                 </select>
                               </div>
                               <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-2">
                                   Room
                                 </label>
                                 <select
-                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E4B315]/40"
                                   value={user.room}
                                   onChange={(e) => updateUser(index, 'room', e.target.value)}
                                 >
@@ -994,7 +1019,7 @@ const BranchSetup: React.FC = () => {
                   <Button
                     onClick={saveBranch}
                     disabled={saving}
-                    className="px-6 py-2 h-10 bg-blue-600 hover:bg-blue-700 text-white"
+                    className="px-6 py-2 h-10 bg-[#E4B315]/12 hover:bg-[#E4B315]/12 text-white"
                   >
                     {saving ? (
                       <>

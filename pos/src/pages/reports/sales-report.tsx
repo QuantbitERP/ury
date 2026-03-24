@@ -24,6 +24,7 @@ import {
   AlertCircle,
   LucideIcon,
 } from "lucide-react";
+import { PageLayout } from "../../components/PageLayout";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -375,33 +376,10 @@ const SalesReport: React.FC = () => {
 
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
-    <div
-      style={{
-        fontFamily: "'Segoe UI', system-ui, sans-serif",
-        background: "#F9FAFB",
-        minHeight: "100vh",
-        padding: 24,
-        maxHeight: "100vh",
-        overflowY: "auto"
-      }}
-    >
-      {/* Header */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 20,
-        }}
-      >
-        <div>
-          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: "#111827" }}>
-            Sales Report
-          </h1>
-          <p style={{ margin: "3px 0 0", fontSize: 13, color: "#6B7280" }}>
-            Track sales performance and revenue trends
-          </p>
-        </div>
+    <PageLayout
+      title="Sales Report"
+      subtitle="Track sales performance and revenue trends"
+      actions={
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
           <span style={{ fontSize: 12, color: "#6B7280" }}>
             📅 {dateRange.from} – {dateRange.to}
@@ -447,528 +425,538 @@ const SalesReport: React.FC = () => {
             <Download size={14} /> Export CSV
           </button>
         </div>
-      </div>
-
-      {/* Date Presets + Filters */}
+      }
+    >
       <div
         style={{
-          display: "flex",
-          gap: 8,
-          marginBottom: 16,
-          flexWrap: "wrap",
-          alignItems: "center",
+          fontFamily: "'Segoe UI', system-ui, sans-serif",
+          background: "#F9FAFB",
+          minHeight: "100%",
+          padding: 24,
         }}
       >
-        {PRESETS.map((p) => (
-          <button
-            key={p.key}
-            onClick={() => {
-              setPreset(p.key);
-              setDateRange(getPreset(p.key));
-            }}
-            style={{
-              padding: "6px 14px",
-              borderRadius: 6,
-              border: "1px solid #E5E7EB",
-              background: preset === p.key ? GOLD : "#fff",
-              color: preset === p.key ? "#fff" : "#374151",
-              fontWeight: preset === p.key ? 600 : 400,
-              cursor: "pointer",
-              fontSize: 13,
-            }}
-          >
-            {p.label}
-          </button>
-        ))}
-        <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
-          <input
-            type="date"
-            value={dateRange.from}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              setPreset("custom");
-              setDateRange((d) => ({ ...d, from: e.target.value }));
-            }}
-            style={{
-              padding: "6px 10px",
-              border: "1px solid #D1D5DB",
-              borderRadius: 6,
-              fontSize: 13,
-            }}
-          />
-          <input
-            type="date"
-            value={dateRange.to}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              setPreset("custom");
-              setDateRange((d) => ({ ...d, to: e.target.value }));
-            }}
-            style={{
-              padding: "6px 10px",
-              border: "1px solid #D1D5DB",
-              borderRadius: 6,
-              fontSize: 13,
-            }}
-          />
-          <select
-            value={statusFilter}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-              setStatus(e.target.value)
-            }
-            style={{
-              padding: "6px 10px",
-              border: "1px solid #D1D5DB",
-              borderRadius: 6,
-              fontSize: 13,
-            }}
-          >
-            <option value="all">All Status</option>
-            {STATUS_OPTIONS.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-          <input
-            placeholder="Search order / customer…"
-            value={search}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              setSearch(e.target.value)
-            }
-            style={{
-              padding: "6px 12px",
-              border: "1px solid #D1D5DB",
-              borderRadius: 6,
-              fontSize: 13,
-              width: 220,
-            }}
-          />
-        </div>
-      </div>
 
-      {/* Error Banner */}
-      {error && (
+        {/* Date Presets + Filters */}
         <div
           style={{
             display: "flex",
-            gap: 10,
-            alignItems: "center",
-            padding: "12px 16px",
-            background: "#FEF2F2",
-            border: "1px solid #FECACA",
-            borderRadius: 8,
+            gap: 8,
             marginBottom: 16,
-            color: "#B91C1C",
+            flexWrap: "wrap",
+            alignItems: "center",
           }}
         >
-          <AlertCircle size={16} />
-          <span style={{ fontSize: 13 }}>
-            {error}. Please ensure you are logged into ERPNext and have permission to view Sales Orders. 
-            Contact your system administrator if the issue persists.
-          </span>
-        </div>
-      )}
-
-      {/* Loading */}
-      {loading && (
-        <div style={{ textAlign: "center", padding: 40, color: "#6B7280" }}>
-          <div
-            style={{
-              width: 32,
-              height: 32,
-              border: `3px solid ${GOLD}`,
-              borderTopColor: "transparent",
-              borderRadius: "50%",
-              animation: "spin 0.8s linear infinite",
-              margin: "0 auto 12px",
-            }}
-          />
-          Loading Sales Orders…
-        </div>
-      )}
-
-      {!loading && (
-        <>
-          {/* Stat Cards */}
-          <div style={{ display: "flex", gap: 16, marginBottom: 20, flexWrap: "wrap" }}>
-            <StatCard icon={DollarSign} label="Total Sales" value={fmt(totalSales)} color={GOLD} />
-            <StatCard icon={ShoppingCart} label="Total Orders" value={filtered.length} color="#3B82F6" />
-            <StatCard icon={TrendingUp} label="Avg Order Value" value={fmt(avgOrder)} color="#8B5CF6" />
-            <StatCard
-              icon={Package}
-              label="Items Sold (Qty)"
-              value={Math.round(totalItems).toLocaleString()}
-              color="#10B981"
+          {PRESETS.map((p) => (
+            <button
+              key={p.key}
+              onClick={() => {
+                setPreset(p.key);
+                setDateRange(getPreset(p.key));
+              }}
+              style={{
+                padding: "6px 14px",
+                borderRadius: 6,
+                border: "1px solid #E5E7EB",
+                background: preset === p.key ? GOLD : "#fff",
+                color: preset === p.key ? "#fff" : "#374151",
+                fontWeight: preset === p.key ? 600 : 400,
+                cursor: "pointer",
+                fontSize: 13,
+              }}
+            >
+              {p.label}
+            </button>
+          ))}
+          <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+            <input
+              type="date"
+              value={dateRange.from}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                setPreset("custom");
+                setDateRange((d) => ({ ...d, from: e.target.value }));
+              }}
+              style={{
+                padding: "6px 10px",
+                border: "1px solid #D1D5DB",
+                borderRadius: 6,
+                fontSize: 13,
+              }}
+            />
+            <input
+              type="date"
+              value={dateRange.to}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                setPreset("custom");
+                setDateRange((d) => ({ ...d, to: e.target.value }));
+              }}
+              style={{
+                padding: "6px 10px",
+                border: "1px solid #D1D5DB",
+                borderRadius: 6,
+                fontSize: 13,
+              }}
+            />
+            <select
+              value={statusFilter}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                setStatus(e.target.value)
+              }
+              style={{
+                padding: "6px 10px",
+                border: "1px solid #D1D5DB",
+                borderRadius: 6,
+                fontSize: 13,
+              }}
+            >
+              <option value="all">All Status</option>
+              {STATUS_OPTIONS.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+            <input
+              placeholder="Search order / customer…"
+              value={search}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setSearch(e.target.value)
+              }
+              style={{
+                padding: "6px 12px",
+                border: "1px solid #D1D5DB",
+                borderRadius: 6,
+                fontSize: 13,
+                width: 220,
+              }}
             />
           </div>
+        </div>
 
-          {/* Charts Row 1 */}
+        {/* Error Banner */}
+        {error && (
           <div
             style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: 16,
+              display: "flex",
+              gap: 10,
+              alignItems: "center",
+              padding: "12px 16px",
+              background: "#FEF2F2",
+              border: "1px solid #FECACA",
+              borderRadius: 8,
               marginBottom: 16,
+              color: "#B91C1C",
             }}
           >
-            {/* Daily Trend */}
-            <div
-              style={{
-                background: "#fff",
-                borderRadius: 10,
-                padding: 20,
-                border: "1px solid #F3F4F6",
-              }}
-            >
-              <h3
-                style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 600, color: "#111827" }}
-              >
-                Daily Sales Trend
-              </h3>
-              {dailyData.length ? (
-                <ResponsiveContainer width="100%" height={220}>
-                  <LineChart data={dailyData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
-                    <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                    <YAxis
-                      tick={{ fontSize: 11 }}
-                      tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}K`}
-                    />
-                    <Tooltip formatter={(v: number) => fmt(v)} />
-                    <Line
-                      type="monotone"
-                      dataKey="total"
-                      stroke={GOLD}
-                      strokeWidth={2}
-                      dot={{ r: 3, fill: GOLD }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              ) : (
-                <p style={{ color: "#9CA3AF", textAlign: "center", paddingTop: 80 }}>
-                  No data
-                </p>
-              )}
-            </div>
-
-            {/* Sales by Status */}
-            <div
-              style={{
-                background: "#fff",
-                borderRadius: 10,
-                padding: 20,
-                border: "1px solid #F3F4F6",
-              }}
-            >
-              <h3
-                style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 600, color: "#111827" }}
-              >
-                Sales by Status
-              </h3>
-              {statusData.length ? (
-                <ResponsiveContainer width="100%" height={220}>
-                  <PieChart>
-                    <Pie
-                      data={statusData}
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                      dataKey="value"
-                      nameKey="name"
-                      label={({
-                        name,
-                        percent,
-                      }: {
-                        name: string;
-                        percent: number;
-                      }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                      labelLine={false}
-                    >
-                      {statusData.map((entry) => (
-                        <Cell
-                          key={entry.name}
-                          fill={STATUS_COLORS[entry.name] ?? GOLD}
-                        />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(v: number) => fmt(v)} />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              ) : (
-                <p style={{ color: "#9CA3AF", textAlign: "center", paddingTop: 80 }}>
-                  No data
-                </p>
-              )}
-            </div>
+            <AlertCircle size={16} />
+            <span style={{ fontSize: 13 }}>
+              {error}. Please ensure you are logged into ERPNext and have permission to view Sales Orders.
+              Contact your system administrator if the issue persists.
+            </span>
           </div>
+        )}
 
-          {/* Charts Row 2 */}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: 16,
-              marginBottom: 16,
-            }}
-          >
-            {/* Top Items by Revenue */}
+        {/* Loading */}
+        {loading && (
+          <div style={{ textAlign: "center", padding: 40, color: "#6B7280" }}>
             <div
               style={{
-                background: "#fff",
-                borderRadius: 10,
-                padding: 20,
-                border: "1px solid #F3F4F6",
+                width: 32,
+                height: 32,
+                border: `3px solid ${GOLD}`,
+                borderTopColor: "transparent",
+                borderRadius: "50%",
+                animation: "spin 0.8s linear infinite",
+                margin: "0 auto 12px",
               }}
-            >
-              <h3
-                style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 600, color: "#111827" }}
-              >
-                Top Items by Revenue
-              </h3>
-              {topItems.length ? (
-                <ResponsiveContainer width="100%" height={220}>
-                  <BarChart data={topItems} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
-                    <XAxis
-                      type="number"
-                      tick={{ fontSize: 10 }}
-                      tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}K`}
-                    />
-                    <YAxis
-                      type="category"
-                      dataKey="name"
-                      tick={{ fontSize: 10 }}
-                      width={110}
-                    />
-                    <Tooltip formatter={(v: number) => fmt(v)} />
-                    <Bar dataKey="amount" fill={GOLD} radius={[0, 4, 4, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <p style={{ color: "#9CA3AF", textAlign: "center", paddingTop: 80 }}>
-                  No data
-                </p>
-              )}
+            />
+            Loading Sales Orders…
+          </div>
+        )}
+
+        {!loading && (
+          <>
+            {/* Stat Cards */}
+            <div style={{ display: "flex", gap: 16, marginBottom: 20, flexWrap: "wrap" }}>
+              <StatCard icon={DollarSign} label="Total Sales" value={fmt(totalSales)} color={GOLD} />
+              <StatCard icon={ShoppingCart} label="Total Orders" value={filtered.length} color="#3B82F6" />
+              <StatCard icon={TrendingUp} label="Avg Order Value" value={fmt(avgOrder)} color="#8B5CF6" />
+              <StatCard
+                icon={Package}
+                label="Items Sold (Qty)"
+                value={Math.round(totalItems).toLocaleString()}
+                color="#10B981"
+              />
             </div>
 
-            {/* Top Customers */}
+            {/* Charts Row 1 */}
             <div
               style={{
-                background: "#fff",
-                borderRadius: 10,
-                padding: 20,
-                border: "1px solid #F3F4F6",
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 16,
+                marginBottom: 16,
               }}
             >
-              <h3
-                style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 600, color: "#111827" }}
+              {/* Daily Trend */}
+              <div
+                style={{
+                  background: "#fff",
+                  borderRadius: 10,
+                  padding: 20,
+                  border: "1px solid #F3F4F6",
+                }}
               >
-                Top Customers
-              </h3>
-              {topCustomers.length ? (
-                <div>
-                  {topCustomers.map(([cust, val], i) => {
-                    const pct = (val / (topCustomers[0][1] || 1)) * 100;
-                    return (
-                      <div key={cust} style={{ marginBottom: 14 }}>
-                        <div
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            marginBottom: 4,
-                          }}
-                        >
-                          <span
-                            style={{ fontSize: 13, fontWeight: 500, color: "#374151" }}
-                          >
-                            {i + 1}.{" "}
-                            {cust.length > 30 ? cust.slice(0, 28) + "…" : cust}
-                          </span>
-                          <span
-                            style={{ fontSize: 13, fontWeight: 600, color: "#111827" }}
-                          >
-                            {fmt(val)}
-                          </span>
-                        </div>
-                        <div
-                          style={{
-                            height: 6,
-                            background: "#F3F4F6",
-                            borderRadius: 3,
-                            overflow: "hidden",
-                          }}
-                        >
+                <h3
+                  style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 600, color: "#111827" }}
+                >
+                  Daily Sales Trend
+                </h3>
+                {dailyData.length ? (
+                  <ResponsiveContainer width="100%" height={220}>
+                    <LineChart data={dailyData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
+                      <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                      <YAxis
+                        tick={{ fontSize: 11 }}
+                        tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}K`}
+                      />
+                      <Tooltip formatter={(v: number) => fmt(v)} />
+                      <Line
+                        type="monotone"
+                        dataKey="total"
+                        stroke={GOLD}
+                        strokeWidth={2}
+                        dot={{ r: 3, fill: GOLD }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <p style={{ color: "#9CA3AF", textAlign: "center", paddingTop: 80 }}>
+                    No data
+                  </p>
+                )}
+              </div>
+
+              {/* Sales by Status */}
+              <div
+                style={{
+                  background: "#fff",
+                  borderRadius: 10,
+                  padding: 20,
+                  border: "1px solid #F3F4F6",
+                }}
+              >
+                <h3
+                  style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 600, color: "#111827" }}
+                >
+                  Sales by Status
+                </h3>
+                {statusData.length ? (
+                  <ResponsiveContainer width="100%" height={220}>
+                    <PieChart>
+                      <Pie
+                        data={statusData}
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={80}
+                        dataKey="value"
+                        nameKey="name"
+                        label={({
+                          name,
+                          percent,
+                        }: {
+                          name: string;
+                          percent: number;
+                        }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                        labelLine={false}
+                      >
+                        {statusData.map((entry) => (
+                          <Cell
+                            key={entry.name}
+                            fill={STATUS_COLORS[entry.name] ?? GOLD}
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(v: number) => fmt(v)} />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <p style={{ color: "#9CA3AF", textAlign: "center", paddingTop: 80 }}>
+                    No data
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Charts Row 2 */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 16,
+                marginBottom: 16,
+              }}
+            >
+              {/* Top Items by Revenue */}
+              <div
+                style={{
+                  background: "#fff",
+                  borderRadius: 10,
+                  padding: 20,
+                  border: "1px solid #F3F4F6",
+                }}
+              >
+                <h3
+                  style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 600, color: "#111827" }}
+                >
+                  Top Items by Revenue
+                </h3>
+                {topItems.length ? (
+                  <ResponsiveContainer width="100%" height={220}>
+                    <BarChart data={topItems} layout="vertical">
+                      <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
+                      <XAxis
+                        type="number"
+                        tick={{ fontSize: 10 }}
+                        tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}K`}
+                      />
+                      <YAxis
+                        type="category"
+                        dataKey="name"
+                        tick={{ fontSize: 10 }}
+                        width={110}
+                      />
+                      <Tooltip formatter={(v: number) => fmt(v)} />
+                      <Bar dataKey="amount" fill={GOLD} radius={[0, 4, 4, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <p style={{ color: "#9CA3AF", textAlign: "center", paddingTop: 80 }}>
+                    No data
+                  </p>
+                )}
+              </div>
+
+              {/* Top Customers */}
+              <div
+                style={{
+                  background: "#fff",
+                  borderRadius: 10,
+                  padding: 20,
+                  border: "1px solid #F3F4F6",
+                }}
+              >
+                <h3
+                  style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 600, color: "#111827" }}
+                >
+                  Top Customers
+                </h3>
+                {topCustomers.length ? (
+                  <div>
+                    {topCustomers.map(([cust, val], i) => {
+                      const pct = (val / (topCustomers[0][1] || 1)) * 100;
+                      return (
+                        <div key={cust} style={{ marginBottom: 14 }}>
                           <div
                             style={{
-                              width: `${pct}%`,
-                              height: "100%",
-                              background: COLORS[i % COLORS.length],
-                              borderRadius: 3,
+                              display: "flex",
+                              justifyContent: "space-between",
+                              marginBottom: 4,
                             }}
-                          />
+                          >
+                            <span
+                              style={{ fontSize: 13, fontWeight: 500, color: "#374151" }}
+                            >
+                              {i + 1}.{" "}
+                              {cust.length > 30 ? cust.slice(0, 28) + "…" : cust}
+                            </span>
+                            <span
+                              style={{ fontSize: 13, fontWeight: 600, color: "#111827" }}
+                            >
+                              {fmt(val)}
+                            </span>
+                          </div>
+                          <div
+                            style={{
+                              height: 6,
+                              background: "#F3F4F6",
+                              borderRadius: 3,
+                              overflow: "hidden",
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: `${pct}%`,
+                                height: "100%",
+                                background: COLORS[i % COLORS.length],
+                                borderRadius: 3,
+                              }}
+                            />
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <p style={{ color: "#9CA3AF", textAlign: "center", paddingTop: 60 }}>
-                  No data
-                </p>
-              )}
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p style={{ color: "#9CA3AF", textAlign: "center", paddingTop: 60 }}>
+                    No data
+                  </p>
+                )}
+              </div>
             </div>
-          </div>
 
-          {/* Orders Table */}
-          <div
-            style={{
-              background: "#fff",
-              borderRadius: 10,
-              border: "1px solid #F3F4F6",
-              overflow: "hidden",
-            }}
-          >
+            {/* Orders Table */}
             <div
               style={{
-                padding: "16px 20px",
-                borderBottom: "1px solid #F3F4F6",
-                display: "flex",
-                justifyContent: "space-between",
+                background: "#fff",
+                borderRadius: 10,
+                border: "1px solid #F3F4F6",
+                overflow: "hidden",
               }}
             >
-              <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600, color: "#111827" }}>
-                Sales Orders{" "}
-                <span style={{ fontWeight: 400, color: "#6B7280", fontSize: 13 }}>
-                  ({filtered.length})
-                </span>
-              </h3>
-            </div>
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-                <thead>
-                  <tr style={{ background: "#F9FAFB" }}>
-                    {["Order #", "Customer", "Date", "Status", "Grand Total", "Items"].map(
-                      (h) => (
-                        <th
-                          key={h}
+              <div
+                style={{
+                  padding: "16px 20px",
+                  borderBottom: "1px solid #F3F4F6",
+                  display: "flex",
+                  justifyContent: "space-between",
+                }}
+              >
+                <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600, color: "#111827" }}>
+                  Sales Orders{" "}
+                  <span style={{ fontWeight: 400, color: "#6B7280", fontSize: 13 }}>
+                    ({filtered.length})
+                  </span>
+                </h3>
+              </div>
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ background: "#F9FAFB" }}>
+                      {["Order #", "Customer", "Date", "Status", "Grand Total", "Items"].map(
+                        (h) => (
+                          <th
+                            key={h}
+                            style={{
+                              padding: "10px 16px",
+                              textAlign: "left",
+                              borderBottom: "1px solid #E5E7EB",
+                              fontWeight: 600,
+                              color: "#374151",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {h}
+                          </th>
+                        )
+                      )}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.slice(0, 50).map((o, i) => (
+                      <tr
+                        key={o.name}
+                        style={{
+                          borderBottom: "1px solid #F9FAFB",
+                          background: i % 2 ? "#FAFAFA" : "#fff",
+                        }}
+                      >
+                        <td
                           style={{
                             padding: "10px 16px",
-                            textAlign: "left",
-                            borderBottom: "1px solid #E5E7EB",
                             fontWeight: 600,
-                            color: "#374151",
+                            color: "#111827",
                             whiteSpace: "nowrap",
                           }}
                         >
-                          {h}
-                        </th>
-                      )
-                    )}
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.slice(0, 50).map((o, i) => (
-                    <tr
-                      key={o.name}
-                      style={{
-                        borderBottom: "1px solid #F9FAFB",
-                        background: i % 2 ? "#FAFAFA" : "#fff",
-                      }}
-                    >
-                      <td
-                        style={{
-                          padding: "10px 16px",
-                          fontWeight: 600,
-                          color: "#111827",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        <a
-                          href={`/app/sales-order/${o.name}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          style={{ color: "#2563EB", textDecoration: "none" }}
-                        >
-                          {o.name}
-                        </a>
-                      </td>
-                      <td style={{ padding: "10px 16px", color: "#374151" }}>
-                        {o.customer}
-                      </td>
-                      <td
-                        style={{
-                          padding: "10px 16px",
-                          color: "#6B7280",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {o.transaction_date}
-                      </td>
-                      <td style={{ padding: "10px 16px" }}>
-                        <span
+                          <a
+                            href={`/app/sales-order/${o.name}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{ color: "#2563EB", textDecoration: "none" }}
+                          >
+                            {o.name}
+                          </a>
+                        </td>
+                        <td style={{ padding: "10px 16px", color: "#374151" }}>
+                          {o.customer}
+                        </td>
+                        <td
                           style={{
-                            padding: "3px 10px",
-                            borderRadius: 20,
-                            fontSize: 11,
-                            fontWeight: 600,
-                            background: `${STATUS_COLORS[o.status] ?? "#9CA3AF"}20`,
-                            color: STATUS_COLORS[o.status] ?? "#9CA3AF",
+                            padding: "10px 16px",
+                            color: "#6B7280",
+                            whiteSpace: "nowrap",
                           }}
                         >
-                          {o.status}
-                        </span>
-                      </td>
-                      <td
-                        style={{
-                          padding: "10px 16px",
-                          fontWeight: 600,
-                          color: "#111827",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {fmt(o.grand_total)}
-                      </td>
-                      <td style={{ padding: "10px 16px", color: "#6B7280" }}>
-                        {o.items.length} item{o.items.length !== 1 ? "s" : ""}
-                      </td>
-                    </tr>
-                  ))}
-                  {filtered.length === 0 && (
-                    <tr>
-                      <td
-                        colSpan={6}
-                        style={{ padding: 40, textAlign: "center", color: "#9CA3AF" }}
-                      >
-                        No orders found for the selected period
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-              {filtered.length > 50 && (
-                <p
-                  style={{
-                    padding: "10px 16px",
-                    color: "#6B7280",
-                    fontSize: 12,
-                    margin: 0,
-                  }}
-                >
-                  Showing 50 of {filtered.length} orders. Use date filters or export CSV
-                  for full data.
-                </p>
-              )}
+                          {o.transaction_date}
+                        </td>
+                        <td style={{ padding: "10px 16px" }}>
+                          <span
+                            style={{
+                              padding: "3px 10px",
+                              borderRadius: 20,
+                              fontSize: 11,
+                              fontWeight: 600,
+                              background: `${STATUS_COLORS[o.status] ?? "#9CA3AF"}20`,
+                              color: STATUS_COLORS[o.status] ?? "#9CA3AF",
+                            }}
+                          >
+                            {o.status}
+                          </span>
+                        </td>
+                        <td
+                          style={{
+                            padding: "10px 16px",
+                            fontWeight: 600,
+                            color: "#111827",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {fmt(o.grand_total)}
+                        </td>
+                        <td style={{ padding: "10px 16px", color: "#6B7280" }}>
+                          {o.items.length} item{o.items.length !== 1 ? "s" : ""}
+                        </td>
+                      </tr>
+                    ))}
+                    {filtered.length === 0 && (
+                      <tr>
+                        <td
+                          colSpan={6}
+                          style={{ padding: 40, textAlign: "center", color: "#9CA3AF" }}
+                        >
+                          No orders found for the selected period
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+                {filtered.length > 50 && (
+                  <p
+                    style={{
+                      padding: "10px 16px",
+                      color: "#6B7280",
+                      fontSize: 12,
+                      margin: 0,
+                    }}
+                  >
+                    Showing 50 of {filtered.length} orders. Use date filters or export CSV
+                    for full data.
+                  </p>
+                )}
+              </div>
             </div>
-          </div>
-        </>
-      )}
+          </>
+        )}
 
-      <style>{`
+        <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         button:hover { opacity: 0.9; }
         a:hover { text-decoration: underline !important; }
       `}</style>
-    </div>
+      </div>
+    </PageLayout>
   );
 };
 

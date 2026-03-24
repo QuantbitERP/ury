@@ -46,6 +46,33 @@ interface Role {
 
 const UserSetup: React.FC = () => {
   const [loading, setLoading] = useState(false);
+
+  // ── Enhanced CSS animations injected at component level ──────────────────
+  React.useEffect(() => {
+    const id = 'qs-setup-styles';
+    if (!document.getElementById(id)) {
+      const s = document.createElement('style');
+      s.id = id;
+      s.textContent = `
+        @keyframes qs-fadeIn    { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+        @keyframes qs-slideRight{ from { opacity:0; transform:translateX(-12px); } to { opacity:1; transform:none; } }
+        @keyframes qs-popIn     { from { opacity:0; transform:scale(.95); } to { opacity:1; transform:scale(1); } }
+        .qs-card       { animation: qs-fadeIn .28s ease both; }
+        .qs-slide-r    { animation: qs-slideRight .25s ease both; }
+        .qs-pop        { animation: qs-popIn .22s cubic-bezier(.34,1.56,.64,1) both; }
+        .qs-row        { transition: background .15s, box-shadow .15s; }
+        .qs-row:hover  { box-shadow: inset 3px 0 0 #E4B315; }
+        .qs-input:focus{ box-shadow: 0 0 0 3px rgba(228,179,21,.15); }
+        ::-webkit-scrollbar       { width:5px; height:5px; }
+        ::-webkit-scrollbar-track { background:transparent; }
+        ::-webkit-scrollbar-thumb { background:#f0e8c8; border-radius:99px; }
+        ::-webkit-scrollbar-thumb:hover { background:#E4B315; }
+      `;
+      document.head.appendChild(s);
+    }
+    return () => { };
+  }, []);
+
   const [saving, setSaving] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
@@ -110,7 +137,7 @@ const UserSetup: React.FC = () => {
       if (response.ok) {
         const data = await response.json();
         const usersList = data.message || [];
-        
+
         // Fetch roles for each user
         const usersWithRoles = await Promise.all(
           usersList.map(async (user: User) => {
@@ -127,7 +154,7 @@ const UserSetup: React.FC = () => {
                   limit_page_length: 50
                 })
               });
-              
+
               if (roleResponse.ok) {
                 const roleData = await roleResponse.json();
                 user.roles = roleData.message || [];
@@ -139,7 +166,7 @@ const UserSetup: React.FC = () => {
             }
           })
         );
-        
+
         setUsers(usersWithRoles);
       } else {
         showToast.error('Failed to fetch users');
@@ -200,7 +227,7 @@ const UserSetup: React.FC = () => {
       if (response.ok) {
         const data = await response.json();
         const userData = data.message;
-        
+
         // Fetch user roles
         const roleResponse = await fetch('/api/method/quantbit_ury_customization.ury_customization.ury_user_management.get_user_roles', {
           method: 'POST',
@@ -211,7 +238,7 @@ const UserSetup: React.FC = () => {
             user_id: userName
           })
         });
-        
+
         if (roleResponse.ok) {
           const roleData = await roleResponse.json();
           const roleList = Array.isArray(roleData.message) ? roleData.message : [];
@@ -220,7 +247,7 @@ const UserSetup: React.FC = () => {
         } else {
           console.error('Failed to fetch user roles:', await roleResponse.text());
         }
-        
+
         setFormData(userData);
         setSelectedUser(userData);
       } else {
@@ -247,7 +274,7 @@ const UserSetup: React.FC = () => {
   const handleRoleToggle = (roleName: string) => {
     const currentRoles = formData.roles || [];
     const existingRoleIndex = currentRoles.findIndex(r => r.role === roleName);
-    
+
     if (existingRoleIndex >= 0) {
       // Remove role
       setFormData(prev => ({
@@ -299,7 +326,7 @@ const UserSetup: React.FC = () => {
         }
 
         const savedUser = { name: formData.name };
-        
+
         // Update roles if changed
         if (formData.roles && formData.name) {
           const newRoleNames = formData.roles.map(r => r.role);
@@ -322,7 +349,7 @@ const UserSetup: React.FC = () => {
             if (roleAssignmentResponse.ok) {
               const result = await roleAssignmentResponse.json();
               console.log('Role assignment result:', result);
-              
+
               if (result.success) {
                 console.log('Roles assigned successfully:', result.message);
                 showToast.success(result.message);
@@ -358,7 +385,7 @@ const UserSetup: React.FC = () => {
             if (passwordResponse.ok) {
               const passwordResult = await passwordResponse.json();
               console.log('Password update result:', passwordResult);
-              
+
               if (passwordResult.success) {
                 console.log('Password updated successfully:', passwordResult.message);
                 showToast.success(passwordResult.message);
@@ -397,7 +424,7 @@ const UserSetup: React.FC = () => {
 
         // Get role names if any are selected
         const roleNames = formData.roles ? formData.roles.map(r => r.role) : [];
-        
+
         console.log('Creating user with data:', userData);
         console.log('Roles to assign:', roleNames);
 
@@ -415,7 +442,7 @@ const UserSetup: React.FC = () => {
         if (response.ok) {
           const result = await response.json();
           console.log('User creation result:', result);
-          
+
           if (result.success) {
             showToast.success(result.message);
             fetchUsers();
@@ -457,7 +484,7 @@ const UserSetup: React.FC = () => {
       if (rolesResponse.ok) {
         const rolesData = await rolesResponse.json();
         const userRoles = rolesData.message || [];
-        
+
         // Delete each role
         for (const role of userRoles) {
           await fetch('/api/method/frappe.client.delete', {
@@ -469,7 +496,7 @@ const UserSetup: React.FC = () => {
               doctype: 'Has Role',
               name: role.name
             })
-          }).catch(() => {}); // Ignore errors for role deletion
+          }).catch(() => { }); // Ignore errors for role deletion
         }
       }
 
@@ -522,7 +549,7 @@ const UserSetup: React.FC = () => {
       if (response.ok) {
         const result = await response.json();
         console.log('Role creation result:', result);
-        
+
         if (result.message.success) {
           showToast.success(result.message.message);
           // Add new role to the roles list
@@ -533,7 +560,7 @@ const UserSetup: React.FC = () => {
             is_custom: result.role_data.is_custom,
             disabled: result.role_data.disabled
           }]);
-          
+
           // Reset form
           setNewRole({
             role_name: '',
@@ -543,7 +570,7 @@ const UserSetup: React.FC = () => {
             two_factor_auth: 0
           });
           setShowCreateRoleForm(false);
-          
+
           // Reload page after successful role creation
           setTimeout(() => {
             window.location.reload();
@@ -600,13 +627,13 @@ const UserSetup: React.FC = () => {
   }, [activeTab]);
 
   return (
-    <div className="flex flex-col h-full bg-gray-50">
+    <div className="flex flex-col h-full bg-gray-50/80">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
+      <div className="bg-white border-b border-gray-100 px-6 py-4 shadow-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <Users className="w-6 h-6 text-blue-600" />
-            <h1 className="text-xl font-semibold text-gray-900">User Setup & Role Management</h1>
+            <Users className="w-6 h-6 text-[#C69A11]" />
+            <h1 className="text-lg font-extrabold text-[#2D2A26] tracking-tight">User Setup & Role Management</h1>
           </div>
           <div className="flex items-center space-x-3">
             <Button
@@ -635,17 +662,16 @@ const UserSetup: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-white border-b border-gray-100">
         <div className="flex space-x-8 px-6">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center space-x-2 py-4 border-b-2 transition-colors ${
-                activeTab === tab.id
-                  ? 'border-blue-500 text-blue-600'
+              className={`flex items-center space-x-2 py-4 border-b-2 transition-colors ${activeTab === tab.id
+                  ? 'border-[#E4B315] text-[#C69A11]'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
+                }`}
             >
               <tab.icon className="w-4 h-4" />
               <span className="font-medium">{tab.label}</span>
@@ -657,42 +683,42 @@ const UserSetup: React.FC = () => {
       {/* Content */}
       <div className="flex-1 overflow-auto p-6">
         {activeTab === 'users' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 qs-card">
             {/* Users List */}
             <div className="lg:col-span-2">
-              <div className="bg-white rounded-lg shadow">
-                <div className="px-6 py-4 border-b border-gray-200">
-                  <h2 className="text-lg font-medium text-gray-900">Users</h2>
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
+                <div className="px-5 py-3.5 border-b border-gray-100 bg-gray-50/50">
+                  <h2 className="text-sm font-bold uppercase tracking-wider text-[#C69A11]">Users</h2>
                 </div>
                 <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
+                  <table className="min-w-full divide-y divide-gray-100">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                           Name
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                           Email
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                           Status
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                           Actions
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody className="bg-white divide-y divide-gray-100">
                       {users.map((user) => (
-                        <tr key={user.name} className="hover:bg-gray-50">
+                        <tr key={user.name} className="hover:bg-[#E4B315]/3 transition-colors qs-row">
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
-                              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                                <Users className="w-4 h-4 text-blue-600" />
+                              <div className="w-8 h-8 bg-[#E4B315]/15 rounded-full flex items-center justify-center">
+                                <Users className="w-4 h-4 text-[#C69A11]" />
                               </div>
                               <div className="ml-3">
                                 <div className="text-sm font-medium text-gray-900">{user.full_name}</div>
-                                <div className="text-sm text-gray-500">{user.user_type}</div>
+                                <div className="text-xs text-gray-400">{user.user_type}</div>
                               </div>
                             </div>
                           </td>
@@ -700,11 +726,10 @@ const UserSetup: React.FC = () => {
                             {user.email}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                              user.enabled 
-                                ? 'bg-green-100 text-green-800' 
+                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${user.enabled
+                                ? 'bg-green-100 text-green-800'
                                 : 'bg-red-100 text-red-800'
-                            }`}>
+                              }`}>
                               {user.enabled ? 'Active' : 'Disabled'}
                             </span>
                           </td>
@@ -733,7 +758,7 @@ const UserSetup: React.FC = () => {
                   </table>
                   {users.length === 0 && !loading && (
                     <div className="text-center py-12">
-                      <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                      <Users className="w-12 h-12 text-gray-300 mx-auto mb-4" />
                       <p className="text-gray-500">No users found</p>
                     </div>
                   )}
@@ -744,9 +769,9 @@ const UserSetup: React.FC = () => {
             {/* User Form */}
             <div className="lg:col-span-1">
               {(selectedUser || showPasswordForm) && (
-                <div className="bg-white rounded-lg shadow">
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
                   <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-                    <h2 className="text-lg font-medium text-gray-900">
+                    <h2 className="text-sm font-bold uppercase tracking-wider text-[#C69A11]">
                       {selectedUser ? 'Edit User' : 'New User'}
                     </h2>
                     <Button
@@ -759,7 +784,7 @@ const UserSetup: React.FC = () => {
                   </div>
                   <div className="p-6 space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-1.5">
                         Email *
                       </label>
                       <input
@@ -767,7 +792,7 @@ const UserSetup: React.FC = () => {
                         name="email"
                         value={formData.email}
                         onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E4B315]/40"
                         required
                         disabled={!!selectedUser}
                       />
@@ -775,7 +800,7 @@ const UserSetup: React.FC = () => {
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-1.5">
                           First Name *
                         </label>
                         <input
@@ -783,12 +808,12 @@ const UserSetup: React.FC = () => {
                           name="first_name"
                           value={formData.first_name}
                           onChange={handleInputChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E4B315]/40"
                           required
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-1.5">
                           Last Name
                         </label>
                         <input
@@ -796,13 +821,13 @@ const UserSetup: React.FC = () => {
                           name="last_name"
                           value={formData.last_name}
                           onChange={handleInputChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E4B315]/40"
                         />
                       </div>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-1.5">
                         Phone
                       </label>
                       <input
@@ -810,12 +835,12 @@ const UserSetup: React.FC = () => {
                         name="phone"
                         value={formData.phone}
                         onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E4B315]/40"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-1.5">
                         Mobile
                       </label>
                       <input
@@ -823,19 +848,19 @@ const UserSetup: React.FC = () => {
                         name="mobile_no"
                         value={formData.mobile_no}
                         onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E4B315]/40"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-1.5">
                         User Type
                       </label>
                       <select
                         name="user_type"
                         value={formData.user_type}
                         onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E4B315]/40"
                       >
                         <option value="System User">System User</option>
                         <option value="Website User">Website User</option>
@@ -849,7 +874,7 @@ const UserSetup: React.FC = () => {
                         name="enabled"
                         checked={formData.enabled === 1}
                         onChange={(e) => setFormData(prev => ({ ...prev, enabled: e.target.checked ? 1 : 0 }))}
-                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        className="w-4 h-4 text-[#C69A11] border-gray-300 rounded focus:ring-[#E4B315]/40"
                       />
                       <label className="ml-2 text-sm text-gray-700">Enabled</label>
                     </div>
@@ -868,11 +893,11 @@ const UserSetup: React.FC = () => {
                           </Button>
                         )}
                       </div>
-                      
+
                       {(!selectedUser || showPasswordSection) && (
                         <div className="space-y-3">
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-1.5">
                               {selectedUser ? 'New Password' : 'Password'}
                             </label>
                             <input
@@ -881,11 +906,11 @@ const UserSetup: React.FC = () => {
                               value={formData.new_password}
                               onChange={handleInputChange}
                               placeholder={selectedUser ? 'Enter new password (leave blank to keep current)' : 'Enter password'}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E4B315]/40"
                             />
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-1.5">
                               Confirm Password
                             </label>
                             <input
@@ -894,7 +919,7 @@ const UserSetup: React.FC = () => {
                               value={formData.confirm_password}
                               onChange={handleInputChange}
                               placeholder={selectedUser ? 'Confirm new password' : 'Confirm password'}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E4B315]/40"
                             />
                           </div>
                         </div>
@@ -903,7 +928,7 @@ const UserSetup: React.FC = () => {
 
                     {/* Roles */}
                     <div className="border-t pt-4">
-                      <h3 className="text-sm font-medium text-gray-700 mb-3">Roles</h3>
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-3">Roles</h3>
                       <div className="space-y-2 max-h-40 overflow-y-auto">
                         {roles.map((role) => (
                           <label key={role.name} className="flex items-center">
@@ -911,7 +936,7 @@ const UserSetup: React.FC = () => {
                               type="checkbox"
                               checked={formData.roles?.some(r => r.role === role.role_name)}
                               onChange={() => handleRoleToggle(role.role_name)}
-                              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                              className="w-4 h-4 text-[#C69A11] border-gray-300 rounded focus:ring-[#E4B315]/40"
                             />
                             <span className="ml-2 text-sm text-gray-700">{role.role_name}</span>
                           </label>
@@ -948,9 +973,9 @@ const UserSetup: React.FC = () => {
         )}
 
         {activeTab === 'roles' && (
-          <div className="bg-white rounded-lg shadow">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
             <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="text-lg font-medium text-gray-900">Available Roles</h2>
+              <h2 className="text-sm font-bold uppercase tracking-wider text-[#C69A11]">Available Roles</h2>
               <Button
                 onClick={() => setShowCreateRoleForm(true)}
                 size="sm"
@@ -960,56 +985,53 @@ const UserSetup: React.FC = () => {
               </Button>
             </div>
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
+              <table className="min-w-full divide-y divide-gray-100">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                       Role Name
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                       Desk Access
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                       Custom Role
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                       Status
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white divide-y divide-gray-100">
                   {roles.map((role) => (
-                    <tr key={role.name} className="hover:bg-gray-50">
+                    <tr key={role.name} className="hover:bg-[#E4B315]/3 transition-colors qs-row">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <Shield className="w-4 h-4 text-blue-600 mr-2" />
+                          <Shield className="w-4 h-4 text-[#C69A11] mr-2" />
                           <span className="text-sm font-medium text-gray-900">{role.role_name}</span>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          role.desk_access 
-                            ? 'bg-green-100 text-green-800' 
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${role.desk_access
+                            ? 'bg-green-100 text-green-800'
                             : 'bg-gray-100 text-gray-800'
-                        }`}>
+                          }`}>
                           {role.desk_access ? 'Yes' : 'No'}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          role.is_custom 
-                            ? 'bg-blue-100 text-blue-800' 
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${role.is_custom
+                            ? 'bg-[#E4B315]/15 text-[#C69A11]'
                             : 'bg-gray-100 text-gray-800'
-                        }`}>
+                          }`}>
                           {role.is_custom ? 'Custom' : 'System'}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          role.disabled 
-                            ? 'bg-red-100 text-red-800' 
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${role.disabled
+                            ? 'bg-red-100 text-red-800'
                             : 'bg-green-100 text-green-800'
-                        }`}>
+                          }`}>
                           {role.disabled ? 'Disabled' : 'Active'}
                         </span>
                       </td>
@@ -1019,7 +1041,7 @@ const UserSetup: React.FC = () => {
               </table>
               {roles.length === 0 && !loading && (
                 <div className="text-center py-12">
-                  <Shield className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <Shield className="w-12 h-12 text-gray-300 mx-auto mb-4" />
                   <p className="text-gray-500">No roles found</p>
                 </div>
               )}
@@ -1029,7 +1051,7 @@ const UserSetup: React.FC = () => {
                 <div className="fixed inset-0 bg-gray-900/80 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
                   <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-medium text-gray-900">Create New Role</h3>
+                      <h3 className="text-sm font-bold uppercase tracking-wider text-[#C69A11]">Create New Role</h3>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -1049,40 +1071,40 @@ const UserSetup: React.FC = () => {
                     </div>
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-1.5">
                           Role Name *
                         </label>
                         <input
                           type="text"
                           value={newRole.role_name || ''}
                           onChange={(e) => handleRoleInputChange('role_name', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E4B315]/40"
                           placeholder="Enter role name"
                         />
                       </div>
 
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                          <label className="block text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-1.5">
                             Desk Access
                           </label>
                           <select
                             value={newRole.desk_access}
                             onChange={(e) => handleRoleInputChange('desk_access', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E4B315]/40"
                           >
                             <option value={1}>Yes</option>
                             <option value={0}>No</option>
                           </select>
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                          <label className="block text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-1.5">
                             Custom Role
                           </label>
                           <select
                             value={newRole.is_custom}
                             onChange={(e) => handleRoleInputChange('is_custom', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E4B315]/40"
                           >
                             <option value={1}>Yes</option>
                             <option value={0}>No</option>
@@ -1092,26 +1114,26 @@ const UserSetup: React.FC = () => {
 
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                          <label className="block text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-1.5">
                             Two Factor Auth
                           </label>
                           <select
                             value={newRole.two_factor_auth}
                             onChange={(e) => handleRoleInputChange('two_factor_auth', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E4B315]/40"
                           >
                             <option value={1}>Yes</option>
                             <option value={0}>No</option>
                           </select>
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                          <label className="block text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-1.5">
                             Disabled
                           </label>
                           <select
                             value={newRole.disabled}
                             onChange={(e) => handleRoleInputChange('disabled', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E4B315]/40"
                           >
                             <option value={0}>Active</option>
                             <option value={1}>Disabled</option>

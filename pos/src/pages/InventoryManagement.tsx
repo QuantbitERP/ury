@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
     Search, Plus, CircleHelp,
     Package, Tags, Ruler, Truck, FileText, Package2, PackageMinus,
@@ -87,6 +87,7 @@ interface EditItemForm extends NewItemForm { item_code: string; actual_qty: numb
 interface AdjustStockForm {
     item_code: string; warehouse: string;
     stock_entry_type: string; qty: number; conversion_factor: number;
+    company: string; branch: string;
 }
 
 const STOCK_ENTRY_TYPES = ['Material Receipt', 'Material Issue', 'Material Transfer', 'Stock Reconciliation'];
@@ -172,7 +173,29 @@ interface MaterialRequestForm {
 
 const InventoryManagement: React.FC = () => {
     const navigate = useNavigate();
-    const [currentView, setCurrentView] = useState<'stock' | 'categories' | 'units' | 'suppliers' | 'purchase-orders' | 'goods-receipts' | 'supplier-returns' | 'stock-transfers' | 'stock-tracking' | 'requisitions'>('stock');
+    const location = useLocation();
+
+    // Map paths to views
+    const getInitialView = () => {
+        const path = location.pathname;
+        if (path === '/suppliers') return 'suppliers';
+        if (path === '/purchase-orders') return 'purchase-orders';
+        if (path === '/goods-receipts') return 'goods-receipts';
+        if (path === '/supplier-returns') return 'supplier-returns';
+        if (path === '/stock-transfers') return 'stock-transfers';
+        if (path === '/stock-tracking') return 'stock-tracking';
+        if (path === '/categories') return 'categories';
+        if (path === '/units') return 'units';
+        return 'stock'; // default for /inventory
+    };
+
+    const [currentView, setCurrentView] = useState<'stock' | 'categories' | 'units' | 'suppliers' | 'purchase-orders' | 'goods-receipts' | 'supplier-returns' | 'stock-transfers' | 'stock-tracking' | 'requisitions'>(getInitialView());
+
+    useEffect(() => {
+        const newView = getInitialView();
+        setCurrentView(newView);
+    }, [location.pathname]);
+
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('');
     const [selectedDepartment, setSelectedDepartment] = useState('');
@@ -188,6 +211,8 @@ const InventoryManagement: React.FC = () => {
     const [uoms, setUoms] = useState<{ name: string }[]>([]);
     const [warehouses, setWarehouses] = useState<{ name: string }[]>([]);
     const [suppliers, setSuppliers] = useState<{ name: string; supplier_name: string }[]>([]);
+    const [companies, setCompanies] = useState<{ name: string }[]>([]);
+    const [branches, setBranches] = useState<{ name: string; branch?: string }[]>([]);
 
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
@@ -197,7 +222,7 @@ const InventoryManagement: React.FC = () => {
 
     const [newItem, setNewItem] = useState<NewItemForm>({ ...EMPTY_NEW });
     const [editItem, setEditItem] = useState<EditItemForm | null>(null);
-    const [adjustForm, setAdjustForm] = useState<AdjustStockForm>({ item_code: '', warehouse: '', stock_entry_type: 'Material Receipt', qty: 0, conversion_factor: 0 });
+    const [adjustForm, setAdjustForm] = useState<AdjustStockForm>({ item_code: '', warehouse: '', stock_entry_type: 'Material Receipt', qty: 0, conversion_factor: 0, company: '', branch: '' });
     const [requisitionForm, setRequisitionForm] = useState<MaterialRequestForm>({
         warehouse: '',
         required_date: '',
@@ -324,16 +349,31 @@ const InventoryManagement: React.FC = () => {
     // Only safe list-permitted fields are requested here.
     const fetchMetadata = async () => {
         try {
-            const [cR, uR, wR, sR] = await Promise.all([
+            const [cR, uR, wR, sR, coR, bR] = await Promise.all([
                 fetch(`/api/resource/Item%20Group?filters=${encodeURIComponent(JSON.stringify([['is_group', '=', '0']]))}&fields=${encodeURIComponent(JSON.stringify(['name', 'item_group_name']))}&limit=200`),
                 fetch(`/api/resource/UOM?filters=${encodeURIComponent(JSON.stringify([['enabled', '=', '1']]))}&fields=${encodeURIComponent(JSON.stringify(['name', 'uom_name']))}&limit=200`),
                 fetch(`/api/resource/Warehouse?fields=${encodeURIComponent(JSON.stringify(['name']))}&limit=200`),
                 fetch(`/api/resource/Supplier?fields=${encodeURIComponent(JSON.stringify(['name', 'supplier_name']))}&limit=200`),
+                fetch(`/api/resource/Company?fields=${encodeURIComponent(JSON.stringify(['name']))}&limit=200`),
+                fetch('/api/method/frappe.client.get_list', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        doctype: 'Branch',
+                        fields: ['name', 'branch'],
+                        limit_page_length: 200
+                    })
+                })
             ]);
             if (cR.ok) setCategories((await cR.json()).data || []);
             if (uR.ok) setUoms((await uR.json()).data || []);
             if (wR.ok) setWarehouses((await wR.json()).data || []);
             if (sR.ok) setSuppliers((await sR.json()).data || []);
+            if (coR.ok) setCompanies((await coR.json()).data || []);
+            if (bR.ok) {
+                const branchData = await bR.json();
+                setBranches(branchData.message || []);
+            }
         } catch (err) { console.error('Metadata fetch error:', err); }
     };
 
@@ -355,7 +395,18 @@ const InventoryManagement: React.FC = () => {
             const created = (await res.json()).data;
 
             if (newItem.current_stock > 0 && newItem.warehouse) {
-                await submitStockEntry({ item_code: created.item_code, warehouse: newItem.warehouse, stock_entry_type: 'Material Receipt', qty: newItem.current_stock, conversion_factor: newItem.conversion_factor || 0 });
+                // For new item creation, we should use the first available company and branch or require user to select
+                const defaultCompany = companies.length > 0 ? companies[0].name : '';
+                const defaultBranch = branches.length > 0 ? branches[0].name : '';
+                if (!defaultCompany) {
+                    alert('Error: No companies available. Please ensure companies are set up in the system.');
+                    return;
+                }
+                if (!defaultBranch) {
+                    alert('Error: No branches available. Please ensure branches are set up in the system.');
+                    return;
+                }
+                await submitStockEntry({ item_code: created.item_code, warehouse: newItem.warehouse, stock_entry_type: 'Material Receipt', qty: newItem.current_stock, conversion_factor: newItem.conversion_factor || 0, company: defaultCompany, branch: defaultBranch });
             }
             setShowAddModal(false); setNewItem({ ...EMPTY_NEW }); fetchStockItems();
         } catch (err: any) { alert('Error creating stock item: ' + err.message); }
@@ -418,7 +469,7 @@ const InventoryManagement: React.FC = () => {
     // ── Adjust stock ──────────────────────────────────────────────────────────
     const handleAdjust = (item_code: string) => {
         const item = stockItems.find(i => i.item_code === item_code);
-        setAdjustForm({ item_code, warehouse: item?.warehouse || '', stock_entry_type: 'Material Receipt', qty: 0, conversion_factor: item?.conversion_factor ?? 0 });
+        setAdjustForm({ item_code, warehouse: item?.warehouse || '', stock_entry_type: 'Material Receipt', qty: 0, conversion_factor: item?.conversion_factor ?? 0, company: '', branch: '' });
         setShowAdjustModal(true);
     };
 
@@ -426,6 +477,8 @@ const InventoryManagement: React.FC = () => {
         const isIn = ['Material Receipt', 'Stock Reconciliation'].includes(params.stock_entry_type);
         const payload: any = {
             stock_entry_type: params.stock_entry_type,
+            company: params.company,
+            branch: params.branch,
             items: [{ item_code: params.item_code, qty: params.qty, basic_rate: params.conversion_factor, ...(isIn ? { t_warehouse: params.warehouse } : { s_warehouse: params.warehouse }) }],
         };
         // Step 1: create draft
@@ -567,8 +620,8 @@ const InventoryManagement: React.FC = () => {
         <li>
             <button type="button" onClick={onClick || (view && (() => setCurrentView(view)))} aria-current={active ? 'page' : undefined}
                 className={`relative w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${active
-                        ? 'bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white shadow-sm shadow-[#E4B315]/25'
-                        : 'text-gray-500 hover:bg-[#E4B315]/8 hover:text-[#C69A11]'
+                    ? 'bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white shadow-sm shadow-[#E4B315]/25'
+                    : 'text-gray-500 hover:bg-[#E4B315]/8 hover:text-[#C69A11]'
                     }`}>
                 {active && <span className="absolute left-0 top-1/2 -translate-y-1/2 h-4 w-[3px] rounded-r-full bg-white/80" />}
                 <span className={active ? 'text-white' : 'text-[#C69A11]'}>{icon}</span>
@@ -757,12 +810,12 @@ const InventoryManagement: React.FC = () => {
                                                                 </td>
                                                                 <td className="p-3">
                                                                     <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${request.status === 'Draft' ? 'bg-gray-100 text-gray-800' :
-                                                                            request.status === 'Submitted' ? 'bg-blue-100 text-blue-800' :
-                                                                                request.status === 'Approved' ? 'bg-green-100 text-green-800' :
-                                                                                    request.status === 'Rejected' ? 'bg-red-100 text-red-800' :
-                                                                                        request.status === 'Partially Fulfilled' ? 'bg-yellow-100 text-yellow-800' :
-                                                                                            request.status === 'Fulfilled' ? 'bg-green-100 text-green-800' :
-                                                                                                'bg-gray-100 text-gray-800'
+                                                                        request.status === 'Submitted' ? 'bg-blue-100 text-blue-800' :
+                                                                            request.status === 'Approved' ? 'bg-green-100 text-green-800' :
+                                                                                request.status === 'Rejected' ? 'bg-red-100 text-red-800' :
+                                                                                    request.status === 'Partially Fulfilled' ? 'bg-yellow-100 text-yellow-800' :
+                                                                                        request.status === 'Fulfilled' ? 'bg-green-100 text-green-800' :
+                                                                                            'bg-gray-100 text-gray-800'
                                                                         }`}>
                                                                         {request.status || 'Draft'}
                                                                     </span>
@@ -845,6 +898,8 @@ const InventoryManagement: React.FC = () => {
             {showAdjustModal && (
                 <Modal title={`Adjust Stock — ${adjustForm.item_code}`} onClose={() => setShowAdjustModal(false)}>
                     <form className="space-y-4" onSubmit={handleAdjustStock}>
+                        <F label="Company *" hint="Company for stock entry validation" id="adj_co"><select id="adj_co" required className={INPUT} value={adjustForm.company} onChange={e => setAdjustForm({ ...adjustForm, company: e.target.value })}><option value="">Select company</option>{companies.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}</select></F>
+                        <F label="Branch *" hint="Branch for accounting dimension validation" id="adj_br"><select id="adj_br" required className={INPUT} value={adjustForm.branch} onChange={e => setAdjustForm({ ...adjustForm, branch: e.target.value })}><option value="">Select branch</option>{branches.map(b => <option key={b.name} value={b.name}>{b.branch || b.name}</option>)}</select></F>
                         <F label="Department (Warehouse) *" id="adj_wh"><select id="adj_wh" required className={INPUT} value={adjustForm.warehouse} onChange={e => setAdjustForm({ ...adjustForm, warehouse: e.target.value })}><option value="">Select warehouse</option>{warehouses.map(w => <option key={w.name} value={w.name}>{w.name}</option>)}</select></F>
                         <F label="Transaction Type *" hint="Maps to Stock Entry Type" id="adj_type"><select id="adj_type" required className={INPUT} value={adjustForm.stock_entry_type} onChange={e => setAdjustForm({ ...adjustForm, stock_entry_type: e.target.value })}>{STOCK_ENTRY_TYPES.map(t => <option key={t} value={t}>{t}</option>)}</select></F>
                         <div className="grid grid-cols-2 gap-4">

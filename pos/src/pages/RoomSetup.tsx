@@ -62,6 +62,33 @@ interface Room {
 
 const RoomSetup: React.FC = () => {
   const [loading, setLoading] = useState(false);
+
+  // ── Enhanced CSS animations injected at component level ──────────────────
+  React.useEffect(() => {
+    const id = 'qs-setup-styles';
+    if (!document.getElementById(id)) {
+      const s = document.createElement('style');
+      s.id = id;
+      s.textContent = `
+        @keyframes qs-fadeIn    { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+        @keyframes qs-slideRight{ from { opacity:0; transform:translateX(-12px); } to { opacity:1; transform:none; } }
+        @keyframes qs-popIn     { from { opacity:0; transform:scale(.95); } to { opacity:1; transform:scale(1); } }
+        .qs-card       { animation: qs-fadeIn .28s ease both; }
+        .qs-slide-r    { animation: qs-slideRight .25s ease both; }
+        .qs-pop        { animation: qs-popIn .22s cubic-bezier(.34,1.56,.64,1) both; }
+        .qs-row        { transition: background .15s, box-shadow .15s; }
+        .qs-row:hover  { box-shadow: inset 3px 0 0 #E4B315; }
+        .qs-input:focus{ box-shadow: 0 0 0 3px rgba(228,179,21,.15); }
+        ::-webkit-scrollbar       { width:5px; height:5px; }
+        ::-webkit-scrollbar-track { background:transparent; }
+        ::-webkit-scrollbar-thumb { background:#f0e8c8; border-radius:99px; }
+        ::-webkit-scrollbar-thumb:hover { background:#E4B315; }
+      `;
+      document.head.appendChild(s);
+    }
+    return () => { };
+  }, []);
+
   const [saving, setSaving] = useState(false);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
@@ -104,7 +131,7 @@ const RoomSetup: React.FC = () => {
       if (response.ok) {
         const data = await response.json();
         const roomsList = data.message || [];
-        
+
         // Fetch full details for each room
         const roomsWithDetails = await Promise.all(
           roomsList.map(async (room: Room) => {
@@ -119,7 +146,7 @@ const RoomSetup: React.FC = () => {
                   name: room.name
                 })
               });
-              
+
               if (detailResponse.ok) {
                 const detailData = await detailResponse.json();
                 return detailData.message || room;
@@ -131,7 +158,7 @@ const RoomSetup: React.FC = () => {
             }
           })
         );
-        
+
         setRooms(roomsWithDetails);
       } else {
         showToast.error('Failed to fetch rooms');
@@ -159,7 +186,7 @@ const RoomSetup: React.FC = () => {
     setSaving(true);
     try {
       const isUpdate = !!selectedRoom?.name;
-      const endpoint = isUpdate 
+      const endpoint = isUpdate
         ? '/api/method/quantbit_ury_customization.ury_customization.ury_room_management.update_room'
         : '/api/method/quantbit_ury_customization.ury_customization.ury_room_management.create_room';
 
@@ -177,7 +204,7 @@ const RoomSetup: React.FC = () => {
       if (response.ok) {
         const result = await response.json();
         console.log('Room save result:', result);
-        
+
         if (result.success) {
           showToast.success(result.message);
           fetchRooms();
@@ -270,7 +297,7 @@ const RoomSetup: React.FC = () => {
 
   const confirmAddFacility = () => {
     if (!currentRoomForModal) return;
-    
+
     if (newFacilityName && newFacilityName.trim()) {
       const updatedRoom = { ...currentRoomForModal };
       if (!updatedRoom.custom_facilities) {
@@ -301,7 +328,7 @@ const RoomSetup: React.FC = () => {
   // Remove facility
   const removeFacility = (index: number) => {
     if (!currentRoomForModal) return;
-    
+
     const updatedRoom = { ...currentRoomForModal };
     updatedRoom.custom_facilities = updatedRoom.custom_facilities?.filter((_, i) => i !== index) || [];
     setCurrentRoomForModal(updatedRoom);
@@ -310,7 +337,7 @@ const RoomSetup: React.FC = () => {
   // Add printer setting
   const addPrinterSetting = () => {
     if (!currentRoomForModal) return;
-    
+
     const updatedRoom = { ...currentRoomForModal };
     if (!updatedRoom.printer_settings) {
       updatedRoom.printer_settings = [];
@@ -332,7 +359,7 @@ const RoomSetup: React.FC = () => {
   // Remove printer setting
   const removePrinterSetting = (index: number) => {
     if (!currentRoomForModal) return;
-    
+
     const updatedRoom = { ...currentRoomForModal };
     updatedRoom.printer_settings = updatedRoom.printer_settings?.filter((_, i) => i !== index) || [];
     setCurrentRoomForModal(updatedRoom);
@@ -341,7 +368,7 @@ const RoomSetup: React.FC = () => {
   // Update printer setting field
   const updatePrinterSetting = (index: number, field: keyof PrinterSettings, value: any) => {
     if (!currentRoomForModal) return;
-    
+
     const updatedRoom = { ...currentRoomForModal };
     if (!updatedRoom.printer_settings) {
       updatedRoom.printer_settings = [];
@@ -356,7 +383,7 @@ const RoomSetup: React.FC = () => {
   // Save facilities and printer settings
   const saveRoomDetails = async () => {
     if (!currentRoomForModal) return;
-    
+
     setSaving(true);
     try {
       const response = await fetch('/api/method/quantbit_ury_customization.ury_customization.ury_room_management.update_room', {
@@ -502,13 +529,13 @@ const RoomSetup: React.FC = () => {
   }, [showPrinterSettingsModal]);
 
   return (
-    <div className="flex flex-col h-full bg-gray-50">
+    <div className="flex flex-col h-full bg-gray-50/80">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
+      <div className="bg-white border-b border-gray-100 px-6 py-4 shadow-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <DoorOpen className="w-6 h-6 text-blue-600" />
-            <h1 className="text-xl font-semibold text-gray-900">Room Setup & Management</h1>
+            <DoorOpen className="w-6 h-6 text-[#C69A11]" />
+            <h1 className="text-lg font-extrabold text-[#2D2A26] tracking-tight">Room Setup & Management</h1>
           </div>
           <div className="flex items-center space-x-3">
             <Button
@@ -536,48 +563,48 @@ const RoomSetup: React.FC = () => {
 
       {/* Content */}
       <div className="flex-1 overflow-auto p-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 qs-card">
           {/* Rooms List */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg shadow">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-medium text-gray-900">Rooms</h2>
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
+              <div className="px-5 py-3.5 border-b border-gray-100 bg-gray-50/50">
+                <h2 className="text-sm font-bold uppercase tracking-wider text-[#C69A11]">Rooms</h2>
               </div>
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
+                <table className="min-w-full divide-y divide-gray-100">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                         Room Name
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                         Branch
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                         Type
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                         Capacity
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                         Rate
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                         Actions
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-white divide-y divide-gray-100">
                     {rooms.map((room) => (
-                      <tr key={room.name} className="hover:bg-gray-50">
+                      <tr key={room.name} className="hover:bg-[#E4B315]/3 transition-colors qs-row">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
-                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                              <DoorOpen className="w-4 h-4 text-blue-600" />
+                            <div className="w-8 h-8 bg-[#E4B315]/15 rounded-full flex items-center justify-center">
+                              <DoorOpen className="w-4 h-4 text-[#C69A11]" />
                             </div>
                             <div className="ml-3">
                               <div className="text-sm font-medium text-gray-900">{room.name}</div>
-                              <div className="text-sm text-gray-500">Created: {new Date(room.creation || '').toLocaleDateString()}</div>
+                              <div className="text-xs text-gray-400">Created: {new Date(room.creation || '').toLocaleDateString()}</div>
                             </div>
                           </div>
                         </td>
@@ -585,13 +612,12 @@ const RoomSetup: React.FC = () => {
                           {room.branch || 'Not Set'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            room.room_type === 'AC' 
-                              ? 'bg-blue-100 text-blue-800' 
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${room.room_type === 'AC'
+                              ? 'bg-[#E4B315]/15 text-[#C69A11]'
                               : room.room_type === 'NON-AC'
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-purple-100 text-purple-800'
-                          }`}>
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-purple-100 text-purple-800'
+                            }`}>
                             {room.room_type === 'NON-AC' ? 'Non-AC' : room.room_type || 'Standard'}
                           </span>
                         </td>
@@ -615,7 +641,7 @@ const RoomSetup: React.FC = () => {
                               variant="outline"
                               size="sm"
                               onClick={() => manageFacilities(room)}
-                              className="text-blue-600 hover:text-blue-700"
+                              className="text-[#C69A11] hover:text-[#C69A11]"
                             >
                               <Plus className="w-3 h-3" />
                             </Button>
@@ -643,7 +669,7 @@ const RoomSetup: React.FC = () => {
                 </table>
                 {rooms.length === 0 && !loading && (
                   <div className="text-center py-12">
-                    <DoorOpen className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <DoorOpen className="w-12 h-12 text-gray-300 mx-auto mb-4" />
                     <p className="text-gray-500">No rooms found</p>
                   </div>
                 )}
@@ -654,9 +680,9 @@ const RoomSetup: React.FC = () => {
           {/* Room Form */}
           <div className="lg:col-span-1">
             {showCreateRoomForm && (
-              <div className="bg-white rounded-lg shadow">
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
                 <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-                  <h2 className="text-lg font-medium text-gray-900">
+                  <h2 className="text-sm font-bold uppercase tracking-wider text-[#C69A11]">
                     {selectedRoom ? 'Edit Room' : 'New Room'}
                   </h2>
                   <Button
@@ -669,40 +695,40 @@ const RoomSetup: React.FC = () => {
                 </div>
                 <div className="p-6 space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-1.5">
                       Room Name *
                     </label>
                     <input
                       type="text"
                       value={newRoom.name}
                       onChange={(e) => handleRoomInputChange('name', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E4B315]/40"
                       required
                       disabled={!!selectedRoom}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-1.5">
                       Branch
                     </label>
                     <input
                       type="text"
                       value={newRoom.branch}
                       onChange={(e) => handleRoomInputChange('branch', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E4B315]/40"
                       placeholder="e.g., 00"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-1.5">
                       Room Type
                     </label>
                     <select
                       value={newRoom.room_type}
                       onChange={(e) => handleRoomInputChange('room_type', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E4B315]/40"
                     >
                       <option value="AC">AC</option>
                       <option value="NON-AC">Non-AC</option>
@@ -713,27 +739,27 @@ const RoomSetup: React.FC = () => {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-1.5">
                         Hourly Rate
                       </label>
                       <input
                         type="number"
                         value={newRoom.custom_rate}
                         onChange={(e) => handleRoomInputChange('custom_rate', parseFloat(e.target.value) || 0)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E4B315]/40"
                         min="0"
                         step="0.01"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-1.5">
                         Daily Rate
                       </label>
                       <input
                         type="number"
                         value={newRoom.custom_daywise_rate}
                         onChange={(e) => handleRoomInputChange('custom_daywise_rate', parseFloat(e.target.value) || 0)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E4B315]/40"
                         min="0"
                         step="0.01"
                       />
@@ -742,26 +768,26 @@ const RoomSetup: React.FC = () => {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-1.5">
                         Capacity
                       </label>
                       <input
                         type="number"
                         value={newRoom.custom_capacity}
                         onChange={(e) => handleRoomInputChange('custom_capacity', parseInt(e.target.value) || 0)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E4B315]/40"
                         min="0"
                         step="1"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-1.5">
                         Branch
                       </label>
                       <select
                         value={newRoom.branch}
                         onChange={(e) => handleRoomInputChange('branch', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E4B315]/40"
                       >
                         <option value="">Select Branch</option>
                         {availableBranches.map((branch: any) => (
@@ -795,7 +821,7 @@ const RoomSetup: React.FC = () => {
         <div className="fixed inset-0 bg-black/80 bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] overflow-auto">
             <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="text-lg font-medium text-gray-900">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-[#C69A11]">
                 Manage Facilities - {currentRoomForModal.name}
               </h2>
               <Button
@@ -862,7 +888,7 @@ const RoomSetup: React.FC = () => {
         <div className="fixed inset-0 bg-black/80 bg-opacity-50 flex items-center justify-center z-[60]">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
             <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="text-lg font-medium text-gray-900">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-[#C69A11]">
                 Add Facility
               </h2>
               <Button
@@ -875,7 +901,7 @@ const RoomSetup: React.FC = () => {
             </div>
             <div className="p-6">
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-1.5">
                   Facility Name *
                 </label>
                 <input
@@ -888,7 +914,7 @@ const RoomSetup: React.FC = () => {
                       confirmAddFacility();
                     }
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E4B315]/40"
                   placeholder="Enter facility name"
                   autoFocus
                 />
@@ -918,7 +944,7 @@ const RoomSetup: React.FC = () => {
         <div className="fixed inset-0 bg-black/80 bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[80vh] overflow-auto">
             <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="text-lg font-medium text-gray-900">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-[#C69A11]">
                 Printer Settings - {currentRoomForModal.name}
               </h2>
               <Button
@@ -944,11 +970,11 @@ const RoomSetup: React.FC = () => {
                   <div key={index} className="border border-gray-200 rounded-lg p-4">
                     <div className="grid grid-cols-2 gap-4 mb-3">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Printer</label>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-1.5">Printer</label>
                         <select
                           value={printer.printer || ''}
                           onChange={(e) => updatePrinterSetting(index, 'printer', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E4B315]/40"
                         >
                           <option value="">Select Printer</option>
                           {availablePrinters.map((printerOption: any) => (
@@ -959,11 +985,11 @@ const RoomSetup: React.FC = () => {
                         </select>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">KOT Print Format</label>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-1.5">KOT Print Format</label>
                         <select
                           value={printer.custom_kot_print_format || ''}
                           onChange={(e) => updatePrinterSetting(index, 'custom_kot_print_format', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E4B315]/40"
                         >
                           <option value="">Select Print Format</option>
                           {availablePrintFormats.map((format: any) => (
@@ -980,7 +1006,7 @@ const RoomSetup: React.FC = () => {
                           type="checkbox"
                           checked={printer.bill === 1}
                           onChange={(e) => updatePrinterSetting(index, 'bill', e.target.checked ? 1 : 0)}
-                          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                          className="w-4 h-4 text-[#C69A11] border-gray-300 rounded focus:ring-[#E4B315]/40"
                         />
                         <label className="ml-2 text-sm text-gray-700">Enable Bill Printing</label>
                       </div>
@@ -989,7 +1015,7 @@ const RoomSetup: React.FC = () => {
                           type="checkbox"
                           checked={printer.custom_kot_print === 1}
                           onChange={(e) => updatePrinterSetting(index, 'custom_kot_print', e.target.checked ? 1 : 0)}
-                          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                          className="w-4 h-4 text-[#C69A11] border-gray-300 rounded focus:ring-[#E4B315]/40"
                         />
                         <label className="ml-2 text-sm text-gray-700">Enable KOT Printing</label>
                       </div>
@@ -998,7 +1024,7 @@ const RoomSetup: React.FC = () => {
                           type="checkbox"
                           checked={printer.custom_block_takeaway_kot === 1}
                           onChange={(e) => updatePrinterSetting(index, 'custom_block_takeaway_kot', e.target.checked ? 1 : 0)}
-                          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                          className="w-4 h-4 text-[#C69A11] border-gray-300 rounded focus:ring-[#E4B315]/40"
                         />
                         <label className="ml-2 text-sm text-gray-700">Block Takeaway KOT</label>
                       </div>
