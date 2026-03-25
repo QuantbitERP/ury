@@ -10,12 +10,7 @@ import Suppliers from './pages/Suppliers';
 import InventoryManagement from './pages/InventoryManagement';
 import CategoriesManagement from './pages/CategoriesManagement';
 import UnitsManagement from './pages/UnitsManagement';
-import StockTransfers from './pages/StockTransfers';
-import StockTracking from './pages/StockTracking';
 import SalesReport from './pages/reports/sales-report';
-import PurchaseOrders from './pages/PurchaseOrders';
-import GoodsReceipts from './pages/GoodsReceipts';
-import SupplierReturns from './pages/SupplierReturns';
 import FinancialAccounting from './pages/finance/FinancialAccounting';
 import AccountsPayable from './pages/AccountsPayable';
 import AccountsReceivable from './pages/AccountsReceivable';
@@ -41,6 +36,7 @@ import AllEvents from './pages/events/AllEvents';
 import EventTypes from './pages/events/EventTypes';
 import EventReports from './pages/events/EventReports';
 import EventForm from './pages/events/EventForm';
+import MenuPackages from './pages/events/MenuPackages';
 import Reservations from './pages/Reservations';
 import BarDisplay from './pages/BarDisplay';
 import BranchSetup from './pages/BranchSetup';
@@ -79,7 +75,7 @@ function App() {
                   <RouteGuard>
                     <Routes>
                       <Route path="/" element={<POS />} />
-                      <Route path="/dashboard" element={< DashboardHome/>} />
+                      <Route path="/dashboard" element={< DashboardHome />} />
                       <Route path="/dashboard/landing" element={<CloudClicLanding />} />
                       <Route path="/orders" element={<Orders />} />
                       <Route path="/kot" element={<KOTSystem />} />
@@ -90,11 +86,11 @@ function App() {
                       <Route path="/inventory" element={<InventoryManagement />} />
                       <Route path="/categories" element={<CategoriesManagement />} />
                       <Route path="/units" element={<UnitsManagement />} />
-                      <Route path="/stock-transfers" element={<StockTransfers />} />
-                      <Route path="/stock-tracking" element={<StockTracking />} />
-                      <Route path="/purchase-orders" element={<PurchaseOrders />} />
-                      <Route path="/goods-receipts" element={<GoodsReceipts />} />
-                      <Route path="/supplier-returns" element={<SupplierReturns />} />
+                      <Route path="/stock-transfers" element={<InventoryManagement />} />
+                      <Route path="/stock-tracking" element={<InventoryManagement />} />
+                      <Route path="/purchase-orders" element={<InventoryManagement />} />
+                      <Route path="/goods-receipts" element={<InventoryManagement />} />
+                      <Route path="/supplier-returns" element={<InventoryManagement />} />
                       <Route path="/reports/sales-report" element={<SalesReport />} />
                       <Route path="/finance/accounting" element={<FinancialAccounting />}>
                         <Route path="chart-of-accounts" element={<ChartOfAccounts />} />
@@ -123,6 +119,7 @@ function App() {
                       <Route path="/events/all-events/:action/:id" element={<EventForm />} />
                       <Route path="/events/event-types" element={<EventTypes />} />
                       <Route path="/events/reports" element={<EventReports />} />
+                      <Route path="/events/menu-packages" element={<MenuPackages />} />
                       <Route path="/reservations" element={<Reservations />} />
                       <Route path="/bar-display" element={<BarDisplay />} />
                       <Route path="/payment" element={<Orders />} />

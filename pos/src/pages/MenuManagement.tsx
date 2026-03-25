@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Plus, Edit2, Trash2, AlertTriangle, ChefHat, BookOpen, Settings, Download, X, Star, ArrowLeft } from 'lucide-react';
 import { getURYMenus, createMenuItem, updateMenuItem, searchItems, URYMenuItem, NewMenuItem, ItemSearchResult } from '../lib/menu-api';
-
+import PageLayout from '../components/PageLayout';
 interface MenuItemDisplay {
   id: string;
   name: string;
@@ -54,10 +54,10 @@ const CategoriesContent: React.FC = () => {
     try {
       // First check which menu items are using this category
       const checkResponse = await fetch(`/api/resource/URY Menu Item?filters=[["course","=","${categoryName}"]]&fields=["item_name","name"]`);
-      
+
       if (checkResponse.ok) {
         const checkData = await checkResponse.json();
-        
+
         if (checkData.data && checkData.data.length > 0) {
           const menuItems = checkData.data.map((item: any) => item.item_name || item.name);
           // Show custom alert with usage information
@@ -86,14 +86,14 @@ const CategoriesContent: React.FC = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        
+
         // Handle LinkExistsError specifically
         if (errorData.exc_type === 'LinkExistsError') {
           const message = errorData.exception || errorData._server_messages;
           // Extract the linked menu name from the error message
           const linkedMenuMatch = message.match(/linked with URY Menu <[^>]*>([^<]+)</);
           const linkedMenu = linkedMenuMatch ? linkedMenuMatch[1] : 'menu items';
-          
+
           // Show custom alert for linked error
           setAlertData({
             type: 'error',
@@ -103,7 +103,7 @@ const CategoriesContent: React.FC = () => {
           setShowAlert(true);
           return;
         }
-        
+
         throw new Error(errorData.message || 'Failed to delete category');
       }
 
@@ -137,7 +137,7 @@ const CategoriesContent: React.FC = () => {
 
     try {
       setIsCreating(true);
-      
+
       // Create new category using Frappe API
       const response = await fetch('/api/resource/URY Menu Course', {
         method: 'POST',
@@ -157,10 +157,10 @@ const CategoriesContent: React.FC = () => {
       }
 
       const result = await response.json();
-      
+
       // Refresh the categories list
       fetchCategories();
-      
+
       // Reset form and close modal
       setNewCategory({
         course: '',
@@ -168,10 +168,10 @@ const CategoriesContent: React.FC = () => {
         custom_indicate_in_kds: false
       });
       setShowAddModal(false);
-      
+
       // Show success message
       alert('Category created successfully!');
-      
+
     } catch (err: any) {
       alert(`Error creating category: ${err.message}`);
     } finally {
@@ -197,7 +197,7 @@ const CategoriesContent: React.FC = () => {
           <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
           <p className="text-red-600 font-medium">Error loading categories</p>
           <p className="text-gray-600 text-sm mt-2">{error}</p>
-          <button 
+          <button
             onClick={fetchCategories}
             className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
@@ -223,7 +223,7 @@ const CategoriesContent: React.FC = () => {
             <div className="text-sm text-gray-500">
               <span className="font-medium">{categories.length}</span> categories
             </div>
-            <button 
+            <button
               onClick={() => setShowAddModal(true)}
               className="bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-medium py-2 px-4 rounded-lg flex items-center gap-2 transition-colors"
             >
@@ -269,17 +269,16 @@ const CategoriesContent: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        category.custom_indicate_in_kds 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-gray-100 text-gray-800'
-                      }`}>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${category.custom_indicate_in_kds
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-gray-100 text-gray-800'
+                        }`}>
                         {category.custom_indicate_in_kds ? 'Yes' : 'No'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <div className="flex items-center gap-2">
-                        <button 
+                        <button
                           onClick={() => handleDeleteCategory(category.name)}
                           className="text-gray-400 hover:text-red-600 transition-colors"
                         >
@@ -312,9 +311,8 @@ const CategoriesContent: React.FC = () => {
         <div className="fixed inset-0 bg-black/80 bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
             <div className="flex items-start gap-4">
-              <div className={`flex-shrink-0 p-2 rounded-full ${
-                alertData.type === 'usage' ? 'bg-yellow-100' : 'bg-red-100'
-              }`}>
+              <div className={`flex-shrink-0 p-2 rounded-full ${alertData.type === 'usage' ? 'bg-yellow-100' : 'bg-red-100'
+                }`}>
                 {alertData.type === 'usage' ? (
                   <AlertTriangle className="h-6 w-6 text-yellow-600" />
                 ) : (
@@ -325,7 +323,7 @@ const CategoriesContent: React.FC = () => {
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
                   {alertData.type === 'usage' ? 'Category in Use' : 'Cannot Delete Category'}
                 </h3>
-                
+
                 {alertData.type === 'usage' && alertData.menuItems && (
                   <div className="mb-4">
                     <p className="text-sm text-gray-600 mb-3">
@@ -340,13 +338,13 @@ const CategoriesContent: React.FC = () => {
                     </div>
                   </div>
                 )}
-                
+
                 {alertData.type === 'error' && (
                   <p className="text-sm text-gray-600 mb-4">
                     {alertData.message}
                   </p>
                 )}
-                
+
                 <div className="flex gap-3">
                   {alertData.type === 'usage' ? (
                     <>
@@ -494,7 +492,7 @@ const ExportContent: React.FC<{
                 <p className="text-sm text-gray-600">Download all menu items with details</p>
               </div>
             </div>
-            
+
             <div className="space-y-2 text-sm text-gray-600 mb-4">
               <div className="flex items-center">
                 <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
@@ -513,7 +511,7 @@ const ExportContent: React.FC<{
                 Enable/Disable Status
               </div>
             </div>
-            
+
             <button
               onClick={onExportMenuItems}
               disabled={loading}
@@ -534,7 +532,7 @@ const ExportContent: React.FC<{
                 <p className="text-sm text-gray-600">Download all categories with settings</p>
               </div>
             </div>
-            
+
             <div className="space-y-2 text-sm text-gray-600 mb-4">
               <div className="flex items-center">
                 <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
@@ -553,7 +551,7 @@ const ExportContent: React.FC<{
                 Creation Details
               </div>
             </div>
-            
+
             <button
               onClick={onExportCategories}
               disabled={loading}
@@ -644,17 +642,17 @@ const MenuManagement: React.FC = () => {
       setLoading(true);
       setError(null);
       const menus = await getURYMenus();
-      
+
       // Flatten all menu items from all menus and extract unique categories
       const allItems: MenuItemDisplay[] = [];
       const uniqueCategories = new Set<string>(['All']);
-      
+
       menus.forEach(menu => {
         if (menu.items && Array.isArray(menu.items)) {
           menu.items.forEach((item: URYMenuItem) => {
             const category = item.course || 'Uncategorized';
             uniqueCategories.add(category);
-            
+
             allItems.push({
               id: item.name,
               name: item.item_name || item.item,
@@ -666,7 +664,7 @@ const MenuManagement: React.FC = () => {
           });
         }
       });
-      
+
       setMenuItems(allItems);
       setCategories(Array.from(uniqueCategories));
     } catch (err: any) {
@@ -710,27 +708,27 @@ const MenuManagement: React.FC = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        
+
         // Handle LinkExistsError specifically
         if (errorData.exc_type === 'LinkExistsError') {
           const message = errorData.exception || errorData._server_messages;
           alert(`Cannot delete menu item because it is linked to other records. ${message}`);
           return;
         }
-        
+
         throw new Error(errorData.message || 'Failed to delete menu item');
       }
 
       const result = await response.json();
-      
+
       // Remove from frontend UI only after successful backend deletion
       setMenuItems(items => items.filter(item => item.id !== itemId));
-      
+
       // Show success message
       if (result.message) {
         alert(result.message);
       }
-      
+
     } catch (err: any) {
       alert(`Error deleting menu item: ${err.message}`);
     }
@@ -749,10 +747,10 @@ const MenuManagement: React.FC = () => {
 
   const handleUpdateItem = async () => {
     if (!editingItem) return;
-    
+
     try {
       setIsUpdating(true);
-      
+
       // Call backend API to update the menu item
       const updatedItem = await updateMenuItem(editingItem.id, {
         item_name: editFormData.name,
@@ -760,22 +758,22 @@ const MenuManagement: React.FC = () => {
         course: editFormData.category,
         special_dish: editFormData.special_dish
       });
-      
+
       // Update local state with the response from backend
       setMenuItems(items =>
         items.map(item =>
           item.id === editingItem.id
             ? {
-                ...item,
-                name: updatedItem.item_name || editFormData.name,
-                price: updatedItem.rate || editFormData.price,
-                category: updatedItem.course || editFormData.category,
-                special_dish: updatedItem.special_dish === 1 || editFormData.special_dish
-              }
+              ...item,
+              name: updatedItem.item_name || editFormData.name,
+              price: updatedItem.rate || editFormData.price,
+              category: updatedItem.course || editFormData.category,
+              special_dish: updatedItem.special_dish === 1 || editFormData.special_dish
+            }
             : item
         )
       );
-      
+
       setShowEditModal(false);
       setEditingItem(null);
     } catch (error: any) {
@@ -790,7 +788,7 @@ const MenuManagement: React.FC = () => {
     try {
       setIsCreating(true);
       const createdItem = await createMenuItem(newMenuItem);
-      
+
       // Add the new item to the local state
       const displayItem: MenuItemDisplay = {
         id: createdItem.name,
@@ -800,9 +798,9 @@ const MenuManagement: React.FC = () => {
         enabled: createdItem.disabled === 0,
         special_dish: createdItem.special_dish === 1
       };
-      
+
       setMenuItems(prev => [...prev, displayItem]);
-      
+
       // Reset form and close modal
       setNewMenuItem({
         item: '',
@@ -812,7 +810,7 @@ const MenuManagement: React.FC = () => {
         special_dish: false
       });
       setShowAddModal(false);
-      
+
     } catch (error: any) {
       console.error('Error creating menu item:', error);
       alert('Failed to create menu item: ' + (error.message || 'Unknown error'));
@@ -826,7 +824,7 @@ const MenuManagement: React.FC = () => {
       setItemSearchResults([]);
       return;
     }
-    
+
     try {
       const results = await searchItems(searchTerm);
       setItemSearchResults(results);
@@ -850,12 +848,12 @@ const MenuManagement: React.FC = () => {
   const handleExportMenuItems = async () => {
     try {
       setExportLoading(true);
-      
+
       // Use the existing menu data that's already loaded
       if (menuItems.length === 0) {
         throw new Error('No menu items data available. Please ensure menu items are loaded first.');
       }
-      
+
       // Transform the data for export
       const exportData = menuItems.map((item) => ({
         item_name: item.name,
@@ -865,7 +863,7 @@ const MenuManagement: React.FC = () => {
         special_dish: item.special_dish ? 1 : 0,
         disabled: item.enabled ? 0 : 1
       }));
-      
+
       downloadCSV(exportData, 'menu_items', [
         { key: 'item_name', label: 'Item Name' },
         { key: 'item', label: 'Item Code' },
@@ -874,7 +872,7 @@ const MenuManagement: React.FC = () => {
         { key: 'special_dish', label: 'Special Dish' },
         { key: 'disabled', label: 'Enabled' }
       ]);
-      
+
     } catch (err: any) {
       console.error('Export error:', err);
       alert('Error exporting menu items: ' + err.message);
@@ -886,11 +884,11 @@ const MenuManagement: React.FC = () => {
   const handleExportCategories = async () => {
     try {
       setExportLoading(true);
-      
+
       // Fetch all categories for export
       const response = await fetch('/api/resource/URY Menu Course?fields=["*"]');
       const data = await response.json();
-      
+
       if (data.data) {
         setExportData(prev => ({ ...prev, categories: data.data }));
         downloadCSV(data.data, 'categories', [
@@ -912,7 +910,7 @@ const MenuManagement: React.FC = () => {
   const downloadCSV = (data: any[], filename: string, columns: { key: string; label: string }[]) => {
     // Create CSV content
     const headers = columns.map(col => col.label).join(',');
-    const rows = data.map(item => 
+    const rows = data.map(item =>
       columns.map(col => {
         const value = item[col.key];
         // Handle special characters and formatting
@@ -922,9 +920,9 @@ const MenuManagement: React.FC = () => {
         return value || '';
       }).join(',')
     );
-    
+
     const csvContent = [headers, ...rows].join('\n');
-    
+
     // Create download link
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -958,7 +956,7 @@ const MenuManagement: React.FC = () => {
             <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
             <p className="text-red-600 font-medium">Error loading menu data</p>
             <p className="text-gray-600 text-sm mt-2">{error}</p>
-            <button 
+            <button
               onClick={fetchMenuData}
               className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
@@ -971,403 +969,401 @@ const MenuManagement: React.FC = () => {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      {/* Left Sidebar - Sub Menu */}
-      <div className="w-64 bg-white border-r border-gray-200 p-4">
-        <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-4">
-          Menu Management
-        </h3>
-        <nav className="space-y-1">
-          {subMenuItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setActiveSection(item.id)}
-                className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  activeSection === item.id
+    <PageLayout title="Menu Management" subtitle="Manage your restaurant's menus and categories">
+      <div className="flex h-full bg-gray-50">
+        {/* Left Sidebar - Sub Menu */}
+        <div className="w-64 bg-white border-r border-gray-200 p-4">
+          <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-4">
+            Menu Management
+          </h3>
+          <nav className="space-y-1">
+            {subMenuItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveSection(item.id)}
+                  className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeSection === item.id
                     ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-700'
                     : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                {item.name}
-              </button>
-            );
-          })}
-        </nav>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 overflow-auto">
-        {activeSection === 'menu-items' ? (
-          <>
-            {/* Header */}
-            <div className="bg-white border-b border-gray-200 px-6 py-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900">Menu Items</h1>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Manage your restaurant's menu items
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <button 
-                    onClick={() => window.location.href = '/'}
-                    className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg flex items-center gap-2 transition-colors"
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                    Back to POS
-                  </button>
-                  <div className="text-sm text-gray-500">
-                    <span className="font-medium">{filteredItems.length}</span> items
-                  </div>
-                  <button 
-                    onClick={() => setShowAddModal(true)}
-                    className="bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-medium py-2 px-4 rounded-lg flex items-center gap-2 transition-colors"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Add Menu Item
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Alert */}
-            <div className="mx-6 mt-4 bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
-              <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <h4 className="text-sm font-semibold text-red-800">
-                  Missing Recipes for Inventory Tracking
-                </h4>
-                <p className="text-sm text-red-700 mt-1">
-                  7 menu items don't have recipes configured. Stock usage won't be tracked for orders containing these items. 
-                  <a href="#" className="underline font-medium">
-                    Go to the Recipes tab to add recipes for these items to enable proper Inventory tracking.
-                  </a>
-                </p>
-              </div>
-            </div>
-
-            {/* Search and Filters */}
-            <div className="px-6 mt-6">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search menu items..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-              </div>
-
-              {/* Category Filters */}
-              <div className="flex gap-2 overflow-x-auto pb-2">
-                {categories.map((category) => (
-                  <button
-                    key={category}
-                    onClick={() => setSelectedCategory(category)}
-                    className={`px-4 py-2 text-sm font-medium rounded-full whitespace-nowrap transition-colors ${
-                      selectedCategory === category
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
                     }`}
-                  >
-                    {category}
-                  </button>
-                ))}
-              </div>
-            </div>
+                >
+                  <Icon className="h-4 w-4" />
+                  {item.name}
+                </button>
+              );
+            })}
+          </nav>
+        </div>
 
-            {/* Menu Items Grid */}
-            <div className="px-6 mt-6 pb-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {filteredItems.map((item) => (
-                  <div key={item.id} className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
-                    <div className="flex justify-between items-start mb-3">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-semibold text-gray-900">{item.name}</h3>
-                          {item.special_dish && (
-                            <div className="flex items-center gap-1 bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">
-                              <Star className="h-3 w-3 fill-current" />
-                              Special
-                            </div>
-                          )}
-                        </div>
-                        <p className="text-lg font-bold text-gray-900 mt-1">KSh {item.price}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => toggleItemStatus(item.id)}
-                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                            item.enabled ? 'bg-green-500' : 'bg-gray-300'
-                          }`}
-                        >
-                          <span
-                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                              item.enabled ? 'translate-x-6' : 'translate-x-1'
-                            }`}
-                          />
-                        </button>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                        {item.category}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <button 
-                          onClick={() => handleEditItem(item)}
-                          className="text-gray-400 hover:text-blue-600 transition-colors"
-                        >
-                          <Edit2 className="h-4 w-4" />
-                        </button>
-                        <button 
-                          onClick={() => deleteItem(item.id)}
-                          className="p-1 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {filteredItems.length === 0 && (
-                <div className="text-center py-12">
-                  <div className="text-gray-500">
-                    <ChefHat className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No menu items found</h3>
-                    <p className="text-gray-500">
-                      {searchTerm || selectedCategory !== 'All' 
-                        ? 'Try adjusting your search or filter criteria' 
-                        : 'Get started by adding your first menu item'}
+        {/* Main Content */}
+        <div className="flex-1 overflow-auto">
+          {activeSection === 'menu-items' ? (
+            <>
+              {/* Header */}
+              <div className="bg-white border-b border-gray-200 px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h1 className="text-2xl font-bold text-gray-900">Menu Items</h1>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Manage your restaurant's menu items
                     </p>
                   </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => window.location.href = '/'}
+                      className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg flex items-center gap-2 transition-colors"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                      Back to POS
+                    </button>
+                    <div className="text-sm text-gray-500">
+                      <span className="font-medium">{filteredItems.length}</span> items
+                    </div>
+                    <button
+                      onClick={() => setShowAddModal(true)}
+                      className="bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-medium py-2 px-4 rounded-lg flex items-center gap-2 transition-colors"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add Menu Item
+                    </button>
+                  </div>
                 </div>
-              )}
+              </div>
+
+              {/* Alert */}
+              <div className="mx-6 mt-4 bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="text-sm font-semibold text-red-800">
+                    Missing Recipes for Inventory Tracking
+                  </h4>
+                  <p className="text-sm text-red-700 mt-1">
+                    7 menu items don't have recipes configured. Stock usage won't be tracked for orders containing these items.
+                    <a href="#" className="underline font-medium">
+                      Go to the Recipes tab to add recipes for these items to enable proper Inventory tracking.
+                    </a>
+                  </p>
+                </div>
+              </div>
+
+              {/* Search and Filters */}
+              <div className="px-6 mt-6">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="flex-1 relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Search menu items..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+
+                {/* Category Filters */}
+                <div className="flex gap-2 overflow-x-auto pb-2">
+                  {categories.map((category) => (
+                    <button
+                      key={category}
+                      onClick={() => setSelectedCategory(category)}
+                      className={`px-4 py-2 text-sm font-medium rounded-full whitespace-nowrap transition-colors ${selectedCategory === category
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                        }`}
+                    >
+                      {category}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Menu Items Grid */}
+              <div className="px-6 mt-6 pb-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {filteredItems.map((item) => (
+                    <div key={item.id} className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-semibold text-gray-900">{item.name}</h3>
+                            {item.special_dish && (
+                              <div className="flex items-center gap-1 bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">
+                                <Star className="h-3 w-3 fill-current" />
+                                Special
+                              </div>
+                            )}
+                          </div>
+                          <p className="text-lg font-bold text-gray-900 mt-1">KSh {item.price}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => toggleItemStatus(item.id)}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${item.enabled ? 'bg-green-500' : 'bg-gray-300'
+                              }`}
+                          >
+                            <span
+                              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${item.enabled ? 'translate-x-6' : 'translate-x-1'
+                                }`}
+                            />
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                          {item.category}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleEditItem(item)}
+                            className="text-gray-400 hover:text-blue-600 transition-colors"
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => deleteItem(item.id)}
+                            className="p-1 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {filteredItems.length === 0 && (
+                  <div className="text-center py-12">
+                    <div className="text-gray-500">
+                      <ChefHat className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">No menu items found</h3>
+                      <p className="text-gray-500">
+                        {searchTerm || selectedCategory !== 'All'
+                          ? 'Try adjusting your search or filter criteria'
+                          : 'Get started by adding your first menu item'}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          ) : activeSection === 'categories' ? (
+            <CategoriesContent />
+          ) : activeSection === 'export' ? (
+            <ExportContent
+              onExportMenuItems={handleExportMenuItems}
+              onExportCategories={handleExportCategories}
+              loading={exportLoading}
+            />
+          ) : (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <Settings className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  {subMenuItems.find(item => item.id === activeSection)?.name || 'Section'}
+                </h3>
+                <p className="text-gray-500">This section is coming soon</p>
+              </div>
             </div>
-          </>
-        ) : activeSection === 'categories' ? (
-          <CategoriesContent />
-        ) : activeSection === 'export' ? (
-          <ExportContent 
-            onExportMenuItems={handleExportMenuItems}
-            onExportCategories={handleExportCategories}
-            loading={exportLoading}
-          />
-        ) : (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center">
-              <Settings className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                {subMenuItems.find(item => item.id === activeSection)?.name || 'Section'}
-              </h3>
-              <p className="text-gray-500">This section is coming soon</p>
+          )}
+        </div>
+
+        {/* Add Menu Item Modal */}
+        {showAddModal && (
+          <div className="fixed inset-0 bg-black/80 bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold text-gray-900">Add New Menu Item</h2>
+                <button
+                  onClick={() => setShowAddModal(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={newMenuItem.item_name || itemSearchTerm}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setNewMenuItem(prev => ({ ...prev, item: value, item_name: value }));
+                        setItemSearchTerm(value);
+                        handleItemSearch(value);
+                      }}
+                      onFocus={() => setShowItemSearch(true)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Enter item name or search"
+                    />
+                    {showItemSearch && itemSearchResults.length > 0 && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                        {itemSearchResults.map((item) => (
+                          <div
+                            key={item.name}
+                            onClick={() => selectItem(item)}
+                            className="px-3 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
+                          >
+                            <div className="font-medium text-gray-900">{item.item_name}</div>
+                            <div className="text-sm text-gray-500">{item.item_group} • {item.stock_uom}</div>
+                            {item.description && (
+                              <div className="text-xs text-gray-400 mt-1">{item.description}</div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Price</label>
+                  <input
+                    type="number"
+                    value={newMenuItem.rate}
+                    onChange={(e) => setNewMenuItem(prev => ({ ...prev, rate: parseFloat(e.target.value) || 0 }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Enter price"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                  <select
+                    value={newMenuItem.course}
+                    onChange={(e) => setNewMenuItem(prev => ({ ...prev, course: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Select category</option>
+                    {categories.filter(cat => cat !== 'All').map(category => (
+                      <option key={category} value={category}>{category}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Special Dish</label>
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={newMenuItem.special_dish}
+                      onChange={(e) => setNewMenuItem(prev => ({ ...prev, special_dish: e.target.checked }))}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">Mark as special dish</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 mt-6">
+                <button
+                  onClick={() => setShowAddModal(false)}
+                  className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAddMenuItem}
+                  disabled={isCreating || !newMenuItem.item_name.trim() || newMenuItem.rate <= 0}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {isCreating ? 'Adding...' : 'Add Item'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Menu Item Modal */}
+        {showEditModal && editingItem && (
+          <div className="fixed inset-0 bg-black/80 bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold text-gray-900">Edit Menu Item</h2>
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                  <input
+                    type="text"
+                    value={editFormData.name}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, name: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Enter item name"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Price</label>
+                  <input
+                    type="number"
+                    value={editFormData.price}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Enter price"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                  <select
+                    value={editFormData.category}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, category: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Select category</option>
+                    {categories.filter(cat => cat !== 'All').map(category => (
+                      <option key={category} value={category}>{category}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Special Dish</label>
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={editFormData.special_dish}
+                      onChange={(e) => setEditFormData(prev => ({ ...prev, special_dish: e.target.checked }))}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">Mark as special dish</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 mt-6">
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleUpdateItem}
+                  disabled={isUpdating || !editFormData.name.trim() || editFormData.price <= 0}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {isUpdating ? 'Updating...' : 'Update Item'}
+                </button>
+              </div>
             </div>
           </div>
         )}
       </div>
-
-      {/* Add Menu Item Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black/80 bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Add New Menu Item</h2>
-              <button
-                onClick={() => setShowAddModal(false)}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={newMenuItem.item_name || itemSearchTerm}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setNewMenuItem(prev => ({ ...prev, item: value, item_name: value }));
-                      setItemSearchTerm(value);
-                      handleItemSearch(value);
-                    }}
-                    onFocus={() => setShowItemSearch(true)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Enter item name or search"
-                  />
-                  {showItemSearch && itemSearchResults.length > 0 && (
-                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
-                      {itemSearchResults.map((item) => (
-                        <div
-                          key={item.name}
-                          onClick={() => selectItem(item)}
-                          className="px-3 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
-                        >
-                          <div className="font-medium text-gray-900">{item.item_name}</div>
-                          <div className="text-sm text-gray-500">{item.item_group} • {item.stock_uom}</div>
-                          {item.description && (
-                            <div className="text-xs text-gray-400 mt-1">{item.description}</div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Price</label>
-                <input
-                  type="number"
-                  value={newMenuItem.rate}
-                  onChange={(e) => setNewMenuItem(prev => ({ ...prev, rate: parseFloat(e.target.value) || 0 }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter price"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                <select
-                  value={newMenuItem.course}
-                  onChange={(e) => setNewMenuItem(prev => ({ ...prev, course: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select category</option>
-                  {categories.filter(cat => cat !== 'All').map(category => (
-                    <option key={category} value={category}>{category}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Special Dish</label>
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={newMenuItem.special_dish}
-                    onChange={(e) => setNewMenuItem(prev => ({ ...prev, special_dish: e.target.checked }))}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                  />
-                  <span className="ml-2 text-sm text-gray-700">Mark as special dish</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-3 mt-6">
-              <button
-                onClick={() => setShowAddModal(false)}
-                className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleAddMenuItem}
-                disabled={isCreating || !newMenuItem.item_name.trim() || newMenuItem.rate <= 0}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {isCreating ? 'Adding...' : 'Add Item'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Menu Item Modal */}
-      {showEditModal && editingItem && (
-        <div className="fixed inset-0 bg-black/80 bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Edit Menu Item</h2>
-              <button
-                onClick={() => setShowEditModal(false)}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                <input
-                  type="text"
-                  value={editFormData.name}
-                  onChange={(e) => setEditFormData(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter item name"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Price</label>
-                <input
-                  type="number"
-                  value={editFormData.price}
-                  onChange={(e) => setEditFormData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter price"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                <select
-                  value={editFormData.category}
-                  onChange={(e) => setEditFormData(prev => ({ ...prev, category: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select category</option>
-                  {categories.filter(cat => cat !== 'All').map(category => (
-                    <option key={category} value={category}>{category}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Special Dish</label>
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={editFormData.special_dish}
-                    onChange={(e) => setEditFormData(prev => ({ ...prev, special_dish: e.target.checked }))}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                  />
-                  <span className="ml-2 text-sm text-gray-700">Mark as special dish</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-3 mt-6">
-              <button
-                onClick={() => setShowEditModal(false)}
-                className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleUpdateItem}
-                disabled={isUpdating || !editFormData.name.trim() || editFormData.price <= 0}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {isUpdating ? 'Updating...' : 'Update Item'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+    </PageLayout>
   );
 };
 

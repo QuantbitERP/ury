@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
     Plus, X, Trash2, ShoppingCart, Clock, DollarSign,
     TrendingUp, FileText, ChevronRight, Search, RefreshCw,
@@ -117,6 +117,108 @@ const MetricCard: React.FC<{
     </div>
 );
 
+// ─── Searchable Item Select Component ────────────────────────────────────────
+const ItemSearchSelect: React.FC<{
+    value: string;
+    onChange: (item_code: string) => void;
+    items: ItemOption[];
+    placeholder?: string;
+    className?: string;
+}> = ({ value, onChange, items, placeholder = "Select item", className = "" }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [highlightedIndex, setHighlightedIndex] = useState(-1);
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    const filteredItems = items.filter(item =>
+        item.item_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.item_code.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    const selectedItem = items.find(i => i.item_code === value);
+
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (inputRef.current && !inputRef.current.contains(e.target as Node)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (!isOpen) return;
+        
+        if (e.key === 'ArrowDown') {
+            setHighlightedIndex(prev => Math.min(prev + 1, filteredItems.length - 1));
+            e.preventDefault();
+        } else if (e.key === 'ArrowUp') {
+            setHighlightedIndex(prev => Math.max(prev - 1, 0));
+            e.preventDefault();
+        } else if (e.key === 'Enter') {
+            if (highlightedIndex >= 0 && filteredItems[highlightedIndex]) {
+                onChange(filteredItems[highlightedIndex].item_code);
+                setSearchTerm(filteredItems[highlightedIndex].item_name);
+                setIsOpen(false);
+                setHighlightedIndex(-1);
+            }
+            e.preventDefault();
+        } else if (e.key === 'Escape') {
+            setIsOpen(false);
+            setHighlightedIndex(-1);
+        }
+    };
+
+    return (
+        <div className="relative" ref={inputRef}>
+            <input
+                type="text"
+                value={isOpen ? searchTerm : (selectedItem?.item_name || '')}
+                onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setIsOpen(true);
+                    setHighlightedIndex(-1);
+                }}
+                onFocus={() => setIsOpen(true)}
+                onKeyDown={handleKeyDown}
+                placeholder={placeholder}
+                className={`${INPUT} appearance-none pr-8 ${className}`}
+                style={{ borderColor: value ? undefined : '#f59e0b' }}
+            />
+            <ChevronRight className="absolute right-2 top-2.5 h-4 w-4 text-gray-400 rotate-90 pointer-events-none" />
+            
+            {isOpen && (
+                <div className="absolute w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
+                    {filteredItems.length === 0 ? (
+                        <div className="p-3 text-center text-gray-400 text-sm">
+                            {searchTerm ? 'No items found' : 'Type to search items...'}
+                        </div>
+                    ) : (
+                        filteredItems.map((item, index) => (
+                            <div
+                                key={item.item_code}
+                                className={`px-3 py-2 cursor-pointer text-sm border-b border-gray-50 last:border-b-0 ${
+                                    index === highlightedIndex ? 'bg-amber-50 text-amber-700' : 'hover:bg-gray-50'
+                                } ${value === item.item_code ? 'bg-blue-50 text-blue-700 font-medium' : ''}`}
+                                onClick={() => {
+                                    onChange(item.item_code);
+                                    setSearchTerm(item.item_name);
+                                    setIsOpen(false);
+                                    setHighlightedIndex(-1);
+                                }}
+                            >
+                                <div className="font-medium">{item.item_name}</div>
+                                <div className="text-xs text-gray-400">{item.item_code}</div>
+                            </div>
+                        ))
+                    )}
+                </div>
+            )}
+        </div>
+    );
+};
+
 // ─── Item row ─────────────────────────────────────────────────────────────────
 const DISCOUNT_TYPES = ['No discount', 'Percentage', 'Fixed Amount'];
 
@@ -138,20 +240,13 @@ const ItemRow: React.FC<{
                 {/* Ingredient */}
                 <div className="space-y-1">
                     <label className="text-xs font-medium text-gray-400">Ingredient</label>
-                    <div className="relative">
-                        <select
-                            value={item.item_code}
-                            onChange={e => onSelectItem(item.id, e.target.value)}
-                            className={INPUT + ' border-amber-400 focus-visible:ring-amber-400 appearance-none pr-8'}
-                            style={{ borderColor: item.item_code ? undefined : '#f59e0b' }}
-                        >
-                            <option value="">Select ingredient</option>
-                            {items.map(i => (
-                                <option key={i.item_code} value={i.item_code}>{i.item_name}</option>
-                            ))}
-                        </select>
-                        <ChevronRight className="absolute right-2 top-2.5 h-4 w-4 text-gray-400 rotate-90 pointer-events-none" />
-                    </div>
+                    <ItemSearchSelect
+                        value={item.item_code}
+                        onChange={(item_code) => onSelectItem(item.id, item_code)}
+                        items={items}
+                        placeholder="Select ingredient"
+                        className={item.item_code ? '' : 'border-amber-400 focus-visible:ring-amber-400'}
+                    />
                 </div>
 
                 {/* Quantity */}
@@ -669,13 +764,13 @@ const PurchaseOrders: React.FC = () => {
         try {
             const [suppRes, itemsRes] = await Promise.all([
                 fetch(`/api/resource/Supplier?fields=${encodeURIComponent(JSON.stringify(['name', 'supplier_name']))}&limit=200`),
-                fetch(`/api/resource/Item?filters=${encodeURIComponent(JSON.stringify([['is_stock_item', '=', '1']]))}&fields=${encodeURIComponent(JSON.stringify(['name', 'item_code', 'item_name', 'valuation_rate']))}&limit=500`),
+                fetch(`/api/resource/Item?filters=${encodeURIComponent(JSON.stringify([['is_stock_item', '=', '1']]))}&fields=${encodeURIComponent(JSON.stringify(['name', 'item_code', 'item_name', 'valuation_rate']))}&limit=1000`),
             ]);
             if (suppRes.ok) setSuppliers((await suppRes.json()).data || []);
             if (itemsRes.ok) {
                 const rawItems = (await itemsRes.json()).data || [];
                 const enriched: ItemOption[] = await Promise.all(
-                    rawItems.slice(0, 100).map(async (i: any) => {
+                    rawItems.map(async (i: any) => {
                         let opening_stock = i.valuation_rate || 0;
                         try {
                             const dr = await fetch(`/api/resource/Item/${encodeURIComponent(i.item_code)}`);

@@ -119,10 +119,10 @@ const fmt = (d: string) =>
 
 // Status badge colours — matching Orders.tsx palette
 const statusColors: Record<string, string> = {
-  open:      'bg-[#E4B315]/10 text-[#C69A11] border border-[#E4B315]/30',
+  open: 'bg-[#E4B315]/10 text-[#C69A11] border border-[#E4B315]/30',
   completed: 'bg-green-50 text-green-700 border border-green-200',
   cancelled: 'bg-red-50 text-red-700 border border-red-200',
-  closed:    'bg-sky-50 text-sky-700 border border-sky-200',
+  closed: 'bg-sky-50 text-sky-700 border border-sky-200',
 };
 
 const apiGet = async (url: string) => {
@@ -132,19 +132,6 @@ const apiGet = async (url: string) => {
   return d.data ?? d.message ?? d;
 };
 
-const apiPost = async (url: string, body: object) => {
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Frappe-CSRF-Token': (window as any).csrf_token ?? ''
-    },
-    body: JSON.stringify(body)
-  });
-  if (!res.ok) throw new Error(`${res.status}`);
-  const d = await res.json();
-  return d.data ?? d.message ?? d;
-};
 
 // ─── Shared input / select class strings ─────────────────────────────────────
 
@@ -493,7 +480,7 @@ const RoomSelector = ({ value, rooms, loading, onChange }: {
             <span className={`inline-flex items-center px-3 py-2 rounded-lg text-xs font-semibold
               ${selected.room_type === 'AC' ? 'bg-blue-50 text-blue-700' :
                 selected.room_type === 'NON-AC' ? 'bg-orange-50 text-orange-700' :
-                'bg-teal-50 text-teal-700'}`}>
+                  'bg-teal-50 text-teal-700'}`}>
               {selected.room_type}
             </span>
           </div>
@@ -716,7 +703,7 @@ const AllEvents: React.FC = () => {
   };
 
   const openEdit = async (ev: FrappeEvent) => {
-    const { name, ...rest } = ev;
+    const name = ev.name;
     try {
       const eventData = await apiGet(`/api/resource/Event/${encodeURIComponent(name)}?fields=["*","custom_accessories"]&limit=100`);
       const { name: eventName, ...eventRest } = eventData;
@@ -860,14 +847,10 @@ const AllEvents: React.FC = () => {
   // ─── RENDER ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans">
-
-      {/* ── Header ── */}
-      <div className="bg-white border-b border-gray-100 px-8 py-5 flex items-center justify-between sticky top-0 z-10 shadow-sm">
-        <div>
-          <h1 className="text-2xl font-bold text-[#2D2A26] tracking-tight">Events</h1>
-          <p className="text-xs text-gray-400 mt-0.5">Frappe · Event Doctype</p>
-        </div>
+    <PageLayout
+      title="Events"
+      subtitle="Frappe · Event Doctype"
+      actions={
         <div className="flex gap-2">
           <button
             onClick={() => window.location.href = '/'}
@@ -885,9 +868,9 @@ const AllEvents: React.FC = () => {
             New Event
           </button>
         </div>
-      </div>
-
-      <div className="px-8 py-6 max-w-7xl mx-auto">
+      }
+    >
+      <div className="px-8 py-6 max-w-7xl mx-auto h-full overflow-y-auto">
 
         {/* ── Filters ── */}
         <div className="flex flex-col sm:flex-row gap-3 mb-5">
@@ -1285,7 +1268,7 @@ const AllEvents: React.FC = () => {
           {toast.msg}
         </div>
       )}
-    </div>
+    </PageLayout>
   );
 };
 
