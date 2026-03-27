@@ -320,6 +320,7 @@ interface CreatePOModalProps {
     onCreated: () => void;
     suppliers: { name: string; supplier_name: string }[];
     items: ItemOption[];
+    companies: { name: string }[];
 }
 
 const genPoNumber = () => {
@@ -341,7 +342,7 @@ const calcAmount = (item: POItem): number => {
     return gross;
 };
 
-const CreatePOModal: React.FC<CreatePOModalProps> = ({ onClose, onCreated, suppliers, items }) => {
+const CreatePOModal: React.FC<CreatePOModalProps> = ({ onClose, onCreated, suppliers, items, companies }) => {
     const [tab, setTab] = useState<'details' | 'items'>('details');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [itemsError, setItemsError] = useState(false);
@@ -349,6 +350,7 @@ const CreatePOModal: React.FC<CreatePOModalProps> = ({ onClose, onCreated, suppl
     const [details, setDetails] = useState({
         po_number: genPoNumber(),
         supplier: '',
+        company: '',
         status: 'Submitted',
         transaction_date: todayISO(),
         schedule_date: '',
@@ -407,6 +409,7 @@ const CreatePOModal: React.FC<CreatePOModalProps> = ({ onClose, onCreated, suppl
             const payload: any = {
                 naming_series: 'PO-',
                 supplier: details.supplier,
+                company: details.company,
                 price_list: 'Standard Buying',
                 transaction_date: details.transaction_date,
                 schedule_date: details.schedule_date || details.transaction_date,
@@ -530,15 +533,29 @@ const CreatePOModal: React.FC<CreatePOModalProps> = ({ onClose, onCreated, suppl
                                         </div>
                                     </div>
                                     <div className="space-y-2">
+                                        <label className="text-xs font-bold uppercase tracking-wider text-[#C69A11]">Company *</label>
+                                        <div className="relative">
+                                            <select required className={INPUT + ' appearance-none pr-8'}
+                                                value={details.company}
+                                                onChange={e => setDetails({ ...details, company: e.target.value })}>
+                                                <option value="">Select company</option>
+                                                {companies.map(c => (
+                                                    <option key={c.name} value={c.name}>{c.name}</option>
+                                                ))}
+                                            </select>
+                                            <ChevronRight className="absolute right-2 top-2.5 h-4 w-4 text-gray-400 rotate-90 pointer-events-none" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-3 gap-4">
+                                    <div className="space-y-2">
                                         <label className="text-xs font-bold uppercase tracking-wider text-[#C69A11]">Expected Delivery Date</label>
                                         <input type="date" className={INPUT}
                                             value={details.schedule_date}
                                             onChange={e => setDetails({ ...details, schedule_date: e.target.value })} />
                                         <p className="text-xs text-gray-400">Maps to <code className="font-mono">schedule_date</code></p>
                                     </div>
-                                </div>
-
-                                <div className="grid grid-cols-3 gap-4">
                                     <div className="space-y-2">
                                         <label className="text-xs font-bold uppercase tracking-wider text-[#C69A11]">Order Date</label>
                                         <input type="date" className={INPUT}
@@ -552,6 +569,9 @@ const CreatePOModal: React.FC<CreatePOModalProps> = ({ onClose, onCreated, suppl
                                             value={details.tax_amount || ''}
                                             onChange={e => setDetails({ ...details, tax_amount: parseFloat(e.target.value) || 0 })} />
                                     </div>
+                                </div>
+
+                                <div className="grid grid-cols-3 gap-4">
                                     <div className="space-y-2">
                                         <label className="text-xs font-bold uppercase tracking-wider text-[#C69A11]">Shipping Cost</label>
                                         <input type="number" step="0.01" min="0" className={INPUT} placeholder="0"
@@ -664,6 +684,7 @@ const PurchaseOrders: React.FC = () => {
 
     const [suppliers, setSuppliers] = useState<{ name: string; supplier_name: string }[]>([]);
     const [items, setItems] = useState<ItemOption[]>([]);
+    const [companies, setCompanies] = useState<{ name: string }[]>([]);
 
     useEffect(() => {
         fetchOrders();
@@ -762,9 +783,10 @@ const PurchaseOrders: React.FC = () => {
     // ── Fetch dropdowns ───────────────────────────────────────────────────────
     const fetchDropdowns = async () => {
         try {
-            const [suppRes, itemsRes] = await Promise.all([
+            const [suppRes, itemsRes, companiesRes] = await Promise.all([
                 fetch(`/api/resource/Supplier?fields=${encodeURIComponent(JSON.stringify(['name', 'supplier_name']))}&limit=200`),
                 fetch(`/api/resource/Item?filters=${encodeURIComponent(JSON.stringify([['is_stock_item', '=', '1']]))}&fields=${encodeURIComponent(JSON.stringify(['name', 'item_code', 'item_name', 'valuation_rate']))}&limit=1000`),
+                fetch(`/api/resource/Company?fields=${encodeURIComponent(JSON.stringify(['name']))}&limit_page_length=9999`),
             ]);
             if (suppRes.ok) setSuppliers((await suppRes.json()).data || []);
             if (itemsRes.ok) {
@@ -784,6 +806,7 @@ const PurchaseOrders: React.FC = () => {
                 );
                 setItems(enriched);
             }
+            if (companiesRes.ok) setCompanies((await companiesRes.json()).data || []);
         } catch (err) { console.error('Dropdown fetch error:', err); }
     };
 
@@ -953,6 +976,7 @@ const PurchaseOrders: React.FC = () => {
                     onCreated={() => { fetchOrders(); fetchMetrics(); }}
                     suppliers={suppliers}
                     items={items}
+                    companies={companies}
                 />
             )}
         </main>
