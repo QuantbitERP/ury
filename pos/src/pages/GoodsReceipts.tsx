@@ -257,6 +257,7 @@ interface CreateGRModalProps {
     suppliers: { name: string; supplier_name: string }[];
     items: ItemOption[];
     warehouses: WarehouseOption[];
+    companies: { name: string }[];
 }
 
 const newItemRow = (): GRItem => ({
@@ -273,7 +274,7 @@ const calcAmount = (item: GRItem): number => {
     return gross;
 };
 
-const CreateGRModal: React.FC<CreateGRModalProps> = ({ onClose, onCreated, suppliers, items, warehouses }) => {
+const CreateGRModal: React.FC<CreateGRModalProps> = ({ onClose, onCreated, suppliers, items, warehouses, companies }) => {
     const [tab, setTab] = useState<'details' | 'items'>('details');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [itemsError, setItemsError] = useState(false);
@@ -287,6 +288,7 @@ const CreateGRModal: React.FC<CreateGRModalProps> = ({ onClose, onCreated, suppl
         notes: '',
         overall_notes: '',
         account_currency: 'KSh',
+        company: '',
     });
 
     const [grItems, setGrItems] = useState<GRItem[]>([]);
@@ -398,6 +400,7 @@ const CreateGRModal: React.FC<CreateGRModalProps> = ({ onClose, onCreated, suppl
         try {
             const payload: any = {
                 supplier: details.supplier,
+                company: details.company,
                 purchase_order: details.purchase_order || undefined,
                 set_warehouse: details.set_warehouse,
                 supplier_delivery_note: details.supplier_delivery_note,
@@ -516,6 +519,23 @@ const CreateGRModal: React.FC<CreateGRModalProps> = ({ onClose, onCreated, suppl
                                         </div>
                                     </div>
                                     <div className="space-y-2">
+                                        <label className="text-xs font-bold uppercase tracking-wider text-[#C69A11]">Company *</label>
+                                        <div className="relative">
+                                            <select required className={INPUT + ' appearance-none pr-8'}
+                                                value={details.company}
+                                                onChange={e => setDetails({ ...details, company: e.target.value })}>
+                                                <option value="">Select company</option>
+                                                {companies.map(c => (
+                                                    <option key={c.name} value={c.name}>{c.name}</option>
+                                                ))}
+                                            </select>
+                                            <ChevronRight className="absolute right-2 top-2.5 h-4 w-4 text-gray-400 rotate-90 pointer-events-none" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
                                         <label className="text-xs font-bold uppercase tracking-wider text-[#C69A11]">Requesting Department (Warehouse)</label>
                                         <div className="relative">
                                             <select required className={INPUT + ' appearance-none pr-8'}
@@ -529,9 +549,6 @@ const CreateGRModal: React.FC<CreateGRModalProps> = ({ onClose, onCreated, suppl
                                             <ChevronRight className="absolute right-2 top-2.5 h-4 w-4 text-gray-400 rotate-90 pointer-events-none" />
                                         </div>
                                     </div>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <label className="text-xs font-bold uppercase tracking-wider text-[#C69A11]">Delivery Note Number</label>
                                         <input type="text" className={INPUT}
@@ -539,15 +556,15 @@ const CreateGRModal: React.FC<CreateGRModalProps> = ({ onClose, onCreated, suppl
                                             onChange={e => setDetails({ ...details, supplier_delivery_note: e.target.value })} />
                                         <p className="text-xs text-gray-400">Maps to <code className="font-mono">supplier_delivery_note</code></p>
                                     </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <label className="text-xs font-bold uppercase tracking-wider text-[#C69A11]">Supplier Invoice Number</label>
                                         <input type="text" className={INPUT}
                                             value={details.notes}
                                             onChange={e => setDetails({ ...details, notes: e.target.value })} />
                                     </div>
-                                </div>
-
-                                <div className="grid grid-cols-1 gap-4">
                                     <div className="space-y-2">
                                         <label className="text-xs font-bold uppercase tracking-wider text-[#C69A11]">Invoice Date</label>
                                         <input type="date" className={INPUT}
@@ -660,6 +677,7 @@ const GoodsReceipts: React.FC = () => {
     const [suppliers, setSuppliers] = useState<{ name: string; supplier_name: string }[]>([]);
     const [items, setItems] = useState<ItemOption[]>([]);
     const [warehouses, setWarehouses] = useState<WarehouseOption[]>([]);
+    const [companies, setCompanies] = useState<{ name: string }[]>([]);
 
     useEffect(() => {
         fetchReceipts();
@@ -746,13 +764,15 @@ const GoodsReceipts: React.FC = () => {
 
     const fetchDropdowns = async () => {
         try {
-            const [suppRes, itemsRes, whRes] = await Promise.all([
+            const [suppRes, itemsRes, whRes, companiesRes] = await Promise.all([
                 fetch(`/api/resource/Supplier?fields=${encodeURIComponent(JSON.stringify(['name', 'supplier_name']))}&limit=200`),
                 fetch(`/api/resource/Item?filters=${encodeURIComponent(JSON.stringify([['is_stock_item', '=', '1']]))}&fields=${encodeURIComponent(JSON.stringify(['name', 'item_code', 'item_name', 'valuation_rate']))}&limit=500`),
                 fetch(`/api/resource/Warehouse?fields=${encodeURIComponent(JSON.stringify(['name']))}&limit=200`),
+                fetch(`/api/resource/Company?fields=${encodeURIComponent(JSON.stringify(['name']))}&limit_page_length=9999`),
             ]);
             if (suppRes.ok) setSuppliers((await suppRes.json()).data || []);
             if (whRes.ok) setWarehouses((await whRes.json()).data || []);
+            if (companiesRes.ok) setCompanies((await companiesRes.json()).data || []);
             if (itemsRes.ok) {
                 const rawItems = (await itemsRes.json()).data || [];
                 const enriched: ItemOption[] = await Promise.all(
@@ -942,6 +962,7 @@ const GoodsReceipts: React.FC = () => {
                     suppliers={suppliers}
                     items={items}
                     warehouses={warehouses}
+                    companies={companies}
                 />
             )}
         </main>
