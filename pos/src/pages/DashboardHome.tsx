@@ -10,6 +10,7 @@ import {
   fetchTabData, TabId,
   OverviewData, OperationsData, StaffData, EventsData, AnalyticsData,
 } from '../lib/api/dashboard-api';
+import Sidebar from '../components/Sidebar';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -702,67 +703,74 @@ const DashboardHome = () => {
   const handleRefresh = () => load(activeTab, true);
 
   return (
-    <div className="max-w-7xl mx-auto space-y-5 pb-10">
+    <div className="flex flex-1 overflow-hidden">
+      <Sidebar />
+      <div className="flex-1 flex flex-col h-screen overflow-hidden">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-50/80">
+          <div className="max-w-7xl mx-auto space-y-5 pb-10">
 
-      {/* ── Header ── */}
-      <div className="flex justify-between items-start pt-1">
-        <div>
-          <h1 className="text-2xl font-extrabold text-[#2D2A26] tracking-tight">Quant Restaurant</h1>
-          <p className="text-sm text-gray-400 mt-0.5 font-medium">Real-time restaurant operations dashboard</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="hidden sm:flex items-center gap-1.5 text-xs text-gray-400 font-medium bg-white border border-gray-100 rounded-xl px-3 py-2 shadow-sm">
-            <Clock className="h-3.5 w-3.5" /> {todayStr()}
-          </span>
-          <button
-            onClick={handleRefresh}
-            disabled={loading}
-            className="flex items-center gap-1.5 px-3 py-2 border border-gray-100 bg-white rounded-xl text-sm font-semibold text-gray-600 hover:border-[#E4B315]/40 hover:text-[#C69A11] disabled:opacity-50 transition-all shadow-sm"
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin text-[#E4B315]' : ''}`} />
-            Refresh
-          </button>
+            {/* ── Header ── */}
+            <div className="flex justify-between items-start pt-1">
+              <div>
+                <h1 className="text-2xl font-extrabold text-[#2D2A26] tracking-tight">Quant Restaurant</h1>
+                <p className="text-sm text-gray-400 mt-0.5 font-medium">Real-time restaurant operations dashboard</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="hidden sm:flex items-center gap-1.5 text-xs text-gray-400 font-medium bg-white border border-gray-100 rounded-xl px-3 py-2 shadow-sm">
+                  <Clock className="h-3.5 w-3.5" /> {todayStr()}
+                </span>
+                <button
+                  onClick={handleRefresh}
+                  disabled={loading}
+                  className="flex items-center gap-1.5 px-3 py-2 border border-gray-100 bg-white rounded-xl text-sm font-semibold text-gray-600 hover:border-[#E4B315]/40 hover:text-[#C69A11] disabled:opacity-50 transition-all shadow-sm"
+                >
+                  <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin text-[#E4B315]' : ''}`} />
+                  Refresh
+                </button>
+              </div>
+            </div>
+
+            {/* ── Tab Bar ── */}
+            <div className="flex bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm p-1 gap-1">
+              {TABS.map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200 ${
+                    activeTab === tab.id
+                      ? 'bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white shadow-md shadow-[#E4B315]/20'
+                      : 'text-gray-400 hover:text-[#2D2A26] hover:bg-gray-50'
+                  }`}
+                >
+                  {tab.icon}
+                  <span className="hidden sm:inline">{tab.label}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* ── Error banner ── */}
+            {error && (
+              <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 text-amber-800 rounded-2xl text-sm">
+                <AlertTriangle className="h-4 w-4 mt-0.5 text-amber-500 shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            {/* ── Tab Content ── */}
+            {loading && !hasData[activeTab] ? (
+              <Spinner />
+            ) : (
+              <>
+                {activeTab === 'overview'   && overview   && <OverviewTab   data={overview}   navigate={navigate} />}
+                {activeTab === 'operations' && operations && <OperationsTab data={operations} navigate={navigate} />}
+                {activeTab === 'staff'      && staff      && <StaffTab      data={staff}      navigate={navigate} />}
+                {activeTab === 'events'     && events     && <EventsTab     data={events}     navigate={navigate} />}
+                {activeTab === 'analytics'  && analytics  && <AnalyticsTab  data={analytics}  />}
+              </>
+            )}
+          </div>
         </div>
       </div>
-
-      {/* ── Tab Bar ── */}
-      <div className="flex bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm p-1 gap-1">
-        {TABS.map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200 ${
-              activeTab === tab.id
-                ? 'bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white shadow-md shadow-[#E4B315]/20'
-                : 'text-gray-400 hover:text-[#2D2A26] hover:bg-gray-50'
-            }`}
-          >
-            {tab.icon}
-            <span className="hidden sm:inline">{tab.label}</span>
-          </button>
-        ))}
-      </div>
-
-      {/* ── Error banner ── */}
-      {error && (
-        <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 text-amber-800 rounded-2xl text-sm">
-          <AlertTriangle className="h-4 w-4 mt-0.5 text-amber-500 shrink-0" />
-          <span>{error}</span>
-        </div>
-      )}
-
-      {/* ── Tab Content ── */}
-      {loading && !hasData[activeTab] ? (
-        <Spinner />
-      ) : (
-        <>
-          {activeTab === 'overview'   && overview   && <OverviewTab   data={overview}   navigate={navigate} />}
-          {activeTab === 'operations' && operations && <OperationsTab data={operations} navigate={navigate} />}
-          {activeTab === 'staff'      && staff      && <StaffTab      data={staff}      navigate={navigate} />}
-          {activeTab === 'events'     && events     && <EventsTab     data={events}     navigate={navigate} />}
-          {activeTab === 'analytics'  && analytics  && <AnalyticsTab  data={analytics}  />}
-        </>
-      )}
     </div>
   );
 };
