@@ -451,7 +451,7 @@ const RoomSetup: React.FC = () => {
         },
         body: JSON.stringify({
           doctype: 'Branch',
-          fields: ['name', 'branch_name', 'branch'],
+          fields: ['name'],
           limit_page_length: 100
         })
       });
@@ -527,6 +527,13 @@ const RoomSetup: React.FC = () => {
       fetchBranches();
     }
   }, [showPrinterSettingsModal]);
+
+  // Fetch branches when create room form opens
+  useEffect(() => {
+    if (showCreateRoomForm) {
+      fetchBranches();
+    }
+  }, [showCreateRoomForm]);
 
   return (
     <div className="flex flex-col h-full bg-gray-50/80">
@@ -709,7 +716,7 @@ const RoomSetup: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-1.5">
+                    {/* <label className="block text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-1.5">
                       Branch
                     </label>
                     <input
@@ -718,7 +725,7 @@ const RoomSetup: React.FC = () => {
                       onChange={(e) => handleRoomInputChange('branch', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E4B315]/40"
                       placeholder="e.g., 00"
-                    />
+                    /> */}
                   </div>
 
                   <div>

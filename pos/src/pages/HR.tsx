@@ -28,6 +28,7 @@ interface Department { name: string; department_name?: string; }
 interface Designation { name: string; designation_name?: string; }
 interface Branch { name: string; branch?: string; }
 interface HolidayList { name: string; holiday_list_name?: string; }
+interface Company { name: string; company_name?: string; }
 
 interface ContractFulfilmentItem {
   name: string; idx: number; fulfilled: number;
@@ -59,7 +60,7 @@ interface EmployeeForm {
   pan_number: string; pf_number: string; esi_number: string;
   bank_name: string; bank_ac_no: string; ifsc_code: string; bank_branch_name: string;
   personal_email: string; company_email: string; cell_number: string;
-  department: string; designation: string; branch: string; holiday_list: string;
+  department: string; designation: string; branch: string; holiday_list: string; company: string;
   employment_type: string; date_of_joining: string; reports_to: string;
   contract_type: string; contract_end_date: string; notice_number_of_days: string;
 }
@@ -76,7 +77,7 @@ const EMPTY_EMP_FORM: EmployeeForm = {
   pan_number: '', pf_number: '', esi_number: '',
   bank_name: '', bank_ac_no: '', ifsc_code: '', bank_branch_name: '',
   personal_email: '', company_email: '', cell_number: '',
-  department: '', designation: '', branch: '', holiday_list: '', employment_type: 'Full-time',
+  department: '', designation: '', branch: '', holiday_list: '', company: '', employment_type: 'Full-time',
   date_of_joining: '', reports_to: '',
   contract_type: '', contract_end_date: '', notice_number_of_days: '',
 };
@@ -152,6 +153,11 @@ const fetchHolidayLists = async (): Promise<HolidayList[]> => {
   return data.data || [];
 };
 
+const fetchCompanies = async (): Promise<Company[]> => {
+  const data = await erpFetch(`${API_BASE}/Company?fields=["name","company_name"]&limit=100`);
+  return data.data || [];
+};
+
 const createEmployee = async (form: EmployeeForm): Promise<EmployeeApiResponse> => {
   const payload = {
     first_name: form.first_name, 
@@ -161,6 +167,7 @@ const createEmployee = async (form: EmployeeForm): Promise<EmployeeApiResponse> 
     gender: form.gender,
     nationality: form.nationality,
     date_of_joining: form.date_of_joining || new Date().toISOString().split('T')[0],
+    company: form.company || undefined,
     department: form.department || undefined, 
     designation: form.designation || undefined,
     branch: form.branch || undefined, 
@@ -408,9 +415,9 @@ const EmpStepIndicator: React.FC<{ current: number }> = ({ current }) => (
 
 const EmployeeModal: React.FC<{
   mode: 'add' | 'edit'; employee: Employee | null;
-  departments: Department[]; designations: Designation[]; branches: Branch[]; holidayLists: HolidayList[]; employeesForReportsTo: Employee[];
+  departments: Department[]; designations: Designation[]; branches: Branch[]; holidayLists: HolidayList[]; companies: Company[]; employeesForReportsTo: Employee[];
   onClose: () => void; onSaved: (emp: Employee) => void;
-}> = ({ mode, employee, departments, designations, branches, holidayLists, employeesForReportsTo, onClose, onSaved }) => {
+}> = ({ mode, employee, departments, designations, branches, holidayLists, companies, employeesForReportsTo, onClose, onSaved }) => {
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -422,7 +429,7 @@ const EmployeeModal: React.FC<{
     bank_name: employee.bank_name || '', bank_ac_no: employee.bank_ac_no || '', ifsc_code: employee.ifsc_code || '', bank_branch_name: employee.bank_branch_name || '',
     personal_email: employee.personal_email || '', company_email: employee.company_email || '',
     cell_number: employee.cell_number || '', department: employee.department || '',
-    designation: employee.designation || '', branch: employee.branch || '', holiday_list: employee.holiday_list || '',
+    designation: employee.designation || '', branch: employee.branch || '', holiday_list: employee.holiday_list || '', company: employee.company || '',
     employment_type: employee.employment_type || 'Full-time', date_of_joining: employee.date_of_joining || '',
     reports_to: employee.reports_to || '', contract_type: '', contract_end_date: '', notice_number_of_days: '',
   } : { ...EMPTY_EMP_FORM });
@@ -553,6 +560,11 @@ const EmployeeModal: React.FC<{
             )}
             {step === 4 && (
               <div className="grid grid-cols-2 gap-4">
+                <Fld label="Company">
+                  <select value={form.company} onChange={e => set({ company: e.target.value })} className={inp}>
+                    <option value="">Select</option>{companies.map(c => <option key={c.name} value={c.name}>{c.company_name || c.name}</option>)}
+                  </select>
+                </Fld>
                 <Fld label="Department">
                   <select value={form.department} onChange={e => set({ department: e.target.value })} className={inp}>
                     <option value="">Select</option>{departments.map(d => <option key={d.name} value={d.name}>{d.department_name || d.name}</option>)}
@@ -1093,6 +1105,7 @@ const HRPage: React.FC = () => {
   const [designations, setDesignations] = useState<Designation[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [holidayLists, setHolidayLists] = useState<HolidayList[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
   const [employeesForReportsTo, setEmployeesForReportsTo] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -1107,8 +1120,8 @@ const HRPage: React.FC = () => {
   const loadAll = useCallback(async () => {
     setLoading(true); setError('');
     try {
-      const [emps, depts, desigs, branchs, holidays, reportsToEmployees] = await Promise.all([fetchEmployees(), fetchDepartments(), fetchDesignations(), fetchBranches(), fetchHolidayLists(), fetchEmployeesForReportsTo()]);
-      setEmployees(emps); setDepartments(depts); setDesignations(desigs); setBranches(branchs); setHolidayLists(holidays); setEmployeesForReportsTo(reportsToEmployees);
+      const [emps, depts, desigs, branchs, holidays, comps, reportsToEmployees] = await Promise.all([fetchEmployees(), fetchDepartments(), fetchDesignations(), fetchBranches(), fetchHolidayLists(), fetchCompanies(), fetchEmployeesForReportsTo()]);
+      setEmployees(emps); setDepartments(depts); setDesignations(desigs); setBranches(branchs); setHolidayLists(holidays); setCompanies(comps); setEmployeesForReportsTo(reportsToEmployees);
     } catch (e: any) { setError('Failed to load from ERPNext. Check your session/connection.'); }
     finally { setLoading(false); }
   }, []);
@@ -1280,7 +1293,7 @@ const HRPage: React.FC = () => {
       {/* Employee Modals */}
       {editModal && (
         <EmployeeModal mode={editModal.mode} employee={editModal.employee}
-          departments={departments} designations={designations} branches={branches} holidayLists={holidayLists} employeesForReportsTo={employeesForReportsTo}
+          departments={departments} designations={designations} branches={branches} holidayLists={holidayLists} companies={companies} employeesForReportsTo={employeesForReportsTo}
           onClose={() => setEditModal(null)} onSaved={handleEmpSaved} />
       )}
       {detailEmployee && (
