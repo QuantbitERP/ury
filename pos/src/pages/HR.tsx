@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Search, Users, Building, Mail, Phone, Calendar, Briefcase,
-  DollarSign, Eye, RefreshCw, UserCheck, UserX, AlertCircle,
+  Search, Users, Mail, Phone, Calendar, Briefcase,
+  DollarSign, Eye, RefreshCw, UserCheck, AlertCircle,
   Edit2, X, ChevronRight, ChevronLeft, Check,
   Shield, CreditCard, FileText, UserPlus, Loader2,
   ClipboardList, Clock, TriangleAlert, Plus, CheckCircle2
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+// import { useNavigate } from 'react-router-dom';
 import { PageLayout } from '../components/PageLayout';
 
 // ─────────────────────────────────────────────────────────────
@@ -20,7 +20,7 @@ interface Employee {
   reports_to: string; employment_type: string; basic_salary?: number;
   creation: string; modified: string;
   pan_number?: string; pf_number?: string; esi_number?: string;
-  bank_name?: string; bank_ac_no?: string; ifsc_code?: string; bank_branch_name?: string; user_id?: string;
+  bank_name?: string; bank_ac_no?: string; ifsc_code?: string; user_id?: string;
   nationality?: string;
 }
 
@@ -58,7 +58,7 @@ interface EmployeeForm {
   first_name: string; last_name: string; middle_name: string;
   date_of_birth: string; gender: string; nationality: string;
   pan_number: string; pf_number: string; esi_number: string;
-  bank_name: string; bank_ac_no: string; ifsc_code: string; bank_branch_name: string;
+  bank_name: string; bank_ac_no: string; ifsc_code: string;
   personal_email: string; company_email: string; cell_number: string;
   department: string; designation: string; branch: string; holiday_list: string; company: string;
   employment_type: string; date_of_joining: string; reports_to: string;
@@ -75,7 +75,7 @@ interface EmployeeApiResponse {
 const EMPTY_EMP_FORM: EmployeeForm = {
   first_name: '', last_name: '', middle_name: '', date_of_birth: '', gender: '', nationality: 'Kenyan',
   pan_number: '', pf_number: '', esi_number: '',
-  bank_name: '', bank_ac_no: '', ifsc_code: '', bank_branch_name: '',
+  bank_name: '', bank_ac_no: '', ifsc_code: '',
   personal_email: '', company_email: '', cell_number: '',
   department: '', designation: '', branch: '', holiday_list: '', company: '', employment_type: 'Full-time',
   date_of_joining: '', reports_to: '',
@@ -110,7 +110,7 @@ const fetchEmployees = async (): Promise<Employee[]> => {
     'name','employee_name','first_name','last_name','middle_name','company','department','designation',
     'branch','holiday_list','status','date_of_joining','date_of_birth','gender','cell_number',
     'personal_email','company_email','reports_to','employment_type','creation','modified',
-    'user_id','bank_name','bank_ac_no','bank_branch_name'
+    'user_id','bank_name','bank_ac_no'
   ];
   const params = new URLSearchParams({
     fields: JSON.stringify(fields),
@@ -180,7 +180,7 @@ const createEmployee = async (form: EmployeeForm): Promise<EmployeeApiResponse> 
  
     bank_name: form.bank_name, 
     bank_ac_no: form.bank_ac_no, 
-    bank_branch_name: form.bank_branch_name,
+    // bank_branch_name: form.bank_branch_name,
     status: 'Active',
   };
   
@@ -220,7 +220,7 @@ const updateEmployee = async (name: string, form: EmployeeForm): Promise<Employe
     bank_name: form.bank_name, 
     bank_ac_no: form.bank_ac_no, 
    
-    bank_branch_name: form.bank_branch_name,
+    // bank_branch_name: form.bank_branch_name,
   };
   
   const data = await erpFetch(`/api/method/quantbit_ury_customization.ury_customization.employee_api.update_employee_with_permissions`, {
@@ -426,7 +426,7 @@ const EmployeeModal: React.FC<{
     middle_name: employee.middle_name || '', date_of_birth: employee.date_of_birth || '',
     gender: employee.gender || '', nationality: 'Kenyan',
     pan_number: employee.pan_number || '', pf_number: employee.pf_number || '', esi_number: employee.esi_number || '',
-    bank_name: employee.bank_name || '', bank_ac_no: employee.bank_ac_no || '', ifsc_code: employee.ifsc_code || '', bank_branch_name: employee.bank_branch_name || '',
+    bank_name: employee.bank_name || '', bank_ac_no: employee.bank_ac_no || '', ifsc_code: employee.ifsc_code || '',
     personal_email: employee.personal_email || '', company_email: employee.company_email || '',
     cell_number: employee.cell_number || '', department: employee.department || '',
     designation: employee.designation || '', branch: employee.branch || '', holiday_list: employee.holiday_list || '', company: employee.company || '',
@@ -548,7 +548,7 @@ const EmployeeModal: React.FC<{
                 <Fld label="Bank Name" span><input value={form.bank_name} onChange={e => set({ bank_name: e.target.value })} className={inp} /></Fld>
                 <Fld label="Account Number"><input value={form.bank_ac_no} onChange={e => set({ bank_ac_no: e.target.value })} className={inp} /></Fld>
                 <Fld label="IFSC / Branch Code"><input value={form.ifsc_code} onChange={e => set({ ifsc_code: e.target.value })} className={inp} /></Fld>
-                <Fld label="Branch Name"><input value={form.bank_branch_name} onChange={e => set({ bank_branch_name: e.target.value })} className={inp} /></Fld>
+                {/* <Fld label="Branch Name"><input value={form.bank_branch_name} onChange={e => set({ bank_branch_name: e.target.value })} className={inp} /></Fld> */}
               </div>
             )}
             {step === 3 && (
@@ -657,7 +657,7 @@ const EmployeeDetailModal: React.FC<{ employee: Employee; onClose: () => void; o
           { title: 'Employment', icon: Briefcase, fields: [['Company',employee.company],['Department',employee.department||'N/A'],['Designation',employee.designation||'N/A'],['Branch',employee.branch||'N/A'],['Type',employee.employment_type],['Reports To',employee.reports_to||'N/A']] },
           { title: 'Contact', icon: Phone, fields: [['Personal Email',employee.personal_email||'N/A'],['Company Email',employee.company_email||'N/A'],['Phone',employee.cell_number||'N/A']] },
           { title: 'Compliance', icon: Shield, fields: [['KRA PIN',employee.pan_number||'N/A'],['NSSF/PF',employee.pf_number||'N/A'],['NHIF/ESI',employee.esi_number||'N/A']] },
-          { title: 'Banking', icon: CreditCard, fields: [['Bank Name',employee.bank_name||'N/A'],['Account Number',employee.bank_ac_no||'N/A'],['IFSC / Branch Code',employee.bank_branch_name||employee.ifsc_code||'N/A']] },
+          { title: 'Banking', icon: CreditCard, fields: [['Bank Name',employee.bank_name||'N/A'],['Account Number',employee.bank_ac_no||'N/A'],['IFSC / Branch Code',employee.ifsc_code||'N/A']] },
           { title: 'Dates', icon: Calendar, fields: [['Joined',formatDate(employee.date_of_joining)],['Created',formatDate(employee.creation)],['Modified',formatDate(employee.modified)]] },
         ].map(({ title, icon: Icon, fields }) => (
           <div key={title} className="bg-gray-50 rounded-xl p-4 border border-gray-100">
