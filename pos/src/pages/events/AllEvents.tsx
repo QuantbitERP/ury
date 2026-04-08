@@ -587,6 +587,8 @@ const AllEvents: React.FC = () => {
   const [form, setForm] = useState<EventForm>(EMPTY_FORM);
   const [accessories, setAccessories] = useState<AccessoryRow[]>([]);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+  const [overlapWarning, setOverlapWarning] = useState<string | null>(null);
+  const [showAlertModal, setShowAlertModal] = useState(false);
 
   const [itemGroups, setItemGroups] = useState<ItemGroup[]>([]);
   const [rooms, setRooms] = useState<URYRoom[]>([]);
@@ -626,6 +628,41 @@ const AllEvents: React.FC = () => {
     const newFinalAmount = calculateFinalAmount(form, accessories);
     setForm(prev => ({ ...prev, custom_final_amount: newFinalAmount }));
   }, [form.custom_amount, accessories, calculateFinalAmount]);
+
+  useEffect(() => {
+    const { starts_on, ends_on, custom_room } = form;
+    if (starts_on && ends_on && custom_room) {
+      const newStart = new Date(starts_on).getTime();
+      const newEnd = new Date(ends_on).getTime();
+
+      const overlapping = events.find(ev => {
+        if (editingName && ev.name === editingName) return false;
+        if (ev.custom_room !== custom_room) return false;
+        if (ev.status === 'Cancelled' || ev.status === 'Closed' || ev.status === 'Completed') return false;
+
+        const evStrStart = ev.starts_on.includes('T') ? ev.starts_on : ev.starts_on.replace(' ', 'T');
+        const evStrEnd = ev.ends_on.includes('T') ? ev.ends_on : ev.ends_on.replace(' ', 'T');
+        const evStart = new Date(evStrStart).getTime();
+        const evEnd = new Date(evStrEnd).getTime();
+
+        return newStart < evEnd && newEnd > evStart;
+      });
+
+      if (overlapping) {
+        const msg = `Warning: This time slot overlaps with an existing event (${overlapping.name} - ${overlapping.subject}) in ${custom_room}.`;
+        setOverlapWarning(prev => {
+          if (prev !== msg) {
+            setShowAlertModal(true);
+          }
+          return msg;
+        });
+      } else {
+        setOverlapWarning(null);
+      }
+    } else {
+      setOverlapWarning(null);
+    }
+  }, [form.starts_on, form.ends_on, form.custom_room, events, editingName]);
 
   // ── Load events ──
   useEffect(() => {
@@ -769,6 +806,10 @@ const AllEvents: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (overlapWarning) {
+      setShowAlertModal(true);
+      return;
+    }
     setSaving(true);
     const cleanAcc = accessories.map(({ _items, _loadingItems, ...rest }) => rest);
     const isEdit = modal === 'edit' && editingName;
@@ -849,11 +890,11 @@ const AllEvents: React.FC = () => {
   return (
     <PageLayout
       title="Events"
-      subtitle="Frappe · Event Doctype"
+      subtitle=""
       actions={
         <div className="flex gap-2">
           <button
-            onClick={() => window.location.href = '/'}
+            onClick={() => window.location.href = '/pos'}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 bg-white hover:border-[#E4B315]/40 hover:text-[#C69A11] transition-colors shadow-sm">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -1065,11 +1106,18 @@ const AllEvents: React.FC = () => {
       {(modal === 'create' || modal === 'edit') && (
         <Modal
           title={modal === 'edit' ? `Edit Event — ${editingName}` : 'New Event'}
-          subtitle="Frappe · Event Doctype"
+          subtitle=""
           onClose={() => setModal('none')}
           wide
         >
           <form onSubmit={handleSubmit} className="space-y-6">
+
+            {overlapWarning && (
+              <div className="bg-orange-50 border border-orange-200 text-orange-800 px-4 py-3 rounded-xl flex items-start gap-3">
+                <svg className="w-5 h-5 text-orange-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                <div className="text-sm font-medium">{overlapWarning}</div>
+              </div>
+            )}
 
             <SectionHeading>Basic Info</SectionHeading>
             <div className="grid grid-cols-2 gap-4">
@@ -1256,6 +1304,28 @@ const AllEvents: React.FC = () => {
             </div>
           </form>
         </Modal>
+      )}
+
+      {/* ── ALERT MODAL ── */}
+      {showAlertModal && overlapWarning && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm flex flex-col border border-gray-100 overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="p-6 text-center space-y-4">
+              <div className="w-14 h-14 bg-red-50 rounded-full flex items-center justify-center mx-auto">
+                <svg className="w-7 h-7 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-[#2D2A26]">Event Overlap</h2>
+                <p className="text-sm text-gray-500 mt-1">{overlapWarning}</p>
+              </div>
+              <button type="button" onClick={() => setShowAlertModal(false)} className="w-full py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded-xl transition-colors">
+                Dismiss
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* ── Toast ── */}

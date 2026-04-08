@@ -90,8 +90,8 @@ const EventTypes: React.FC = () => {
             // Mock API call - replace with actual Frappe API
             if (editingEventType) {
                 console.log('Updating event type:', formData);
-                setEventTypes(eventTypes.map(et => 
-                    et.name === editingEventType.name 
+                setEventTypes(eventTypes.map(et =>
+                    et.name === editingEventType.name
                         ? { ...et, ...formData }
                         : et
                 ));
@@ -150,7 +150,7 @@ const EventTypes: React.FC = () => {
             const newStatus = eventType.status === 'Active' ? 'Inactive' : 'Active';
             // Mock API call - replace with actual Frappe API
             console.log(`Updating ${eventType.name} status to ${newStatus}`);
-            setEventTypes(eventTypes.map(et => 
+            setEventTypes(eventTypes.map(et =>
                 et.name === eventType.name ? { ...et, status: newStatus } : et
             ));
         } catch (error) {
@@ -161,7 +161,7 @@ const EventTypes: React.FC = () => {
     const calculateStats = () => {
         const active = eventTypes.filter(et => et.status === 'Active').length;
         const total = eventTypes.length;
-        const avgDuration = eventTypes.length > 0 
+        const avgDuration = eventTypes.length > 0
             ? Math.round(eventTypes.reduce((sum, et) => sum + et.default_duration, 0) / eventTypes.length)
             : 0;
         const avgPrice = eventTypes.length > 0
@@ -195,7 +195,7 @@ const EventTypes: React.FC = () => {
                         <p className="text-gray-600 mt-2">Manage different types of events your venue can host</p>
                     </div>
                     <div className="flex gap-2">
-                        <button onClick={() => window.location.href = '/'} className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg flex items-center gap-2 transition-colors">
+                        <button onClick={() => window.location.href = '/pos'} className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg flex items-center gap-2 transition-colors">
                             <ArrowLeft className="h-4 w-4" />
                             Back to POS
                         </button>
@@ -427,9 +427,9 @@ const EventTypes: React.FC = () => {
                                             </div>
                                         </td>
                                         <td className="py-3 px-4">
-                                            <Badge 
-                                                className={eventType.status === 'Active' 
-                                                    ? 'bg-green-100 text-green-800' 
+                                            <Badge
+                                                className={eventType.status === 'Active'
+                                                    ? 'bg-green-100 text-green-800'
                                                     : 'bg-gray-100 text-gray-800'
                                                 }
                                             >
@@ -477,8 +477,8 @@ const EventTypes: React.FC = () => {
                                 <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                                 <h3 className="text-lg font-medium text-gray-900 mb-2">No event types found</h3>
                                 <p className="text-gray-500 mb-4">
-                                    {searchTerm 
-                                        ? 'Try adjusting your search' 
+                                    {searchTerm
+                                        ? 'Try adjusting your search'
                                         : 'Get started by creating your first event type'}
                                 </p>
                                 <Button onClick={() => setShowAddDialog(true)}>

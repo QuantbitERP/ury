@@ -149,7 +149,7 @@ const ItemSearchSelect: React.FC<{
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (!isOpen) return;
-        
+
         if (e.key === 'ArrowDown') {
             setHighlightedIndex(prev => Math.min(prev + 1, filteredItems.length - 1));
             e.preventDefault();
@@ -187,7 +187,7 @@ const ItemSearchSelect: React.FC<{
                 style={{ borderColor: value ? undefined : '#f59e0b' }}
             />
             <ChevronRight className="absolute right-2 top-2.5 h-4 w-4 text-gray-400 rotate-90 pointer-events-none" />
-            
+
             {isOpen && (
                 <div className="absolute w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
                     {filteredItems.length === 0 ? (
@@ -198,9 +198,8 @@ const ItemSearchSelect: React.FC<{
                         filteredItems.map((item, index) => (
                             <div
                                 key={item.item_code}
-                                className={`px-3 py-2 cursor-pointer text-sm border-b border-gray-50 last:border-b-0 ${
-                                    index === highlightedIndex ? 'bg-amber-50 text-amber-700' : 'hover:bg-gray-50'
-                                } ${value === item.item_code ? 'bg-blue-50 text-blue-700 font-medium' : ''}`}
+                                className={`px-3 py-2 cursor-pointer text-sm border-b border-gray-50 last:border-b-0 ${index === highlightedIndex ? 'bg-amber-50 text-amber-700' : 'hover:bg-gray-50'
+                                    } ${value === item.item_code ? 'bg-blue-50 text-blue-700 font-medium' : ''}`}
                                 onClick={() => {
                                     onChange(item.item_code);
                                     setSearchTerm(item.item_name);
@@ -829,7 +828,7 @@ const PurchaseOrders: React.FC = () => {
                 <div className="flex h-16 items-center justify-between">
                     <h1 className="text-xl font-extrabold text-[#2D2A26] tracking-tight">Purchase Orders</h1>
                     <div className="flex items-center gap-2">
-                        <button onClick={() => window.location.href = '/'}
+                        <button onClick={() => window.location.href = '/pos'}
                             className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-xl hover:border-[#E4B315]/40 hover:text-[#C69A11] bg-white text-gray-600 font-semibold text-sm transition-colors shadow-sm">
                             <ArrowLeft className="h-4 w-4" />
                             Back to POS

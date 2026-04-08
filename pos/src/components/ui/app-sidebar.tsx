@@ -9,6 +9,7 @@ import {
     Receipt, BarChart3, ArrowRightLeft, ArrowUpDown,
     ChevronDown, Building, Building2, PieChart, Users,
     ExternalLink, Banknote, Wallet2, Rocket,
+    Settings, UserCog
 } from 'lucide-react';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -24,76 +25,85 @@ const SECTION_COLORS: Record<string, {
     accentBar: string;
 }> = {
     dashboard: {
-        iconBg:      'bg-[#E4B315]/15 text-[#C69A11]',
-        headerOpen:  'bg-[#E4B315]/10 border-[#E4B315]/30 text-[#2D2A26]',
+        iconBg: 'bg-[#E4B315]/15 text-[#C69A11]',
+        headerOpen: 'bg-[#E4B315]/10 border-[#E4B315]/30 text-[#2D2A26]',
         headerHover: 'hover:bg-[#E4B315]/6 hover:text-[#2D2A26]',
-        itemActive:  'bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white shadow-sm shadow-[#E4B315]/30',
-        itemHover:   'hover:bg-[#E4B315]/8 hover:text-[#C69A11]',
-        dot:         'bg-[#E4B315]',
-        accentBar:   'bg-white/70',
+        itemActive: 'bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white shadow-sm shadow-[#E4B315]/30',
+        itemHover: 'hover:bg-[#E4B315]/8 hover:text-[#C69A11]',
+        dot: 'bg-[#E4B315]',
+        accentBar: 'bg-white/70',
     },
     pos: {
-        iconBg:      'bg-orange-100 text-orange-600',
-        headerOpen:  'bg-orange-50 border-orange-200 text-[#2D2A26]',
+        iconBg: 'bg-orange-100 text-orange-600',
+        headerOpen: 'bg-orange-50 border-orange-200 text-[#2D2A26]',
         headerHover: 'hover:bg-orange-50/60 hover:text-[#2D2A26]',
-        itemActive:  'bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white shadow-sm shadow-[#E4B315]/30',
-        itemHover:   'hover:bg-orange-50 hover:text-orange-700',
-        dot:         'bg-orange-400',
-        accentBar:   'bg-white/70',
+        itemActive: 'bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white shadow-sm shadow-[#E4B315]/30',
+        itemHover: 'hover:bg-orange-50 hover:text-orange-700',
+        dot: 'bg-orange-400',
+        accentBar: 'bg-white/70',
     },
     restaurant: {
-        iconBg:      'bg-rose-100 text-rose-600',
-        headerOpen:  'bg-rose-50 border-rose-200 text-[#2D2A26]',
+        iconBg: 'bg-rose-100 text-rose-600',
+        headerOpen: 'bg-rose-50 border-rose-200 text-[#2D2A26]',
         headerHover: 'hover:bg-rose-50/60 hover:text-[#2D2A26]',
-        itemActive:  'bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white shadow-sm shadow-[#E4B315]/30',
-        itemHover:   'hover:bg-rose-50 hover:text-rose-700',
-        dot:         'bg-rose-400',
-        accentBar:   'bg-white/70',
+        itemActive: 'bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white shadow-sm shadow-[#E4B315]/30',
+        itemHover: 'hover:bg-rose-50 hover:text-rose-700',
+        dot: 'bg-rose-400',
+        accentBar: 'bg-white/70',
     },
     inventory: {
-        iconBg:      'bg-emerald-100 text-emerald-600',
-        headerOpen:  'bg-emerald-50 border-emerald-200 text-[#2D2A26]',
+        iconBg: 'bg-emerald-100 text-emerald-600',
+        headerOpen: 'bg-emerald-50 border-emerald-200 text-[#2D2A26]',
         headerHover: 'hover:bg-emerald-50/60 hover:text-[#2D2A26]',
-        itemActive:  'bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white shadow-sm shadow-[#E4B315]/30',
-        itemHover:   'hover:bg-emerald-50 hover:text-emerald-700',
-        dot:         'bg-emerald-400',
-        accentBar:   'bg-white/70',
+        itemActive: 'bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white shadow-sm shadow-[#E4B315]/30',
+        itemHover: 'hover:bg-emerald-50 hover:text-emerald-700',
+        dot: 'bg-emerald-400',
+        accentBar: 'bg-white/70',
     },
     hr: {
-        iconBg:      'bg-indigo-100 text-indigo-600',
-        headerOpen:  'bg-indigo-50 border-indigo-200 text-[#2D2A26]',
+        iconBg: 'bg-indigo-100 text-indigo-600',
+        headerOpen: 'bg-indigo-50 border-indigo-200 text-[#2D2A26]',
         headerHover: 'hover:bg-indigo-50/60 hover:text-[#2D2A26]',
-        itemActive:  'bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white shadow-sm shadow-[#E4B315]/30',
-        itemHover:   'hover:bg-indigo-50 hover:text-indigo-700',
-        dot:         'bg-indigo-400',
-        accentBar:   'bg-white/70',
+        itemActive: 'bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white shadow-sm shadow-[#E4B315]/30',
+        itemHover: 'hover:bg-indigo-50 hover:text-indigo-700',
+        dot: 'bg-indigo-400',
+        accentBar: 'bg-white/70',
     },
     finance: {
-        iconBg:      'bg-teal-100 text-teal-600',
-        headerOpen:  'bg-teal-50 border-teal-200 text-[#2D2A26]',
+        iconBg: 'bg-teal-100 text-teal-600',
+        headerOpen: 'bg-teal-50 border-teal-200 text-[#2D2A26]',
         headerHover: 'hover:bg-teal-50/60 hover:text-[#2D2A26]',
-        itemActive:  'bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white shadow-sm shadow-[#E4B315]/30',
-        itemHover:   'hover:bg-teal-50 hover:text-teal-700',
-        dot:         'bg-teal-400',
-        accentBar:   'bg-white/70',
+        itemActive: 'bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white shadow-sm shadow-[#E4B315]/30',
+        itemHover: 'hover:bg-teal-50 hover:text-teal-700',
+        dot: 'bg-teal-400',
+        accentBar: 'bg-white/70',
     },
     reports: {
-        iconBg:      'bg-purple-100 text-purple-600',
-        headerOpen:  'bg-purple-50 border-purple-200 text-[#2D2A26]',
+        iconBg: 'bg-purple-100 text-purple-600',
+        headerOpen: 'bg-purple-50 border-purple-200 text-[#2D2A26]',
         headerHover: 'hover:bg-purple-50/60 hover:text-[#2D2A26]',
-        itemActive:  'bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white shadow-sm shadow-[#E4B315]/30',
-        itemHover:   'hover:bg-purple-50 hover:text-purple-700',
-        dot:         'bg-purple-400',
-        accentBar:   'bg-white/70',
+        itemActive: 'bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white shadow-sm shadow-[#E4B315]/30',
+        itemHover: 'hover:bg-purple-50 hover:text-purple-700',
+        dot: 'bg-purple-400',
+        accentBar: 'bg-white/70',
     },
     events: {
-        iconBg:      'bg-sky-100 text-sky-600',
-        headerOpen:  'bg-sky-50 border-sky-200 text-[#2D2A26]',
+        iconBg: 'bg-sky-100 text-sky-600',
+        headerOpen: 'bg-sky-50 border-sky-200 text-[#2D2A26]',
         headerHover: 'hover:bg-sky-50/60 hover:text-[#2D2A26]',
-        itemActive:  'bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white shadow-sm shadow-[#E4B315]/30',
-        itemHover:   'hover:bg-sky-50 hover:text-sky-700',
-        dot:         'bg-sky-400',
-        accentBar:   'bg-white/70',
+        itemActive: 'bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white shadow-sm shadow-[#E4B315]/30',
+        itemHover: 'hover:bg-sky-50 hover:text-sky-700',
+        dot: 'bg-sky-400',
+        accentBar: 'bg-white/70',
+    },
+    setup: {
+        iconBg: 'bg-slate-100 text-slate-600',
+        headerOpen: 'bg-slate-50 border-slate-200 text-[#2D2A26]',
+        headerHover: 'hover:bg-slate-50/60 hover:text-[#2D2A26]',
+        itemActive: 'bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white shadow-sm shadow-[#E4B315]/30',
+        itemHover: 'hover:bg-slate-50 hover:text-slate-700',
+        dot: 'bg-slate-400',
+        accentBar: 'bg-white/70',
     },
 };
 
@@ -132,28 +142,25 @@ function NavItem({ icon, label, href, external, badge, sectionId }: NavProps) {
             )}
 
             {/* Icon */}
-            <span className={`flex items-center justify-center h-6 w-6 rounded-lg shrink-0 transition-all duration-200 ${
-                isActive
+            <span className={`flex items-center justify-center h-6 w-6 rounded-lg shrink-0 transition-all duration-200 ${isActive
                     ? 'bg-white/20 text-white'
                     : `${colors.iconBg}`
-            }`}>
+                }`}>
                 {icon}
             </span>
 
             {/* Label */}
-            <span className={`flex-1 font-medium leading-none truncate transition-colors duration-150 ${
-                isActive ? 'text-white' : 'text-foreground/75'
-            }`}>
+            <span className={`flex-1 font-medium leading-none truncate transition-colors duration-150 ${isActive ? 'text-white' : 'text-foreground/75'
+                }`}>
                 {label}
             </span>
 
             {/* Badge */}
             {badge && (
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none shrink-0 ${
-                    isActive
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none shrink-0 ${isActive
                         ? 'bg-white/20 text-white'
                         : 'bg-[#E4B315]/15 text-[#C69A11]'
-                }`}>
+                    }`}>
                     {badge}
                 </span>
             )}
@@ -281,9 +288,8 @@ function Section({ id, title, Icon, open, onToggle, hasActiveChild, children }: 
 
                 {/* Chevron with smooth rotate */}
                 <ChevronDown
-                    className={`h-3.5 w-3.5 shrink-0 transition-transform duration-280 ease-[cubic-bezier(0.4,0,0.2,1)] ${
-                        open ? 'rotate-180' : 'rotate-0'
-                    }`}
+                    className={`h-3.5 w-3.5 shrink-0 transition-transform duration-280 ease-[cubic-bezier(0.4,0,0.2,1)] ${open ? 'rotate-180' : 'rotate-0'
+                        }`}
                 />
             </button>
 
@@ -349,14 +355,15 @@ export function AppSidebar() {
     const { user } = useRootStore();
 
     const [openSections, setOpenSections] = useState<Record<string, boolean>>(() => ({
-        dashboard:  false,
-        pos:        false,
+        dashboard: false,
+        pos: false,
         restaurant: false,
-        inventory:  false,
-        hr:         false,
-        finance:    false,
-        reports:    false,
-        events:     false,
+        inventory: false,
+        hr: false,
+        finance: false,
+        reports: false,
+        events: false,
+        setup: false,
     }));
 
     // Define all sections with their menu items
@@ -455,6 +462,18 @@ export function AppSidebar() {
                 { icon: <ChartColumn className="h-3.5 w-3.5" />, label: 'Reports', href: '/events/reports', sectionId: 'events' },
             ]
         },
+        {
+            id: 'setup',
+            title: 'Set Up',
+            Icon: Settings,
+            items: [
+                { icon: <Building2 className="h-3.5 w-3.5" />, label: 'Branch Setup', href: '/branch-setup', sectionId: 'setup' },
+                { icon: <Store className="h-3.5 w-3.5" />, label: 'Restaurant Setup', href: '/restaurant-setup', sectionId: 'setup' },
+                { icon: <UserCog className="h-3.5 w-3.5" />, label: 'User Setup', href: '/user-setup', sectionId: 'setup' },
+                { icon: <Building className="h-3.5 w-3.5" />, label: 'Room Setup', href: '/room-setup', sectionId: 'setup' },
+                { icon: <UtensilsCrossed className="h-3.5 w-3.5" />, label: 'Table Setup', href: '/table-setup', sectionId: 'setup' },
+            ]
+        },
     ];
 
     // Filter sections and items based on user roles
@@ -462,10 +481,10 @@ export function AppSidebar() {
         if (!user?.roles) return [];
 
         const userRoles = user.roles;
-        
+
         // Check if user has restricted roles (URY Captain, System Manager, Customer)
         const hasRestrictedRoles = hasRole(userRoles, ['URY Captain', 'System Manager', 'Customer']);
-        
+
         // Check if user has manager/cashier roles (URY Manager, URY Cashier)
         const hasManagerCashierRoles = hasRole(userRoles, ['URY Manager', 'URY Cashier']);
 
@@ -482,8 +501,8 @@ export function AppSidebar() {
         const hasManufacturingRoles = hasRole(userRoles, ['Manufacturing Manager', 'Manufacturing User']);
 
         // Check if user has ALL roles (has roles from all categories)
-        const hasAllRoles = hasRestrictedRoles && hasManagerCashierRoles && hasHRRoles && 
-                           hasPurchaseRoles && hasStockRoles && hasManufacturingRoles;
+        const hasAllRoles = hasRestrictedRoles && hasManagerCashierRoles && hasHRRoles &&
+            hasPurchaseRoles && hasStockRoles && hasManufacturingRoles;
 
         return allSections.map(section => {
             let filteredItems = section.items;
@@ -499,8 +518,8 @@ export function AppSidebar() {
                 filteredItems = section.items;
             }
             // For users with HR roles only (HR Manager, HR User, Customer, System Manager) - NO URY/Purchase/Stock/Manufacturing roles
-            else if (hasHRRoles && !hasRestrictedRoles && !hasManagerCashierRoles && 
-                     !hasPurchaseRoles && !hasStockRoles && !hasManufacturingRoles) {
+            else if (hasHRRoles && !hasRestrictedRoles && !hasManagerCashierRoles &&
+                !hasPurchaseRoles && !hasStockRoles && !hasManufacturingRoles) {
                 if (section.id === 'hr' || section.id === 'finance') {
                     // Show all items in Human Resources and Finance & Accounting (for Payroll)
                     filteredItems = section.items;
@@ -513,9 +532,9 @@ export function AppSidebar() {
             else if (hasRestrictedRoles && !hasManagerCashierRoles) {
                 if (section.id === 'pos') {
                     // Show only EPOS Terminal, KOT, and Bar Order
-                    filteredItems = section.items.filter(item => 
-                        item.label === 'EPOS Terminal' || 
-                        item.label === 'Kitchen Order Ticket' || 
+                    filteredItems = section.items.filter(item =>
+                        item.label === 'EPOS Terminal' ||
+                        item.label === 'Kitchen Order Ticket' ||
                         item.label === 'Bar Order'
                     );
                 } else {
@@ -550,14 +569,15 @@ export function AppSidebar() {
     };
 
     const sectionPaths: Record<string, string[]> = {
-        dashboard:  ['/dashboard'],
-        pos:        ['/pos', '/kot', '/bar-display', '/orders', '/payment'],
+        dashboard: ['/dashboard'],
+        pos: ['/pos', '/kot', '/bar-display', '/orders', '/payment'],
         restaurant: ['/menu', '/recipes', '/manufacturing', '/reservations'],
-        inventory:  ['/inventory', '/stock-transfers', '/stock-tracking', '/suppliers', '/purchase-orders'],
-        hr:         ['/hr', '/staff-management', '/workspace-management'],
-        finance:    ['/payroll', '/finance', '/bank-accounts', '/bank-transactions'],
-        reports:    ['/reports'],
-        events:     ['/events'],
+        inventory: ['/inventory', '/stock-transfers', '/stock-tracking', '/suppliers', '/purchase-orders'],
+        hr: ['/hr', '/staff-management', '/workspace-management'],
+        finance: ['/payroll', '/finance', '/bank-accounts', '/bank-transactions'],
+        reports: ['/reports'],
+        events: ['/events'],
+        setup: ['/setup', '/room-setup'],
     };
 
     const hasActiveChild = (id: string) =>

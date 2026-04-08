@@ -12,6 +12,7 @@ import {
   Receipt, BarChart3, ArrowRightLeft, ArrowUpDown,
   ChevronDown, Building, Building2, PieChart, Users,
   ExternalLink, Banknote, Rocket, PanelLeftClose, PanelLeftOpen,
+  Settings, UserCog,
 } from 'lucide-react';
 
 // ─── Colour palette (matches app-sidebar.tsx) ─────────────────────────────────
@@ -27,6 +28,7 @@ const SECTION_COLORS: Record<string, {
   finance:    { iconBg:'bg-teal-100 text-teal-600', headerOpen:'bg-teal-50 border-teal-200 text-[#2D2A26]', headerHover:'hover:bg-teal-50/60 hover:text-[#2D2A26]', itemActive:'bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white shadow-sm shadow-[#E4B315]/30', itemHover:'hover:bg-teal-50 hover:text-teal-700', dot:'bg-teal-400' },
   reports:    { iconBg:'bg-purple-100 text-purple-600', headerOpen:'bg-purple-50 border-purple-200 text-[#2D2A26]', headerHover:'hover:bg-purple-50/60 hover:text-[#2D2A26]', itemActive:'bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white shadow-sm shadow-[#E4B315]/30', itemHover:'hover:bg-purple-50 hover:text-purple-700', dot:'bg-purple-400' },
   events:     { iconBg:'bg-sky-100 text-sky-600', headerOpen:'bg-sky-50 border-sky-200 text-[#2D2A26]', headerHover:'hover:bg-sky-50/60 hover:text-[#2D2A26]', itemActive:'bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white shadow-sm shadow-[#E4B315]/30', itemHover:'hover:bg-sky-50 hover:text-sky-700', dot:'bg-sky-400' },
+  setup:      { iconBg:'bg-slate-100 text-slate-600', headerOpen:'bg-slate-50 border-slate-200 text-[#2D2A26]', headerHover:'hover:bg-slate-50/60 hover:text-[#2D2A26]', itemActive:'bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white shadow-sm shadow-[#E4B315]/30', itemHover:'hover:bg-slate-50 hover:text-slate-700', dot:'bg-slate-400' },
 };
 
 // ─── Smooth animated section content ─────────────────────────────────────────
@@ -130,7 +132,7 @@ function InlineSidebar({ collapsed }: InlineSidebarProps) {
   const location = useLocation();
   const [open, setOpen] = React.useState<Record<string, boolean>>({
     dashboard:false, pos:false, restaurant:false, inventory:false,
-    hr:false, finance:false, reports:false, events:false,
+    hr:false, finance:false, reports:false, events:false, setup:false,
   });
 
   // Auto-open the section matching current route
@@ -144,6 +146,7 @@ function InlineSidebar({ collapsed }: InlineSidebarProps) {
       finance:    ['/payroll','/finance','/bank-accounts','/bank-transactions'],
       reports:    ['/reports'],
       events:     ['/events'],
+      setup:      ['/branch-setup', '/restaurant-setup', '/user-setup', '/room-setup', '/table-setup'],
     };
     const active = Object.entries(sectionPaths).find(([,paths]) =>
       paths.some(p => location.pathname === p || (p !== '/' && location.pathname.startsWith(p)))
@@ -160,6 +163,7 @@ function InlineSidebar({ collapsed }: InlineSidebarProps) {
     hr:['/hr','/staff-management','/workspace-management'],
     finance:['/payroll','/finance','/bank-accounts','/bank-transactions'],
     reports:['/reports'], events:['/events'],
+    setup:['/branch-setup', '/restaurant-setup', '/user-setup', '/room-setup', '/table-setup'],
   };
   const hasActive = (id: string) => (sectionPaths[id]??[]).some(p => location.pathname===p||(p!=='/'&&location.pathname.startsWith(p)));
 
@@ -237,6 +241,14 @@ function InlineSidebar({ collapsed }: InlineSidebarProps) {
             <NavItem sectionId="events" icon={<Calendar className="h-3.5 w-3.5" />} label="Calendar" href="/events/calendar" collapsed={collapsed} />
             <NavItem sectionId="events" icon={<FileText className="h-3.5 w-3.5" />} label="All Events" href="/events/all-events" collapsed={collapsed} />
             <NavItem sectionId="events" icon={<UtensilsCrossed className="h-3.5 w-3.5" />} label="Menu Packages" href="/events/menu-packages" collapsed={collapsed} />
+          </Section>
+
+          <Section id="setup" title="Set Up" Icon={Settings} open={open.setup} onToggle={() => toggle('setup')} hasActiveChild={hasActive('setup')} collapsed={collapsed}>
+            <NavItem sectionId="setup" icon={<Building2 className="h-3.5 w-3.5" />} label="Branch Setup" href="/branch-setup" collapsed={collapsed} />
+            <NavItem sectionId="setup" icon={<Store className="h-3.5 w-3.5" />} label="Restaurant Setup" href="/restaurant-setup" collapsed={collapsed} />
+            <NavItem sectionId="setup" icon={<UserCog className="h-3.5 w-3.5" />} label="User Setup" href="/user-setup" collapsed={collapsed} />
+            <NavItem sectionId="setup" icon={<Building className="h-3.5 w-3.5" />} label="Room Setup" href="/room-setup" collapsed={collapsed} />
+            <NavItem sectionId="setup" icon={<UtensilsCrossed className="h-3.5 w-3.5" />} label="Table Setup" href="/table-setup" collapsed={collapsed} />
           </Section>
         </nav>
         <div className="h-6 shrink-0" />

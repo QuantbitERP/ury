@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../components/ui';
 import { showToast } from '../components/ui/toast';
+import PageLayout from '../components/PageLayout';
 
 // Types based on Frappe User doctype
 interface UserRole {
@@ -627,58 +628,53 @@ const UserSetup: React.FC = () => {
   }, [activeTab]);
 
   return (
-    <div className="flex flex-col h-full bg-gray-50/80">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-100 px-6 py-4 shadow-sm">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <Users className="w-6 h-6 text-[#C69A11]" />
-            <h1 className="text-lg font-extrabold text-[#2D2A26] tracking-tight">User Setup & Role Management</h1>
-          </div>
-          <div className="flex items-center space-x-3">
+    <PageLayout
+      title="User Setup & Role Management"
+      actions={
+        <>
+          <Button
+            variant="outline"
+            onClick={activeTab === 'users' ? fetchUsers : fetchRoles}
+            disabled={loading}
+            className="flex items-center space-x-2"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <span>Refresh</span>
+          </Button>
+          {activeTab === 'users' && (
             <Button
-              variant="outline"
-              onClick={activeTab === 'users' ? fetchUsers : fetchRoles}
-              disabled={loading}
+              onClick={() => {
+                resetForm();
+                setShowPasswordForm(true);
+              }}
               className="flex items-center space-x-2"
             >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-              <span>Refresh</span>
+              <UserPlus className="w-4 h-4" />
+              <span>Add New User</span>
             </Button>
-            {activeTab === 'users' && (
-              <Button
-                onClick={() => {
-                  resetForm();
-                  setShowPasswordForm(true);
-                }}
-                className="flex items-center space-x-2"
+          )}
+        </>
+      }
+    >
+      <div className="flex flex-col h-full bg-gray-50/80">
+        {/* Tabs */}
+        <div className="bg-white border-b border-gray-100">
+          <div className="flex space-x-8 px-6">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center space-x-2 py-4 border-b-2 transition-colors ${activeTab === tab.id
+                    ? 'border-[#E4B315] text-[#C69A11]'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                  }`}
               >
-                <UserPlus className="w-4 h-4" />
-                <span>Add New User</span>
-              </Button>
-            )}
+                <tab.icon className="w-4 h-4" />
+                <span className="font-medium">{tab.label}</span>
+              </button>
+            ))}
           </div>
         </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="bg-white border-b border-gray-100">
-        <div className="flex space-x-8 px-6">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center space-x-2 py-4 border-b-2 transition-colors ${activeTab === tab.id
-                  ? 'border-[#E4B315] text-[#C69A11]'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
-            >
-              <tab.icon className="w-4 h-4" />
-              <span className="font-medium">{tab.label}</span>
-            </button>
-          ))}
-        </div>
-      </div>
 
       {/* Content */}
       <div className="flex-1 overflow-auto p-6">
@@ -1178,8 +1174,9 @@ const UserSetup: React.FC = () => {
             </div>
           </div>
         )}
+        </div>
       </div>
-    </div>
+    </PageLayout>
   );
 };
 
