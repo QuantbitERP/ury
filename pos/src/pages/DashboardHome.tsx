@@ -485,11 +485,11 @@ const StaffTab = ({ data, navigate }: { data: StaffData; navigate: (path: string
     </div>
 
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-      <NavLink icon={<Users className="h-4 w-4" />} label="All Employees" sub="View full staff list" onClick={() => navigate('/hr/employees')} />
-      <NavLink icon={<Clock className="h-4 w-4" />} label="Shift Management" sub="View and edit shifts" onClick={() => navigate('/hr/shifts')} />
-      <NavLink icon={<UserPlus className="h-4 w-4" />} label="Add Employee" sub="Onboard new staff" onClick={() => navigate('/hr/employees/new')} />
-      <NavLink icon={<DollarSign className="h-4 w-4" />} label="Payroll" sub="Process payments" onClick={() => navigate('/hr/payroll')} />
-      <NavLink icon={<FileText className="h-4 w-4" />} label="Leave Management" sub="Manage leave requests" onClick={() => navigate('/hr/leaves')} />
+      <NavLink icon={<Users className="h-4 w-4" />} label="All Employees" sub="View full staff list" onClick={() => navigate('/hr')} />
+      <NavLink icon={<Clock className="h-4 w-4" />} label="Shift Management" sub="View and edit shifts" onClick={() => navigate('/workspace-management')} />
+      <NavLink icon={<UserPlus className="h-4 w-4" />} label="Add Employee" sub="Onboard new staff" onClick={() => navigate('/hr')} />
+      <NavLink icon={<DollarSign className="h-4 w-4" />} label="Payroll" sub="Process payments" onClick={() => navigate('/payroll')} />
+      <NavLink icon={<FileText className="h-4 w-4" />} label="Leave Management" sub="Manage leave requests" onClick={() => navigate('/workspace-management')} />
       <NavLink icon={<BarChart2 className="h-4 w-4" />} label="Staff Reports" sub="Performance analytics" onClick={() => navigate('/reports/staff')} />
     </div>
   </div>
@@ -535,7 +535,7 @@ const EventsTab = ({ data, navigate }: { data: EventsData; navigate: (path: stri
 
     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
       <NavLink icon={<Calendar className="h-4 w-4" />} label="Event Calendar" sub="View all bookings" onClick={() => navigate('/events/calendar')} />
-      <NavLink icon={<Settings className="h-4 w-4" />} label="Create Event" sub="Book a new event" onClick={() => navigate('/events/new')} />
+      <NavLink icon={<Settings className="h-4 w-4" />} label="Create Event" sub="Book a new event" onClick={() => navigate('/events/all-events')} />
     </div>
   </div>
 );

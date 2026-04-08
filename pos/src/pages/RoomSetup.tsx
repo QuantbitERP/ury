@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../components/ui';
 import { showToast } from '../components/ui/toast';
+import PageLayout from '../components/PageLayout';
 
 // Types based on URY Room doctype
 interface PrinterSettings {
@@ -536,41 +537,34 @@ const RoomSetup: React.FC = () => {
   }, [showCreateRoomForm]);
 
   return (
-    <div className="flex flex-col h-full bg-gray-50/80">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-100 px-6 py-4 shadow-sm">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <DoorOpen className="w-6 h-6 text-[#C69A11]" />
-            <h1 className="text-lg font-extrabold text-[#2D2A26] tracking-tight">Room Setup & Management</h1>
-          </div>
-          <div className="flex items-center space-x-3">
-            <Button
-              variant="outline"
-              onClick={fetchRooms}
-              disabled={loading}
-              className="flex items-center space-x-2"
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-              <span>Refresh</span>
-            </Button>
-            <Button
-              onClick={() => {
-                resetForm();
-                setShowCreateRoomForm(true);
-              }}
-              className="flex items-center space-x-2"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Add New Room</span>
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 overflow-auto p-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 qs-card">
+    <PageLayout
+      title="Room Setup & Management"
+      actions={
+        <>
+          <Button
+            variant="outline"
+            onClick={fetchRooms}
+            disabled={loading}
+            className="flex items-center space-x-2"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <span>Refresh</span>
+          </Button>
+          <Button
+            onClick={() => {
+              resetForm();
+              setShowCreateRoomForm(true);
+            }}
+            className="flex items-center space-x-2"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add New Room</span>
+          </Button>
+        </>
+      }
+    >
+      <div className="flex flex-col h-full bg-gray-50/80 p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 qs-card flex-1 min-h-0 overflow-hidden">
           {/* Rooms List */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
@@ -1075,7 +1069,7 @@ const RoomSetup: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+    </PageLayout>
   );
 };
 

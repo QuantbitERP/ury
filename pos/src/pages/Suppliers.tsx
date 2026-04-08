@@ -296,7 +296,7 @@ const Suppliers: React.FC = () => {
                     <h1 className="text-xl font-extrabold text-[#2D2A26] tracking-tight">Suppliers</h1>
                     <div className="flex items-center gap-2">
                         <button
-                            onClick={() => window.location.href = '/'}
+                            onClick={() => window.location.href = '/pos'}
                             className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-xl hover:border-[#E4B315]/40 hover:text-[#C69A11] bg-white text-gray-600 font-semibold text-sm transition-colors shadow-sm">
                             <ArrowLeft className="h-4 w-4" />
                             Back to POS

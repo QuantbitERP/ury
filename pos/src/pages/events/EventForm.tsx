@@ -54,6 +54,8 @@ const EventForm: React.FC = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [overlapWarning, setOverlapWarning] = useState<string | null>(null);
+    const [showAlertModal, setShowAlertModal] = useState(false);
     const [event, setEvent] = useState<Event>({
         subject: '',
         custom_event_purpose: '',
@@ -80,6 +82,50 @@ const EventForm: React.FC = () => {
     useEffect(() => {
         if (id && action !== 'new') fetchEvent(id);
     }, [id, action]);
+
+    useEffect(() => {
+        const checkOverlap = async () => {
+            if (!event.starts_on || !event.ends_on || !event.custom_room) {
+                setOverlapWarning(null);
+                return;
+            }
+            try {
+                const res = await fetch(`/api/resource/Event?fields=["name","subject","starts_on","ends_on","status","custom_room"]&filters=[["custom_room","=","${encodeURIComponent(event.custom_room)}"]]&limit=1000`);
+                if (!res.ok) return;
+                const data = await res.json();
+                const existingEvents = data.data || [];
+                
+                const newStart = new Date(event.starts_on).getTime();
+                const newEnd = new Date(event.ends_on).getTime();
+                
+                const overlapping = existingEvents.find((ev: any) => {
+                    if (id && ev.name === id) return false;
+                    if (ev.status === 'Cancelled' || ev.status === 'Closed' || ev.status === 'Completed') return false;
+                    const evStrStart = ev.starts_on.includes('T') ? ev.starts_on : ev.starts_on.replace(' ', 'T');
+                    const evStrEnd = ev.ends_on.includes('T') ? ev.ends_on : ev.ends_on.replace(' ', 'T');
+                    const evStart = new Date(evStrStart).getTime();
+                    const evEnd = new Date(evStrEnd).getTime();
+                    return newStart < evEnd && newEnd > evStart;
+                });
+                
+                if (overlapping) {
+                    const msg = `Warning: This time slot overlaps with an existing event (${overlapping.name} - ${overlapping.subject}) in ${event.custom_room}.`;
+                    setOverlapWarning(prev => {
+                        if (prev !== msg) {
+                            setShowAlertModal(true);
+                        }
+                        return msg;
+                    });
+                } else {
+                    setOverlapWarning(null);
+                }
+            } catch (err) {
+                console.error("Error checking overlap", err);
+            }
+        };
+        
+        checkOverlap();
+    }, [event.starts_on, event.ends_on, event.custom_room, id]);
 
     const fetchEvent = async (eventId: string) => {
         try {
@@ -164,6 +210,10 @@ const EventForm: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (overlapWarning) {
+            setShowAlertModal(true);
+            return;
+        }
         try {
             setSaving(true);
             const formattedEvent = {
@@ -222,6 +272,13 @@ const EventForm: React.FC = () => {
             </div>
 
             <form onSubmit={handleSubmit}>
+                {overlapWarning && (
+                    <div className="bg-orange-50 border border-orange-200 text-orange-800 px-4 py-3 rounded-xl flex items-start gap-3 mb-6">
+                        <svg className="w-5 h-5 text-orange-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                        <div className="text-sm font-medium">{overlapWarning}</div>
+                    </div>
+                )}
+                
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
                     {/* ── Main Column ── */}
@@ -578,6 +635,28 @@ const EventForm: React.FC = () => {
                     </div>
                 </div>
             </form>
+
+            {showAlertModal && overlapWarning && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm flex flex-col border border-gray-100 overflow-hidden animate-in fade-in zoom-in duration-200">
+                        <div className="p-6 text-center space-y-4">
+                            <div className="w-14 h-14 bg-red-50 rounded-full flex items-center justify-center mx-auto">
+                                <svg className="w-7 h-7 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h2 className="text-lg font-bold text-[#2D2A26]">Event Overlap</h2>
+                                <p className="text-sm text-gray-500 mt-1">{overlapWarning}</p>
+                            </div>
+                            <button type="button" onClick={() => setShowAlertModal(false)} className="w-full py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded-xl transition-colors">
+                                Dismiss
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 };

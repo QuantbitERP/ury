@@ -1011,7 +1011,7 @@ const MenuManagement: React.FC = () => {
                   </div>
                   <div className="flex items-center gap-3">
                     <button
-                      onClick={() => window.location.href = '/'}
+                      onClick={() => window.location.href = '/pos'}
                       className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg flex items-center gap-2 transition-colors"
                     >
                       <ArrowLeft className="h-4 w-4" />

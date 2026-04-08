@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../components/ui';
 import { showToast } from '../components/ui/toast';
+import PageLayout from '../components/PageLayout';
 
 // Types based on Branch doctype
 interface AggregatorSettings {
@@ -501,23 +502,9 @@ const BranchSetup: React.FC = () => {
   }, []);
 
   return (
-    <div className="p-6 max-w-6xl mx-auto h-screen flex flex-col overflow-y-auto bg-gray-50/80">
-      <div className="flex justify-between items-center mb-6 flex-shrink-0">
-        <div className="flex items-center space-x-3">
-          <Building className="w-8 h-8 text-[#C69A11]" />
-          <h1 className="text-xl font-extrabold text-[#2D2A26] tracking-tight">Branch Setup</h1>
-        </div>
-        <Button
-          variant="outline"
-          onClick={() => navigate('/')}
-          className="flex items-center space-x-2"
-        >
-          <X className="w-4 h-4" />
-          <span>Close</span>
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 overflow-hidden">
+    <PageLayout title="Branch Setup">
+      <div className="p-6 max-w-7xl mx-auto w-full flex flex-col h-full">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0 overflow-hidden">
         {/* Branch List */}
         <div className="lg:col-span-1 flex flex-col">
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col h-full">
@@ -1038,8 +1025,9 @@ const BranchSetup: React.FC = () => {
             </div>
           </div>
         </div>
+        </div>
       </div>
-    </div>
+    </PageLayout>
   );
 };
 

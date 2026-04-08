@@ -226,7 +226,7 @@ const EventCalendar: React.FC = () => {
             subtitle="Manage and view all your events in one place"
             actions={
                 <button
-                    onClick={() => window.location.href = '/'}
+                    onClick={() => window.location.href = '/pos'}
                     className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 bg-white hover:border-[#E4B315]/40 hover:text-[#C69A11] transition-colors shadow-sm">
                     <ChevronLeft className="h-4 w-4" /> Back to POS
                 </button>
