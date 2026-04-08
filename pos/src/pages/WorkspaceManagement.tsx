@@ -1279,8 +1279,8 @@ const TableCard: React.FC<{
 const Th: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap">{children}</th>
 );
-const Td: React.FC<{ children: React.ReactNode; className?: string; title?: string }> = ({ children, className = '', title }) => (
-  <td className={`px-4 py-3 text-sm text-gray-600 ${className}`} title={title}>{children}</td>
+const Td: React.FC<{ children: React.ReactNode; className?: string; title?: string; colSpan?: number }> = ({ children, className = '', title, colSpan }) => (
+  <td className={`px-4 py-3 text-sm text-gray-600 ${className}`} title={title} colSpan={colSpan}>{children}</td>
 );
 
 const EmptyRow: React.FC<{ cols: number; msg?: string }> = ({ cols, msg = 'No records found' }) => (
@@ -1751,30 +1751,74 @@ const LeavesTab: React.FC<{
           >
             <table className="w-full">
               <thead className="bg-slate-50 border-b border-slate-100">
-                <tr><Th>Employee</Th><Th>Leave Type</Th><Th>Total</Th><Th>From</Th><Th>To</Th><Th>Actions</Th></tr>
+                <tr><Th>Leave Type</Th><Th>Max Leaves</Th><Th>Employee</Th><Th>Allocated</Th><Th>From</Th><Th>To</Th><Th>Actions</Th></tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {loading ? <LoadingRow cols={6} /> :
-                  leaveAllocations.length === 0 ? <EmptyRow cols={6} /> :
-                    leaveAllocations.map(a => (
-                      <tr key={a.name} className="hover:bg-[#E4B315]/8/20 transition-colors">
-                        <Td><AvatarCell name={a.employee_name} /></Td>
-                        <Td>{a.leave_type}</Td>
-                        <Td><span className="font-semibold text-[#C69A11]">{a.new_leaves_allocated}</span></Td>
-                        <Td className="mono text-xs">{formatDate(a.from_date)}</Td>
-                        <Td className="mono text-xs">{formatDate(a.to_date)}</Td>
-                        <Td>
-                          <button onClick={() => {
-                            if (confirm(`Delete allocation for ${a.employee_name}?`)) {
-                              // Handle delete
-                            }
-                          }}
-                            className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 transition" title="Delete">
-                            <X className="w-4 h-4" />
-                          </button>
-                        </Td>
-                      </tr>
-                    ))}
+                {loading ? <LoadingRow cols={7} /> :
+                  leaveTypes.length === 0 ? <EmptyRow cols={7} /> :
+                    leaveTypes.map(lt => {
+                      const allocations = leaveAllocations.filter(la => la.leave_type === lt.name);
+                      return (
+                        <tr key={lt.name} className="hover:bg-[#E4B315]/8/20 transition-colors">
+                          <Td className="font-semibold">{lt.name}</Td>
+                          <Td><span className="text-gray-600">{lt.max_leaves_allowed || 'Unlimited'}</span></Td>
+                          {allocations.length > 0 ? (
+                            allocations.map((allocation, idx) => (
+                              <React.Fragment key={allocation.name}>
+                                {idx === 0 && <Td><AvatarCell name={allocation.employee_name} /></Td>}
+                                {idx === 0 && <Td><span className="font-semibold text-[#C69A11]">{allocation.new_leaves_allocated}</span></Td>}
+                                {idx === 0 && <Td className="mono text-xs">{formatDate(allocation.from_date)}</Td>}
+                                {idx === 0 && <Td className="mono text-xs">{formatDate(allocation.to_date)}</Td>}
+                                {idx === 0 && (
+                                  <Td>
+                                    <button onClick={() => {
+                                      if (confirm(`Delete allocation for ${allocation.employee_name}?`)) {
+                                        // Handle delete
+                                      }
+                                    }}
+                                      className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 transition" title="Delete">
+                                      <X className="w-4 h-4" />
+                                    </button>
+                                  </Td>
+                                )}
+                                {idx > 0 && (
+                                  <>
+                                    <Td colSpan={5} className="text-xs text-gray-500 py-2">
+                                      <div className="flex items-center gap-2">
+                                        <AvatarCell name={allocation.employee_name} />
+                                        <span>Allocated: {allocation.new_leaves_allocated} ({formatDate(allocation.from_date)} - {formatDate(allocation.to_date)})</span>
+                                        <button onClick={() => {
+                                          if (confirm(`Delete allocation for ${allocation.employee_name}?`)) {
+                                            // Handle delete
+                                          }
+                                        }}
+                                          className="p-1 rounded-lg text-rose-500 hover:bg-rose-50 transition" title="Delete">
+                                          <X className="w-3 h-3" />
+                                        </button>
+                                      </div>
+                                    </Td>
+                                  </>
+                                )}
+                              </React.Fragment>
+                            ))
+                          ) : (
+                            <>
+                              <Td colSpan={5} className="text-gray-400 text-sm">
+                                <div className="flex items-center justify-between">
+                                  <span>No allocations yet</span>
+                                  <button 
+                                    onClick={() => setAllocateModal(true)}
+                                    className="text-xs text-[#C69A11] hover:text-[#E4B315] font-medium"
+                                  >
+                                    Allocate Now
+                                  </button>
+                                </div>
+                              </Td>
+                            </>
+                          )}
+                        </tr>
+                      );
+                    })}
               </tbody>
             </table>
           </TableCard>
@@ -1866,6 +1910,77 @@ const LeavesTab: React.FC<{
               disabled={!allocateForm.employee || !allocateForm.leave_type}
               className="flex-1 px-4 py-2 text-sm font-bold bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white rounded-xl hover:opacity-90 disabled:opacity-50 shadow-sm shadow-[#E4B315]/20">
               Allocate
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal title="Create Leave Type" open={typeModal} onClose={() => setTypeModal(false)}>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1.5">Leave Type Name</label>
+            <input type="text" value={typeForm.leave_type_name} onChange={e => setTypeForm(f => ({ ...f, leave_type_name: e.target.value }))}
+              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E4B315]/30 focus:border-[#E4B315]/50 transition-colors" 
+              placeholder="e.g., Casual Leave" />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1.5">Max Leaves Allowed</label>
+            <input type="number" value={typeForm.max_leaves_allowed} onChange={e => setTypeForm(f => ({ ...f, max_leaves_allowed: parseFloat(e.target.value) || 0 }))}
+              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E4B315]/30 focus:border-[#E4B315]/50 transition-colors" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex items-center gap-2">
+              <input type="checkbox" id="carry_forward" checked={typeForm.is_carry_forward === 1} onChange={e => setTypeForm(f => ({ ...f, is_carry_forward: e.target.checked ? 1 : 0 }))}
+                className="w-4 h-4 text-[#E4B315] border-slate-300 rounded focus:ring-[#E4B315]/30" />
+              <label htmlFor="carry_forward" className="text-xs font-medium text-gray-700">Carry Forward</label>
+            </div>
+            <div className="flex items-center gap-2">
+              <input type="checkbox" id="lwp" checked={typeForm.is_lwp === 1} onChange={e => setTypeForm(f => ({ ...f, is_lwp: e.target.checked ? 1 : 0 }))}
+                className="w-4 h-4 text-[#E4B315] border-slate-300 rounded focus:ring-[#E4B315]/30" />
+              <label htmlFor="lwp" className="text-xs font-medium text-gray-700">Without Pay</label>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex items-center gap-2">
+              <input type="checkbox" id="earned_leave" checked={typeForm.is_earned_leave === 1} onChange={e => setTypeForm(f => ({ ...f, is_earned_leave: e.target.checked ? 1 : 0 }))}
+                className="w-4 h-4 text-[#E4B315] border-slate-300 rounded focus:ring-[#E4B315]/30" />
+              <label htmlFor="earned_leave" className="text-xs font-medium text-gray-700">Earned Leave</label>
+            </div>
+            <div className="flex items-center gap-2">
+              <input type="checkbox" id="include_holiday" checked={typeForm.include_holiday === 1} onChange={e => setTypeForm(f => ({ ...f, include_holiday: e.target.checked ? 1 : 0 }))}
+                className="w-4 h-4 text-[#E4B315] border-slate-300 rounded focus:ring-[#E4B315]/30" />
+              <label htmlFor="include_holiday" className="text-xs font-medium text-gray-700">Include Holidays</label>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex items-center gap-2">
+              <input type="checkbox" id="compensatory" checked={typeForm.is_compensatory === 1} onChange={e => setTypeForm(f => ({ ...f, is_compensatory: e.target.checked ? 1 : 0 }))}
+                className="w-4 h-4 text-[#E4B315] border-slate-300 rounded focus:ring-[#E4B315]/30" />
+              <label htmlFor="compensatory" className="text-xs font-medium text-gray-700">Compensatory</label>
+            </div>
+            <div className="flex items-center gap-2">
+              <input type="checkbox" id="encashment" checked={typeForm.allow_encashment === 1} onChange={e => setTypeForm(f => ({ ...f, allow_encashment: e.target.checked ? 1 : 0 }))}
+                className="w-4 h-4 text-[#E4B315] border-slate-300 rounded focus:ring-[#E4B315]/30" />
+              <label htmlFor="encashment" className="text-xs font-medium text-gray-700">Allow Encashment</label>
+            </div>
+          </div>
+          <div className="flex gap-2 pt-2">
+            <button onClick={() => setTypeModal(false)}
+              className="flex-1 px-4 py-2 text-sm font-semibold border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50 transition-colors">Cancel</button>
+            <button
+              onClick={() => {
+                if (typeForm.leave_type_name) {
+                  onCreateLeaveType(typeForm);
+                  setTypeModal(false);
+                  setTypeForm({
+                    leave_type_name: '', max_leaves_allowed: 0, is_carry_forward: 0, is_lwp: 0, is_earned_leave: 0, include_holiday: 1,
+                    is_compensatory: 0, allow_encashment: 0
+                  });
+                }
+              }}
+              disabled={!typeForm.leave_type_name}
+              className="flex-1 px-4 py-2 text-sm font-bold bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white rounded-xl hover:opacity-90 disabled:opacity-50 shadow-sm shadow-[#E4B315]/20">
+              Create
             </button>
           </div>
         </div>
