@@ -578,17 +578,17 @@ const Select: React.FC<{
 );
 
 // ─────────────────────────────────────────────────────
-// STAT CARD
+// COMPACT STAT
 // ─────────────────────────────────────────────────────
-const StatCard: React.FC<{ label: string; value: number | string; sub?: string; icon: React.ReactNode; accent: string; gold?: boolean }> = ({ label, value, sub, icon, accent, gold }) => (
-  <div className={`rounded-2xl p-5 flex flex-col gap-3 border shadow-sm relative overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-md ${gold ? 'bg-gradient-to-br from-[#E4B315] to-[#C69A11] border-transparent' : 'bg-white border-gray-100'}`}>
-    <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${gold ? 'bg-white/20' : accent}`}>
+const CompactStat: React.FC<{ label: string; value: number | string; sub?: string; icon: React.ReactNode; accent: string; gold?: boolean }> = ({ label, value, sub, icon, accent, gold }) => (
+  <div className="flex items-center gap-3">
+    <div className={`w-4 h-4 rounded flex items-center justify-center ${gold ? 'bg-[#E4B315]/20' : accent}`}>
       {icon}
     </div>
-    <div>
-      <p className={`text-2xl font-bold tracking-tight ${gold ? 'text-white' : 'text-gray-900'}`}>{value}</p>
-      <p className={`text-xs font-medium mt-0.5 ${gold ? 'text-white/80' : 'text-gray-500'}`}>{label}</p>
-      {sub && <p className={`text-xs mt-0.5 ${gold ? 'text-white/70' : 'text-gray-400'}`}>{sub}</p>}
+    <div className="flex flex-col">
+      <p className={`text-xl font-bold ${gold ? 'text-[#C69A11]' : 'text-gray-800'}`}>{value}</p>
+      <p className={`text-xs ${gold ? 'text-[#C69A11]/70' : 'text-gray-500'}`}>{label}</p>
+      {sub && <p className={`text-xs ${gold ? 'text-[#C69A11]/50' : 'text-gray-400'}`}>{sub}</p>}
     </div>
   </div>
 );
@@ -723,16 +723,16 @@ const WorkspaceManagement: React.FC = () => {
 
       <ToastContainer toasts={toasts} remove={id => setToasts(p => p.filter(t => t.id !== id))} />
 
-      <div className="px-4 sm:px-6 py-4 space-y-4 h-full overflow-y-auto flex flex-col bg-gray-50/80">
+      <div className="px-4 sm:px-6 py-4 space-y-4 h-screen max-h-[calc(100vh-80px)] overflow-hidden flex flex-col bg-gray-50/80">
 
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-hidden">
           <div className="max-w-7xl mx-auto h-full flex flex-col">
             {/* ── Stats ─────────────────────────────── */}
-            <div className="shrink-0 grid grid-cols-2 lg:grid-cols-4 gap-2 mb-3">
-              <StatCard label="Total Employees" value={employees.length} icon={<Users className="w-4 h-4 text-white" />} accent="bg-[#E4B315]/8" gold />
-              <StatCard label="Present Today" value={presentToday} sub={`of ${employees.length}`} icon={<UserCheck className="w-4 h-4 text-emerald-600" />} accent="bg-emerald-50" />
-              <StatCard label="Shift Assignments" value={activeShifts} icon={<BarChart2 className="w-4 h-4 text-sky-600" />} accent="bg-sky-50" />
-              <StatCard label="Pending Leaves" value={pendingLeaves} icon={<Calendar className="w-4 h-4 text-[#C69A11]" />} accent="bg-[#E4B315]/10" />
+            <div className="shrink-0 flex items-center justify-between mb-4">
+              <CompactStat label="Total Employees" value={employees.length} icon={<Users className="w-4 h-4 text-white" />} accent="bg-[#E4B315]/20" gold />
+              <CompactStat label="Present Today" value={presentToday} sub={`of ${employees.length}`} icon={<UserCheck className="w-4 h-4 text-emerald-600" />} accent="bg-emerald-100" />
+              <CompactStat label="Shift Assignments" value={activeShifts} icon={<BarChart2 className="w-4 h-4 text-sky-600" />} accent="bg-sky-100" />
+              <CompactStat label="Pending Leaves" value={pendingLeaves} icon={<Calendar className="w-4 h-4 text-[#C69A11]" />} accent="bg-[#E4B315]/20" />
             </div>
 
             {/* ── Quick Check In/Out ────────────────── */}
@@ -763,7 +763,7 @@ const WorkspaceManagement: React.FC = () => {
 
             {/* ── Tab Content (Scrollable) ─────────────── */}
             <div className="flex-1 flex flex-col min-h-0">
-              <div className="flex-1 overflow-auto">
+              <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ maxHeight: 'calc(100vh - 320px)' }}>
                 {tab === 'attendance' && (
                   <AttendanceTab
                     attendance={attendance}
@@ -855,7 +855,7 @@ const WorkspaceManagement: React.FC = () => {
               </div>
 
               {/* Pagination - Fixed at bottom */}
-              {tab === 'attendance' && attendance.length > 0 && (
+              {/* {tab === 'attendance' && attendance.length > 0 && (
                 <div className="flex-shrink-0 p-4 border-t border-slate-100 bg-white">
                   <Pagination
                     currentPage={attendancePage}
@@ -902,7 +902,7 @@ const WorkspaceManagement: React.FC = () => {
                     onItemsPerPageChange={setCheckinsItemsPerPage}
                   />
                 </div>
-              )}
+              )} */}
             </div>
           </div>
           </div>
@@ -1003,7 +1003,8 @@ const HolidaysTab: React.FC<{
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 h-full flex flex-col">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ maxHeight: 'calc(100vh - 380px)' }}>
       <TableCard title="Holiday Lists" count={holidayLists.length}
         action={
           <button onClick={() => setCreateModal(true)}
@@ -1183,6 +1184,7 @@ const HolidaysTab: React.FC<{
     )}
   </div>
 </Modal>
+      </div>
     </div>
   );
 };
@@ -1214,7 +1216,7 @@ const QuickCheckin: React.FC<{
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 mb-5">
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-3 mb-2">
       <h2 className="text-sm font-semibold text-gray-800 mb-3">Quick Check In / Out</h2>
       <div className="flex flex-col sm:flex-row gap-3">
         <Select
@@ -1243,13 +1245,16 @@ const QuickCheckin: React.FC<{
       </div>
 
       {recent.length > 0 && (
-        <div className="mt-4 flex flex-wrap gap-2">
-          {recent.map((r, i) => (
-            <div key={i} className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${r.type === 'IN' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
-              {r.type === 'IN' ? <LogIn className="w-3 h-3" /> : <LogOut className="w-3 h-3" />}
-              {r.name} · {r.time}
-            </div>
-          ))}
+        <div className="mt-4">
+          <h3 className="text-xs font-semibold text-gray-600 mb-2">Recent Check-ins</h3>
+          <div className="max-h-24 overflow-y-auto overflow-x-hidden flex flex-wrap gap-2 p-1 bg-gray-50 rounded-lg border border-gray-100">
+            {recent.map((r, i) => (
+              <div key={i} className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${r.type === 'IN' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
+                {r.type === 'IN' ? <LogIn className="w-3 h-3" /> : <LogOut className="w-3 h-3" />}
+                {r.name} · {r.time}
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>
@@ -1279,8 +1284,8 @@ const TableCard: React.FC<{
 const Th: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <th className="px-4 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap">{children}</th>
 );
-const Td: React.FC<{ children: React.ReactNode; className?: string; title?: string }> = ({ children, className = '', title }) => (
-  <td className={`px-4 py-3 text-sm text-gray-600 ${className}`} title={title}>{children}</td>
+const Td: React.FC<{ children: React.ReactNode; className?: string; title?: string; colSpan?: number }> = ({ children, className = '', title, colSpan }) => (
+  <td className={`px-4 py-3 text-sm text-gray-600 ${className}`} title={title} colSpan={colSpan}>{children}</td>
 );
 
 const EmptyRow: React.FC<{ cols: number; msg?: string }> = ({ cols, msg = 'No records found' }) => (
@@ -1354,7 +1359,7 @@ const AttendanceTab: React.FC<{
       </div>
 
       {/* Table Container */}
-      <div className="flex-1 overflow-auto mt-4">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden mt-4" style={{ maxHeight: 'calc(100vh - 420px)' }}>
         <TableCard title="Attendance Records" count={filtered.length}>
           <table className="w-full">
             <thead className="bg-slate-50 border-b border-slate-100 sticky top-0 z-10">
@@ -1457,7 +1462,7 @@ const ShiftsTab: React.FC<{
         ))}
       </div>
 
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ maxHeight: 'calc(100vh - 380px)' }}>
         {activeSection === 'assignments' && (
           <TableCard title="Shift Assignments" count={shiftAssignments.length}
             action={
@@ -1680,7 +1685,7 @@ const LeavesTab: React.FC<{
         ))}
       </div>
 
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ maxHeight: 'calc(100vh - 380px)' }}>
         {activeSection === 'applications' && (
           <>
             <div className="flex items-center gap-3 flex-wrap mb-4">
@@ -1751,30 +1756,74 @@ const LeavesTab: React.FC<{
           >
             <table className="w-full">
               <thead className="bg-slate-50 border-b border-slate-100">
-                <tr><Th>Employee</Th><Th>Leave Type</Th><Th>Total</Th><Th>From</Th><Th>To</Th><Th>Actions</Th></tr>
+                <tr><Th>Leave Type</Th><Th>Max Leaves</Th><Th>Employee</Th><Th>Allocated</Th><Th>From</Th><Th>To</Th><Th>Actions</Th></tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {loading ? <LoadingRow cols={6} /> :
-                  leaveAllocations.length === 0 ? <EmptyRow cols={6} /> :
-                    leaveAllocations.map(a => (
-                      <tr key={a.name} className="hover:bg-[#E4B315]/8/20 transition-colors">
-                        <Td><AvatarCell name={a.employee_name} /></Td>
-                        <Td>{a.leave_type}</Td>
-                        <Td><span className="font-semibold text-[#C69A11]">{a.new_leaves_allocated}</span></Td>
-                        <Td className="mono text-xs">{formatDate(a.from_date)}</Td>
-                        <Td className="mono text-xs">{formatDate(a.to_date)}</Td>
-                        <Td>
-                          <button onClick={() => {
-                            if (confirm(`Delete allocation for ${a.employee_name}?`)) {
-                              // Handle delete
-                            }
-                          }}
-                            className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 transition" title="Delete">
-                            <X className="w-4 h-4" />
-                          </button>
-                        </Td>
-                      </tr>
-                    ))}
+                {loading ? <LoadingRow cols={7} /> :
+                  leaveTypes.length === 0 ? <EmptyRow cols={7} /> :
+                    leaveTypes.map(lt => {
+                      const allocations = leaveAllocations.filter(la => la.leave_type === lt.name);
+                      return (
+                        <tr key={lt.name} className="hover:bg-[#E4B315]/8/20 transition-colors">
+                          <Td className="font-semibold">{lt.name}</Td>
+                          <Td><span className="text-gray-600">{lt.max_leaves_allowed || 'Unlimited'}</span></Td>
+                          {allocations.length > 0 ? (
+                            allocations.map((allocation, idx) => (
+                              <React.Fragment key={allocation.name}>
+                                {idx === 0 && <Td><AvatarCell name={allocation.employee_name} /></Td>}
+                                {idx === 0 && <Td><span className="font-semibold text-[#C69A11]">{allocation.new_leaves_allocated}</span></Td>}
+                                {idx === 0 && <Td className="mono text-xs">{formatDate(allocation.from_date)}</Td>}
+                                {idx === 0 && <Td className="mono text-xs">{formatDate(allocation.to_date)}</Td>}
+                                {idx === 0 && (
+                                  <Td>
+                                    <button onClick={() => {
+                                      if (confirm(`Delete allocation for ${allocation.employee_name}?`)) {
+                                        // Handle delete
+                                      }
+                                    }}
+                                      className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 transition" title="Delete">
+                                      <X className="w-4 h-4" />
+                                    </button>
+                                  </Td>
+                                )}
+                                {idx > 0 && (
+                                  <>
+                                    <Td colSpan={5} className="text-xs text-gray-500 py-2">
+                                      <div className="flex items-center gap-2">
+                                        <AvatarCell name={allocation.employee_name} />
+                                        <span>Allocated: {allocation.new_leaves_allocated} ({formatDate(allocation.from_date)} - {formatDate(allocation.to_date)})</span>
+                                        <button onClick={() => {
+                                          if (confirm(`Delete allocation for ${allocation.employee_name}?`)) {
+                                            // Handle delete
+                                          }
+                                        }}
+                                          className="p-1 rounded-lg text-rose-500 hover:bg-rose-50 transition" title="Delete">
+                                          <X className="w-3 h-3" />
+                                        </button>
+                                      </div>
+                                    </Td>
+                                  </>
+                                )}
+                              </React.Fragment>
+                            ))
+                          ) : (
+                            <>
+                              <Td colSpan={5} className="text-gray-400 text-sm">
+                                <div className="flex items-center justify-between">
+                                  <span>No allocations yet</span>
+                                  <button 
+                                    onClick={() => setAllocateModal(true)}
+                                    className="text-xs text-[#C69A11] hover:text-[#E4B315] font-medium"
+                                  >
+                                    Allocate Now
+                                  </button>
+                                </div>
+                              </Td>
+                            </>
+                          )}
+                        </tr>
+                      );
+                    })}
               </tbody>
             </table>
           </TableCard>
@@ -1870,6 +1919,77 @@ const LeavesTab: React.FC<{
           </div>
         </div>
       </Modal>
+
+      <Modal title="Create Leave Type" open={typeModal} onClose={() => setTypeModal(false)}>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1.5">Leave Type Name</label>
+            <input type="text" value={typeForm.leave_type_name} onChange={e => setTypeForm(f => ({ ...f, leave_type_name: e.target.value }))}
+              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E4B315]/30 focus:border-[#E4B315]/50 transition-colors" 
+              placeholder="e.g., Casual Leave" />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1.5">Max Leaves Allowed</label>
+            <input type="number" value={typeForm.max_leaves_allowed} onChange={e => setTypeForm(f => ({ ...f, max_leaves_allowed: parseFloat(e.target.value) || 0 }))}
+              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E4B315]/30 focus:border-[#E4B315]/50 transition-colors" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex items-center gap-2">
+              <input type="checkbox" id="carry_forward" checked={typeForm.is_carry_forward === 1} onChange={e => setTypeForm(f => ({ ...f, is_carry_forward: e.target.checked ? 1 : 0 }))}
+                className="w-4 h-4 text-[#E4B315] border-slate-300 rounded focus:ring-[#E4B315]/30" />
+              <label htmlFor="carry_forward" className="text-xs font-medium text-gray-700">Carry Forward</label>
+            </div>
+            <div className="flex items-center gap-2">
+              <input type="checkbox" id="lwp" checked={typeForm.is_lwp === 1} onChange={e => setTypeForm(f => ({ ...f, is_lwp: e.target.checked ? 1 : 0 }))}
+                className="w-4 h-4 text-[#E4B315] border-slate-300 rounded focus:ring-[#E4B315]/30" />
+              <label htmlFor="lwp" className="text-xs font-medium text-gray-700">Without Pay</label>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex items-center gap-2">
+              <input type="checkbox" id="earned_leave" checked={typeForm.is_earned_leave === 1} onChange={e => setTypeForm(f => ({ ...f, is_earned_leave: e.target.checked ? 1 : 0 }))}
+                className="w-4 h-4 text-[#E4B315] border-slate-300 rounded focus:ring-[#E4B315]/30" />
+              <label htmlFor="earned_leave" className="text-xs font-medium text-gray-700">Earned Leave</label>
+            </div>
+            <div className="flex items-center gap-2">
+              <input type="checkbox" id="include_holiday" checked={typeForm.include_holiday === 1} onChange={e => setTypeForm(f => ({ ...f, include_holiday: e.target.checked ? 1 : 0 }))}
+                className="w-4 h-4 text-[#E4B315] border-slate-300 rounded focus:ring-[#E4B315]/30" />
+              <label htmlFor="include_holiday" className="text-xs font-medium text-gray-700">Include Holidays</label>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex items-center gap-2">
+              <input type="checkbox" id="compensatory" checked={typeForm.is_compensatory === 1} onChange={e => setTypeForm(f => ({ ...f, is_compensatory: e.target.checked ? 1 : 0 }))}
+                className="w-4 h-4 text-[#E4B315] border-slate-300 rounded focus:ring-[#E4B315]/30" />
+              <label htmlFor="compensatory" className="text-xs font-medium text-gray-700">Compensatory</label>
+            </div>
+            <div className="flex items-center gap-2">
+              <input type="checkbox" id="encashment" checked={typeForm.allow_encashment === 1} onChange={e => setTypeForm(f => ({ ...f, allow_encashment: e.target.checked ? 1 : 0 }))}
+                className="w-4 h-4 text-[#E4B315] border-slate-300 rounded focus:ring-[#E4B315]/30" />
+              <label htmlFor="encashment" className="text-xs font-medium text-gray-700">Allow Encashment</label>
+            </div>
+          </div>
+          <div className="flex gap-2 pt-2">
+            <button onClick={() => setTypeModal(false)}
+              className="flex-1 px-4 py-2 text-sm font-semibold border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50 transition-colors">Cancel</button>
+            <button
+              onClick={() => {
+                if (typeForm.leave_type_name) {
+                  onCreateLeaveType(typeForm);
+                  setTypeModal(false);
+                  setTypeForm({
+                    leave_type_name: '', max_leaves_allowed: 0, is_carry_forward: 0, is_lwp: 0, is_earned_leave: 0, include_holiday: 1,
+                    is_compensatory: 0, allow_encashment: 0
+                  });
+                }
+              }}
+              disabled={!typeForm.leave_type_name}
+              className="flex-1 px-4 py-2 text-sm font-bold bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white rounded-xl hover:opacity-90 disabled:opacity-50 shadow-sm shadow-[#E4B315]/20">
+              Create
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };
@@ -1899,7 +2019,7 @@ const CheckinLogTab: React.FC<{
       </div>
 
       {/* Table Container */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ maxHeight: 'calc(100vh - 380px)' }}>
         <TableCard title="Employee Check-in Log" count={filtered.length}>
           <table className="w-full">
             <thead className="bg-slate-50 border-b border-slate-100">

@@ -374,7 +374,7 @@ export function AppSidebar() {
             Icon: House,
             items: [
                 { icon: <House className="h-3.5 w-3.5" />, label: 'Dashboard Home', href: '/dashboard', badge: 'Home', sectionId: 'dashboard' },
-                { icon: <Rocket className="h-3.5 w-3.5" />, label: 'CloudClic Landing', href: '/dashboard/landing', sectionId: 'dashboard' },
+                // { icon: <Rocket className="h-3.5 w-3.5" />, label: 'CloudClic Landing', href: '/dashboard/landing', sectionId: 'dashboard' },
             ]
         },
         {
