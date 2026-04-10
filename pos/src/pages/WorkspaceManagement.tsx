@@ -578,17 +578,17 @@ const Select: React.FC<{
 );
 
 // ─────────────────────────────────────────────────────
-// STAT CARD
+// COMPACT STAT
 // ─────────────────────────────────────────────────────
-const StatCard: React.FC<{ label: string; value: number | string; sub?: string; icon: React.ReactNode; accent: string; gold?: boolean }> = ({ label, value, sub, icon, accent, gold }) => (
-  <div className={`rounded-2xl p-5 flex flex-col gap-3 border shadow-sm relative overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-md ${gold ? 'bg-gradient-to-br from-[#E4B315] to-[#C69A11] border-transparent' : 'bg-white border-gray-100'}`}>
-    <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${gold ? 'bg-white/20' : accent}`}>
+const CompactStat: React.FC<{ label: string; value: number | string; sub?: string; icon: React.ReactNode; accent: string; gold?: boolean }> = ({ label, value, sub, icon, accent, gold }) => (
+  <div className="flex items-center gap-3">
+    <div className={`w-4 h-4 rounded flex items-center justify-center ${gold ? 'bg-[#E4B315]/20' : accent}`}>
       {icon}
     </div>
-    <div>
-      <p className={`text-2xl font-bold tracking-tight ${gold ? 'text-white' : 'text-gray-900'}`}>{value}</p>
-      <p className={`text-xs font-medium mt-0.5 ${gold ? 'text-white/80' : 'text-gray-500'}`}>{label}</p>
-      {sub && <p className={`text-xs mt-0.5 ${gold ? 'text-white/70' : 'text-gray-400'}`}>{sub}</p>}
+    <div className="flex flex-col">
+      <p className={`text-xl font-bold ${gold ? 'text-[#C69A11]' : 'text-gray-800'}`}>{value}</p>
+      <p className={`text-xs ${gold ? 'text-[#C69A11]/70' : 'text-gray-500'}`}>{label}</p>
+      {sub && <p className={`text-xs ${gold ? 'text-[#C69A11]/50' : 'text-gray-400'}`}>{sub}</p>}
     </div>
   </div>
 );
@@ -723,16 +723,16 @@ const WorkspaceManagement: React.FC = () => {
 
       <ToastContainer toasts={toasts} remove={id => setToasts(p => p.filter(t => t.id !== id))} />
 
-      <div className="px-4 sm:px-6 py-4 space-y-4 h-full overflow-y-auto flex flex-col bg-gray-50/80">
+      <div className="px-4 sm:px-6 py-4 space-y-4 h-screen max-h-[calc(100vh-80px)] overflow-hidden flex flex-col bg-gray-50/80">
 
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-hidden">
           <div className="max-w-7xl mx-auto h-full flex flex-col">
             {/* ── Stats ─────────────────────────────── */}
-            <div className="shrink-0 grid grid-cols-2 lg:grid-cols-4 gap-2 mb-3">
-              <StatCard label="Total Employees" value={employees.length} icon={<Users className="w-4 h-4 text-white" />} accent="bg-[#E4B315]/8" gold />
-              <StatCard label="Present Today" value={presentToday} sub={`of ${employees.length}`} icon={<UserCheck className="w-4 h-4 text-emerald-600" />} accent="bg-emerald-50" />
-              <StatCard label="Shift Assignments" value={activeShifts} icon={<BarChart2 className="w-4 h-4 text-sky-600" />} accent="bg-sky-50" />
-              <StatCard label="Pending Leaves" value={pendingLeaves} icon={<Calendar className="w-4 h-4 text-[#C69A11]" />} accent="bg-[#E4B315]/10" />
+            <div className="shrink-0 flex items-center justify-between mb-4">
+              <CompactStat label="Total Employees" value={employees.length} icon={<Users className="w-4 h-4 text-white" />} accent="bg-[#E4B315]/20" gold />
+              <CompactStat label="Present Today" value={presentToday} sub={`of ${employees.length}`} icon={<UserCheck className="w-4 h-4 text-emerald-600" />} accent="bg-emerald-100" />
+              <CompactStat label="Shift Assignments" value={activeShifts} icon={<BarChart2 className="w-4 h-4 text-sky-600" />} accent="bg-sky-100" />
+              <CompactStat label="Pending Leaves" value={pendingLeaves} icon={<Calendar className="w-4 h-4 text-[#C69A11]" />} accent="bg-[#E4B315]/20" />
             </div>
 
             {/* ── Quick Check In/Out ────────────────── */}
@@ -763,7 +763,7 @@ const WorkspaceManagement: React.FC = () => {
 
             {/* ── Tab Content (Scrollable) ─────────────── */}
             <div className="flex-1 flex flex-col min-h-0">
-              <div className="flex-1 overflow-auto">
+              <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ maxHeight: 'calc(100vh - 320px)' }}>
                 {tab === 'attendance' && (
                   <AttendanceTab
                     attendance={attendance}
@@ -855,7 +855,7 @@ const WorkspaceManagement: React.FC = () => {
               </div>
 
               {/* Pagination - Fixed at bottom */}
-              {tab === 'attendance' && attendance.length > 0 && (
+              {/* {tab === 'attendance' && attendance.length > 0 && (
                 <div className="flex-shrink-0 p-4 border-t border-slate-100 bg-white">
                   <Pagination
                     currentPage={attendancePage}
@@ -902,7 +902,7 @@ const WorkspaceManagement: React.FC = () => {
                     onItemsPerPageChange={setCheckinsItemsPerPage}
                   />
                 </div>
-              )}
+              )} */}
             </div>
           </div>
           </div>
@@ -1003,7 +1003,8 @@ const HolidaysTab: React.FC<{
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 h-full flex flex-col">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ maxHeight: 'calc(100vh - 380px)' }}>
       <TableCard title="Holiday Lists" count={holidayLists.length}
         action={
           <button onClick={() => setCreateModal(true)}
@@ -1183,6 +1184,7 @@ const HolidaysTab: React.FC<{
     )}
   </div>
 </Modal>
+      </div>
     </div>
   );
 };
@@ -1214,7 +1216,7 @@ const QuickCheckin: React.FC<{
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 mb-5">
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-3 mb-2">
       <h2 className="text-sm font-semibold text-gray-800 mb-3">Quick Check In / Out</h2>
       <div className="flex flex-col sm:flex-row gap-3">
         <Select
@@ -1243,13 +1245,16 @@ const QuickCheckin: React.FC<{
       </div>
 
       {recent.length > 0 && (
-        <div className="mt-4 flex flex-wrap gap-2">
-          {recent.map((r, i) => (
-            <div key={i} className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${r.type === 'IN' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
-              {r.type === 'IN' ? <LogIn className="w-3 h-3" /> : <LogOut className="w-3 h-3" />}
-              {r.name} · {r.time}
-            </div>
-          ))}
+        <div className="mt-4">
+          <h3 className="text-xs font-semibold text-gray-600 mb-2">Recent Check-ins</h3>
+          <div className="max-h-24 overflow-y-auto overflow-x-hidden flex flex-wrap gap-2 p-1 bg-gray-50 rounded-lg border border-gray-100">
+            {recent.map((r, i) => (
+              <div key={i} className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${r.type === 'IN' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
+                {r.type === 'IN' ? <LogIn className="w-3 h-3" /> : <LogOut className="w-3 h-3" />}
+                {r.name} · {r.time}
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>
@@ -1354,7 +1359,7 @@ const AttendanceTab: React.FC<{
       </div>
 
       {/* Table Container */}
-      <div className="flex-1 overflow-auto mt-4">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden mt-4" style={{ maxHeight: 'calc(100vh - 420px)' }}>
         <TableCard title="Attendance Records" count={filtered.length}>
           <table className="w-full">
             <thead className="bg-slate-50 border-b border-slate-100 sticky top-0 z-10">
@@ -1457,7 +1462,7 @@ const ShiftsTab: React.FC<{
         ))}
       </div>
 
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ maxHeight: 'calc(100vh - 380px)' }}>
         {activeSection === 'assignments' && (
           <TableCard title="Shift Assignments" count={shiftAssignments.length}
             action={
@@ -1680,7 +1685,7 @@ const LeavesTab: React.FC<{
         ))}
       </div>
 
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ maxHeight: 'calc(100vh - 380px)' }}>
         {activeSection === 'applications' && (
           <>
             <div className="flex items-center gap-3 flex-wrap mb-4">
@@ -2014,7 +2019,7 @@ const CheckinLogTab: React.FC<{
       </div>
 
       {/* Table Container */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ maxHeight: 'calc(100vh - 380px)' }}>
         <TableCard title="Employee Check-in Log" count={filtered.length}>
           <table className="w-full">
             <thead className="bg-slate-50 border-b border-slate-100">
