@@ -140,10 +140,10 @@ doc_events = {
         "before_save": "ury.ury.hooks.ury_pos_opening_entry.before_save",
         "before_insert": "ury.ury.api.ury_kot_order_number.set_last_invoice_in_pos_open",
     },
-    "POS Closing Entry": {
-        "before_save": "ury.ury.hooks.ury_pos_closing_entry.before_save",
-        "validate": "ury.ury.hooks.ury_pos_closing_entry.validate",
-    },
+    # "POS Closing Entry": {
+    #     "before_save": "ury.ury.hooks.ury_pos_closing_entry.before_save",
+    #     "validate": "ury.ury.hooks.ury_pos_closing_entry.validate",
+    # },
     "URY Menu Course": {
         "validate": "ury.ury.api.ury_menu_course_validation.validate_priority",
     },
