@@ -43,6 +43,7 @@ interface SalesInvoice {
 interface InvoiceItem {
   _id: string;
   item_name: string;
+  item_code: string;
   uom: string;
   qty: number;
   rate: number;
@@ -56,6 +57,7 @@ interface NewInvoiceForm {
   due_date: string;
   payment_terms_template: string;
   remarks: string;
+  branch: string;
   items: InvoiceItem[];
 }
 
@@ -84,12 +86,12 @@ const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
 
 const newItem = (): InvoiceItem => ({
   _id: Math.random().toString(36).slice(2),
-  item_name: '', uom: 'Nos', qty: 1, rate: 0, income_account: '', amount: 0,
+  item_name: '', item_code: '', uom: 'Nos', qty: 1, rate: 0, income_account: '', amount: 0,
 });
 
 const EMPTY_FORM: NewInvoiceForm = {
   customer: '', posting_date: new Date().toISOString().split('T')[0],
-  due_date: '', payment_terms_template: '', remarks: '', items: [newItem()],
+  due_date: '', payment_terms_template: '', remarks: '', branch: '', items: [newItem()],
 };
 
 // ─── Component ─────────────────────────────────────────────────────────────────
@@ -108,6 +110,7 @@ const AccountsReceivable: React.FC = () => {
   const [bankAccounts,     setBankAccounts]     = useState<{ name: string }[]>([]);
   const [itemMaster,       setItemMaster]       = useState<{ name: string; item_name: string; stock_uom?: string; standard_rate?: number }[]>([]);
   const [incomeAccounts,   setIncomeAccounts]   = useState<{ name: string }[]>([]);
+  const [branches,         setBranches]         = useState<{ name: string; branch?: string }[]>([]);
 
   const [currentPage,  setCurrentPage]  = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
@@ -117,13 +120,13 @@ const AccountsReceivable: React.FC = () => {
   const [invoiceForm,     setInvoiceForm]     = useState<NewInvoiceForm>({ ...EMPTY_FORM, items: [newItem()] });
   const [paymentForm,     setPaymentForm]     = useState<any>({});
 
-  // ── Fetch Sales Invoices with status Unpaid | Partly Paid | Overdue ────────
+  // ── Fetch All Submitted Sales Invoices ────────
   const fetchInvoices = async () => {
     setLoading(true); setError(null);
     try {
       const fields = JSON.stringify(['name','customer','customer_name','posting_date','due_date',
                                      'grand_total','outstanding_amount','status','docstatus']);
-      const filters = JSON.stringify([['docstatus','=',1],['status','in',['Unpaid','Partly Paid','Overdue']]]);
+      const filters = JSON.stringify([['docstatus','=',1]]);
       const params = new URLSearchParams({ fields, filters, limit_page_length:'500', order_by:'posting_date desc' });
       const res = await fetch(`/api/resource/Sales%20Invoice?${params}`, { headers: mutationHeaders() });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -137,13 +140,22 @@ const AccountsReceivable: React.FC = () => {
 
   const fetchDeps = async () => {
     try {
-      const [custRes, ptRes, mopRes, bankRes, itemRes, incRes] = await Promise.all([
+      const [custRes, ptRes, mopRes, bankRes, itemRes, incRes, branchRes] = await Promise.all([
         fetch('/api/resource/Customer?fields=["name","customer_name"]&limit_page_length=1000', { headers: mutationHeaders() }),
         fetch('/api/resource/Payment%20Terms%20Template?fields=["name"]&limit_page_length=100', { headers: mutationHeaders() }),
         fetch('/api/resource/Mode%20of%20Payment?fields=["name"]&limit_page_length=100', { headers: mutationHeaders() }),
         fetch('/api/resource/Account?filters=[["account_type","in",["Bank","Cash"]],["is_group","=",0]]&fields=["name"]&limit_page_length=200', { headers: mutationHeaders() }),
         fetch('/api/resource/Item?fields=["name","item_name","stock_uom","standard_rate"]&limit_page_length=500&order_by=item_name%20asc', { headers: mutationHeaders() }),
         fetch('/api/resource/Account?filters=[["root_type","=","Income"],["is_group","=",0]]&fields=["name"]&limit_page_length=300&order_by=name%20asc', { headers: mutationHeaders() }),
+        fetch('/api/method/frappe.client.get_list', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...mutationHeaders() },
+          body: JSON.stringify({
+            doctype: 'Branch',
+            fields: ['name'],
+            limit_page_length: 200
+          })
+        }),
       ]);
       if (custRes.ok) setCustomers((await custRes.json()).data || []);
       if (ptRes.ok)   setPaymentTermsList((await ptRes.json()).data || []);
@@ -151,6 +163,10 @@ const AccountsReceivable: React.FC = () => {
       if (bankRes.ok) setBankAccounts((await bankRes.json()).data || []);
       if (itemRes.ok) setItemMaster((await itemRes.json()).data || []);
       if (incRes.ok)  setIncomeAccounts((await incRes.json()).data || []);
+      if (branchRes.ok) {
+        const branchData = await branchRes.json();
+        setBranches(branchData.message || []);
+      }
     } catch (e) { console.error('fetchDeps', e); }
   };
 
@@ -201,6 +217,7 @@ const AccountsReceivable: React.FC = () => {
   // ── Submit new Sales Invoice ───────────────────────────────────────────────
   const submitInvoice = async () => {
     if (!invoiceForm.customer) { alert('Please select a customer.'); return; }
+    if (!invoiceForm.branch) { alert('Please select a branch.'); return; }
     const validItems = invoiceForm.items.filter(it => it.item_name.trim());
     if (!validItems.length) { alert('Please add at least one item.'); return; }
     setSubmitting(true);
@@ -209,9 +226,11 @@ const AccountsReceivable: React.FC = () => {
         doctype: 'Sales Invoice',
         customer: invoiceForm.customer,
         posting_date: invoiceForm.posting_date,
+        docstatus:1,
         due_date: invoiceForm.due_date || undefined,
         payment_terms_template: invoiceForm.payment_terms_template || undefined,
         remarks: invoiceForm.remarks || undefined,
+        branch: invoiceForm.branch,  // Selected branch for accounting dimension validation
         items: validItems.map(it => ({
           item_name: it.item_name,
           uom: it.uom || 'Nos',
@@ -219,6 +238,11 @@ const AccountsReceivable: React.FC = () => {
           rate: it.rate || 0,
           income_account: it.income_account || undefined,
           amount: it.amount,
+          // eTims mandatory fields
+          custom_taxation_type_code: 'A', // Default taxation type
+          custom_item_code_etims: it.item_code || 'DEFAULT', // Default item code if not provided
+          custom_unit_of_quantity_code: 'NOS', // Default unit code
+          custom_packaging_unit_code: 'NOS', // Default packaging code
         })),
       };
       const res = await fetch('/api/resource/Sales%20Invoice', { method:'POST', headers:mutationHeaders(), body:JSON.stringify(payload) });
@@ -250,7 +274,10 @@ const AccountsReceivable: React.FC = () => {
         posting_date: paymentForm.posting_date,
         mode_of_payment: paymentForm.mode_of_payment || undefined,
         paid_amount: amount, received_amount: amount,
+        docstatus:1,
         source_exchange_rate: 1, target_exchange_rate: 1,
+        reference_no: selectedInvoice.name,  // Use invoice number as reference
+        reference_date: paymentForm.posting_date,  // Use posting date as reference date
         references: [{ reference_doctype:'Sales Invoice', reference_name:selectedInvoice.name, allocated_amount:amount }],
       };
       const res = await fetch('/api/resource/Payment%20Entry', { method:'POST', headers:mutationHeaders(), body:JSON.stringify(payload) });
@@ -354,7 +381,7 @@ const AccountsReceivable: React.FC = () => {
               </div>
               <p className="text-sm font-bold text-[#2D2A26] mb-1">No invoices found</p>
               <p className="text-xs text-gray-400">
-                {statusFilter ? 'Try clearing the status filter' : 'No Unpaid, Partly Paid or Overdue invoices'}
+                {statusFilter ? 'Try clearing the status filter' : 'No submitted sales invoices found'}
               </p>
             </div>
           ) : (
@@ -438,6 +465,15 @@ const AccountsReceivable: React.FC = () => {
                   onChange={e => setInvoiceForm(f => ({ ...f, payment_terms_template: e.target.value }))}>
                   <option value="">Select terms (optional)…</option>
                   {paymentTermsList.map(pt => <option key={pt.name} value={pt.name}>{pt.name}</option>)}
+                </select>
+              </div>
+
+              <div>
+                <label className={LABEL}>Branch *</label>
+                <select className={INPUT} value={invoiceForm.branch}
+                  onChange={e => setInvoiceForm(f => ({ ...f, branch: e.target.value }))}>
+                  <option value="">Select branch...</option>
+                  {branches.map(b => <option key={b.name} value={b.name}>{b.branch || b.name}</option>)}
                 </select>
               </div>
 
