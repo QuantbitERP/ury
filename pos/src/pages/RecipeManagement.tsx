@@ -5,12 +5,13 @@ import PageLayout from '../components/PageLayout';
 
 // ── Interfaces ────────────────────────────────────────────────────────────────
 interface ItemOption { item_code: string; item_name: string; stock_uom?: string; valuation_rate?: number; }
+interface Company { name: string; default_currency?: string; }
 interface BOMItem { name: string; item_code: string; item_name: string; description: string; qty: number; uom: string; rate: number; amount: number; stock_qty: number; stock_uom: string; include_item_in_manufacturing: number; is_stock_item: number; }
 interface BOM { name: string; item_name: string; item: string; description: string; company: string; uom: string; quantity: number; is_active: boolean; is_default: boolean; allow_alternative_item: boolean; total_cost: number; raw_material_cost: number; operating_cost: number; scrap_material_cost: number; items: BOMItem[]; exploded_items: BOMItem[]; sell_price?: number; prep_time?: number; cook_time?: number; serving_size?: number; production_category?: string; linked_menu_item?: string; status?: string; }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-const formatCurrency = (n: number) =>
-  new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES', maximumFractionDigits: 0 }).format(n ?? 0);
+const formatCurrency = (n: number, currency: string = 'KES') =>
+  new Intl.NumberFormat('en-KE', { style: 'currency', currency: currency, maximumFractionDigits: 0 }).format(n ?? 0);
 
 const grossMargin = (cost: number, sell: number): string => {
   if (!sell || sell === 0) return '0.0';
@@ -84,7 +85,7 @@ const ItemSearch: React.FC<ItemSearchProps> = ({ value, placeholder = 'Search it
                 <div className="text-xs text-gray-400">{item.item_code} · {item.stock_uom || 'Nos'}</div>
               </div>
               {item.valuation_rate != null && item.valuation_rate > 0 && (
-                <div className="text-xs text-gray-400 font-semibold shrink-0 ml-3">{formatCurrency(item.valuation_rate)}</div>
+                <div className="text-xs text-gray-400 font-semibold shrink-0 ml-3">{formatCurrency(item.valuation_rate, 'KES')}</div>
               )}
             </div>
           ))}
@@ -102,11 +103,11 @@ const ItemSearch: React.FC<ItemSearchProps> = ({ value, placeholder = 'Search it
 // ── Empty helpers ─────────────────────────────────────────────────────────────
 const emptyIngredient = (): BOMItem => ({ name: '', item_code: '', item_name: '', description: '', qty: 1, uom: '', rate: 0, amount: 0, stock_qty: 0, stock_uom: '', include_item_in_manufacturing: 1, is_stock_item: 1 });
 interface IngredientRow extends BOMItem { _id: number; }
-interface RecipeForm { name: string; item_name: string; item: string; item_uom: string; description: string; quantity: number; uom: string; sell_price: number; linked_menu_item: string; linked_menu_item_name: string; status: string; company: string; items: IngredientRow[]; }
-const emptyForm = (): RecipeForm => ({ name: '', item_name: '', item: '', item_uom: 'Nos', description: '', quantity: 1, uom: 'Nos', sell_price: 0, linked_menu_item: '', linked_menu_item_name: '', status: 'Available', company: '', items: [{ ...emptyIngredient(), _id: Date.now() }] });
+interface RecipeForm { name: string; item_name: string; item: string; item_uom: string; description: string; quantity: number; uom: string; sell_price: number; linked_menu_item: string; linked_menu_item_name: string; status: string; company: string; currency: string; items: IngredientRow[]; }
+const emptyForm = (): RecipeForm => ({ name: '', item_name: '', item: '', item_uom: 'Nos', description: '', quantity: 1, uom: 'Nos', sell_price: 0, linked_menu_item: '', linked_menu_item_name: '', status: 'Available', company: '', currency: 'KES', items: [{ ...emptyIngredient(), _id: Date.now() }] });
 
 // ── Modal ─────────────────────────────────────────────────────────────────────
-interface ModalProps { title: string; onClose: () => void; onSubmit: () => Promise<void>; submitLabel: string; form: RecipeForm; setForm: React.Dispatch<React.SetStateAction<RecipeForm>>; saving: boolean; companies: { name: string }[]; }
+interface ModalProps { title: string; onClose: () => void; onSubmit: () => Promise<void>; submitLabel: string; form: RecipeForm; setForm: React.Dispatch<React.SetStateAction<RecipeForm>>; saving: boolean; companies: Company[]; }
 
 const RecipeModal: React.FC<ModalProps> = ({ title, onClose, onSubmit, submitLabel, form, setForm, saving, companies }) => {
   const addIngredient = () => setForm(f => ({ ...f, items: [...f.items, { ...emptyIngredient(), _id: Date.now() + Math.random() }] }));
@@ -114,6 +115,15 @@ const RecipeModal: React.FC<ModalProps> = ({ title, onClose, onSubmit, submitLab
   const updateIngredient = (id: number, patch: Partial<IngredientRow>) => setForm(f => ({ ...f, items: f.items.map(i => i._id === id ? { ...i, ...patch } : i) }));
   const totalCost = form.items.reduce((s, i) => s + (parseFloat(String(i.qty)) || 0) * (parseFloat(String(i.rate)) || 0), 0);
   const gm = grossMargin(totalCost, form.sell_price);
+
+  const handleCompanyChange = (companyName: string) => {
+    const selectedCompany = companies.find(c => c.name === companyName);
+    setForm(f => ({ 
+      ...f, 
+      company: companyName, 
+      currency: selectedCompany?.default_currency || 'KES'
+    }));
+  };
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -146,9 +156,9 @@ const RecipeModal: React.FC<ModalProps> = ({ title, onClose, onSubmit, submitLab
             <div>
               <label className={labelCls}>Company *</label>
               <select className={inputCls} value={form.company} required
-                onChange={e => setForm(f => ({ ...f, company: e.target.value }))}>
+                onChange={e => handleCompanyChange(e.target.value)}>
                 <option value="">Select company</option>
-                {companies.map((c: { name: string }) => <option key={c.name} value={c.name}>{c.name}</option>)}
+                {companies.map((c: Company) => <option key={c.name} value={c.name}>{c.name}</option>)}
               </select>
             </div>
             <div>
@@ -161,7 +171,7 @@ const RecipeModal: React.FC<ModalProps> = ({ title, onClose, onSubmit, submitLab
           {/* Sell Price */}
           <div className="grid grid-cols-[180px_1fr] gap-4">
             <div>
-              <label className={labelCls}>Sell Price (KES)</label>
+              <label className={labelCls}>Sell Price ({form.currency})</label>
               <input className={inputCls} type="number" min="0" placeholder="0" value={form.sell_price || ''}
                 onChange={e => setForm(f => ({ ...f, sell_price: parseFloat(e.target.value) || 0 }))} />
             </div>
@@ -176,7 +186,7 @@ const RecipeModal: React.FC<ModalProps> = ({ title, onClose, onSubmit, submitLab
                 <span className="ml-2 text-xs text-gray-400">· select item, enter qty</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold px-3 py-1 rounded-full bg-[#E4B315]/10 text-[#C69A11]">Total: {formatCurrency(totalCost)}</span>
+                <span className="text-xs font-bold px-3 py-1 rounded-full bg-[#E4B315]/10 text-[#C69A11]">Total: {formatCurrency(totalCost, form.currency)}</span>
                 <button onClick={addIngredient}
                   className="flex items-center gap-1.5 bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-sm shadow-[#E4B315]/20 hover:opacity-90 transition-opacity">
                   <Plus size={13} /> Add Row
@@ -192,7 +202,7 @@ const RecipeModal: React.FC<ModalProps> = ({ title, onClose, onSubmit, submitLab
             </div>
 
             <div className="max-h-72 overflow-y-auto divide-y divide-gray-50">
-              {form.items.map((ing, idx) => (
+              {form.items.map((ing) => (
                 <div key={ing._id} className="grid grid-cols-[2.5fr_80px_90px_100px_36px] items-center">
                   <div className="p-2"><ItemSearch value={ing.item_name || ing.item_code} placeholder="Search ingredient…"
                     onSelect={item => updateIngredient(ing._id, { item_code: item.item_code, item_name: item.item_name, uom: item.stock_uom || 'Nos', stock_uom: item.stock_uom || 'Nos', rate: item.valuation_rate || 0 })}
@@ -201,7 +211,7 @@ const RecipeModal: React.FC<ModalProps> = ({ title, onClose, onSubmit, submitLab
                     value={ing.qty} onChange={e => updateIngredient(ing._id, { qty: parseFloat(e.target.value) || 0 })} /></div>
                   <div className="p-2"><input className={inputCls + ' px-2 text-gray-500'} value={ing.uom} placeholder="UOM"
                     onChange={e => updateIngredient(ing._id, { uom: e.target.value })} /></div>
-                  <div className="px-3 py-2 text-sm font-bold text-[#2D2A26]">{formatCurrency((ing.qty || 0) * (ing.rate || 0))}</div>
+                  <div className="px-3 py-2 text-sm font-bold text-[#2D2A26]">{formatCurrency((ing.qty || 0) * (ing.rate || 0), form.currency)}</div>
                   <div className="flex items-center justify-center p-1">
                     <button onClick={() => removeIngredient(ing._id)}
                       className="p-1 text-gray-300 hover:text-red-500 transition-colors rounded-lg"><X size={14} /></button>
@@ -217,8 +227,8 @@ const RecipeModal: React.FC<ModalProps> = ({ title, onClose, onSubmit, submitLab
           {/* Margin summary */}
           {(totalCost > 0 || form.sell_price > 0) && (
             <div className="flex gap-6 p-3.5 bg-[#E4B315]/6 rounded-xl border border-[#E4B315]/20 text-sm flex-wrap">
-              <span className="text-gray-500">Cost: <strong className="text-[#2D2A26]">{formatCurrency(totalCost)}</strong></span>
-              <span className="text-gray-500">Sell: <strong className="text-[#2D2A26]">{formatCurrency(form.sell_price)}</strong></span>
+              <span className="text-gray-500">Cost: <strong className="text-[#2D2A26]">{formatCurrency(totalCost, form.currency)}</strong></span>
+              <span className="text-gray-500">Sell: <strong className="text-[#2D2A26]">{formatCurrency(form.sell_price, form.currency)}</strong></span>
               <span className="text-gray-500">Gross Margin: <strong className={parseFloat(gm) >= 0 ? 'text-green-600' : 'text-red-600'}>{gm}%</strong></span>
             </div>
           )}
@@ -258,13 +268,13 @@ const RecipeManagement: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
-  const [companies, setCompanies] = useState<{ name: string }[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
 
   useEffect(() => { fetchRecipes(); fetchCompanies(); }, []);
 
   const fetchCompanies = async () => {
     try {
-      const res = await fetch('/api/resource/Company?fields=["name"]&limit_page_length=9999');
+      const res = await fetch('/api/resource/Company?fields=["name","default_currency"]&limit_page_length=9999');
       const data = await res.json();
       setCompanies(data.data || []);
     } catch (err) {
@@ -305,7 +315,7 @@ const RecipeManagement: React.FC = () => {
     setSaving(true);
     try {
       const itemCode = addForm.linked_menu_item || addForm.item_name;
-      const payload = { item: itemCode, item_name: addForm.item_name, company: addForm.company, docstatus: 1, description: addForm.description || addForm.item_name, quantity: addForm.quantity || 1, uom: addForm.uom || 'Nos', is_active: 1, is_default: 1, items: addForm.items.filter(i => i.item_code.trim() !== '').map(i => ({ item_code: i.item_code, item_name: i.item_name, qty: i.qty, uom: i.uom || i.stock_uom || 'Nos', rate: i.rate || 0 })) };
+      const payload = { item: itemCode, item_name: addForm.item_name, company: addForm.company, currency: addForm.currency, docstatus: 1, description: addForm.description || addForm.item_name, quantity: addForm.quantity || 1, uom: addForm.uom || 'Nos', is_active: 1, is_default: 1, items: addForm.items.filter(i => i.item_code.trim() !== '').map(i => ({ item_code: i.item_code, item_name: i.item_name, qty: i.qty, uom: i.uom || i.stock_uom || 'Nos', rate: i.rate || 0 })) };
       const res = await fetch('/api/resource/BOM', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Frappe-CSRF-Token': (window as any).csrf_token || '' }, body: JSON.stringify(payload) });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.exception || data?.message || `HTTP ${res.status}`);
@@ -345,7 +355,8 @@ const RecipeManagement: React.FC = () => {
     try {
       const res = await fetch(`/api/resource/BOM/${encodeURIComponent(recipe.name)}`);
       const data = await res.json(); const full: BOM = data.data ?? recipe;
-      setEditForm({ name: full.name, item_name: full.item_name, item: full.item, item_uom: full.uom || 'Nos', description: full.description || '', quantity: full.quantity, uom: full.uom, sell_price: full.total_cost ?? full.sell_price ?? 0, linked_menu_item: full.item ?? '', linked_menu_item_name: full.item_name ?? '', status: full.status ?? 'Available', company: full.company || '', items: (full.items?.length > 0 ? full.items : [emptyIngredient()]).map(i => ({ ...emptyIngredient(), name: i.name || '', item_code: i.item_code || '', item_name: i.item_name || '', description: i.description || '', qty: i.qty ?? 1, uom: i.uom || i.stock_uom || '', rate: i.rate ?? 0, amount: i.amount ?? 0, stock_qty: i.stock_qty ?? 0, stock_uom: i.stock_uom || '', _id: Math.random() })) });
+      const selectedCompany = companies.find(c => c.name === full.company);
+      setEditForm({ name: full.name, item_name: full.item_name, item: full.item, item_uom: full.uom || 'Nos', description: full.description || '', quantity: full.quantity, uom: full.uom, sell_price: full.total_cost ?? full.sell_price ?? 0, linked_menu_item: full.item ?? '', linked_menu_item_name: full.item_name ?? '', status: full.status ?? 'Available', company: full.company || '', currency: selectedCompany?.default_currency || 'KES', items: (full.items?.length > 0 ? full.items : [emptyIngredient()]).map(i => ({ ...emptyIngredient(), name: i.name || '', item_code: i.item_code || '', item_name: i.item_name || '', description: i.description || '', qty: i.qty ?? 1, uom: i.uom || i.stock_uom || '', rate: i.rate ?? 0, amount: i.amount ?? 0, stock_qty: i.stock_qty ?? 0, stock_uom: i.stock_uom || '', _id: Math.random() })) });
       setEditTarget(full.name);
     } catch (err: any) { alert('Failed to load recipe: ' + err.message); }
   };
@@ -430,8 +441,8 @@ const RecipeManagement: React.FC = () => {
                             <div className="text-xs text-gray-400 font-mono">{recipe.item}</div>
                           </td>
                           <td className="px-4 py-3.5 text-sm text-gray-500">{recipe.linked_menu_item || '—'}</td>
-                          <td className="px-4 py-3.5 text-sm font-semibold text-[#2D2A26] tabular-nums">{formatCurrency(recipe.total_cost || 0)}</td>
-                          <td className="px-4 py-3.5 text-sm font-semibold text-[#2D2A26] tabular-nums">{formatCurrency(recipe.sell_price || 0)}</td>
+                          <td className="px-4 py-3.5 text-sm font-semibold text-[#2D2A26] tabular-nums">{formatCurrency(recipe.total_cost || 0, 'KES')}</td>
+                          <td className="px-4 py-3.5 text-sm font-semibold text-[#2D2A26] tabular-nums">{formatCurrency(recipe.sell_price || 0, 'KES')}</td>
                           <td className="px-4 py-3.5">
                             <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold ${marginBadge(gm)}`}>{gm}%</span>
                           </td>

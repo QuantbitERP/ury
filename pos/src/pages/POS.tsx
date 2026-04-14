@@ -6,9 +6,11 @@ import ProductDialog from '../components/ProductDialog';
 import MenuList from '../components/MenuList';
 import SearchBar from '../components/SearchBar';
 import { usePOSStore } from '../store/pos-store';
+import { useRootStore } from '../store/root-store';
 import { cn } from '../lib/utils';
 import { Spinner } from '../components/ui/spinner';
 import InitialLoader from '../components/InitialLoader';
+import { useNavigate } from 'react-router-dom';
 
 export default function POS() {
   const {
@@ -23,6 +25,46 @@ export default function POS() {
     isMenuInteractionDisabled,
     isInitializing,
   } = usePOSStore();
+
+  const { user } = useRootStore();
+  const navigate = useNavigate();
+
+  // ── Role-based access control ──────────────────────────────────────────────────
+  useEffect(() => {
+    if (!user?.roles) return;
+
+    const userRoles = user.roles;
+    
+    // Helper function to check if user has specific roles
+    const hasRole = (roles: string[], requiredRoles: string[]) => 
+      requiredRoles.some(role => roles.includes(role));
+
+    // Check if user has Finance roles (Accounts Manager, Accounts User, Analytics, Auditor)
+    const hasFinanceRoles = hasRole(userRoles, ['Accounts Manager', 'Accounts User', 'Analytics', 'Auditor']);
+    
+    // Check if user has HR roles (HR Manager, HR User)
+    const hasHRRoles = hasRole(userRoles, ['HR Manager', 'HR User']);
+    
+    // Check if user has Purchase/Stock roles
+    const hasPurchaseRoles = hasRole(userRoles, ['Purchase Manager', 'Purchase Master Manager', 'Purchase User']);
+    const hasStockRoles = hasRole(userRoles, ['Stock Manager', 'Stock User', 'Supplier']);
+
+    // PRIORITY: Finance roles take precedence - redirect to dashboard if user has finance roles
+    if (hasFinanceRoles) {
+      navigate('/dashboard');
+      return;
+    }
+    // PRIORITY: HR roles take precedence - redirect to dashboard if user has HR roles
+    else if (hasHRRoles) {
+      navigate('/dashboard');
+      return;
+    }
+    // PRIORITY: Purchase/Stock roles take precedence - redirect to dashboard if user has these roles
+    else if (hasPurchaseRoles || hasStockRoles) {
+      navigate('/dashboard');
+      return;
+    }
+  }, [user, navigate]);
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
