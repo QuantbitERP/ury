@@ -22,6 +22,9 @@ const RouteGuard: React.FC<Props> = ({ children }) => {
     const userRoles = user.roles;
     const currentPath = location.pathname;
 
+    // PRIORITY: Check if user has Finance roles (Accounts Manager, Accounts User, Analytics, Auditor)
+    const hasFinanceRoles = hasRole(userRoles, ['Accounts Manager', 'Accounts User', 'Analytics', 'Auditor']);
+    
     // Check if user has restricted roles (URY Captain, System Manager, Customer)
     const hasRestrictedRoles = hasRole(userRoles, ['URY Captain', 'System Manager', 'Customer']);
     
@@ -42,9 +45,53 @@ const RouteGuard: React.FC<Props> = ({ children }) => {
 
     // Check if user has ALL roles (has roles from all categories)
     const hasAllRoles = hasRestrictedRoles && hasManagerCashierRoles && hasHRRoles && 
-                       hasPurchaseRoles && hasStockRoles && hasManufacturingRoles;
+                       hasPurchaseRoles && hasStockRoles && hasManufacturingRoles && hasFinanceRoles;
 
     // Define allowed routes for different role groups
+    const financeAllowedRoutes = [
+      '/dashboard',
+      '/finance/accounting',
+      '/finance/accounting/financial-dashboard',
+      '/finance/accounting/chart-of-accounts',
+      '/finance/accounting/budgets',
+      '/finance/accounting/gl-entry',
+      '/finance/accounting/journal-entry',
+      '/finance/accounting/accounts-payable',
+      '/finance/accounting/accounts-receivable',
+      '/finance/accounting/bank-accounts',
+      '/finance/accounting/bank-transactions',
+      '/finance/accounting/petty-cash',
+      '/finance/accounting/vat-manager',
+      '/finance/accounting/catering-levy',
+      '/finance/accounting/financial-reports',
+      '/finance/accounting/tax-configuration',
+      '/finance/accounting/payment-analysis',
+      '/'  // Root/home route
+    ];
+
+    const hrAllowedRoutes = [
+      '/dashboard',
+      '/hr',
+      '/staff-management',
+      '/workspace-management',
+      '/payroll',
+      '/'  // Root/home route
+    ];
+
+    const purchaseStockAllowedRoutes = [
+      '/dashboard',
+      '/inventory',
+      '/suppliers',
+      '/categories',
+      '/units',
+      '/stock-transfers',
+      '/stock-tracking',
+      '/purchase-orders',
+      '/goods-receipts',
+      '/supplier-returns',
+      '/'  // Root/home route
+    ];
+
     const restrictedAllowedRoutes = [
       '/pos',
       '/kot', 
@@ -65,40 +112,72 @@ const RouteGuard: React.FC<Props> = ({ children }) => {
       '/'  // Root/home route
     ];
 
-    const hrAllowedRoutes = [
-      '/hr',
-      '/staff-management',
-      '/workspace-management',
-      '/payroll',
-      '/finance/accounting',
-      '/bank-accounts',
-      '/bank-transactions',
-      '/'  // Root/home route
-    ];
-
-    // For users with ALL roles across all categories - full access, no restrictions
+    // HIGHEST PRIORITY: Users with ALL roles across all categories - full access, no restrictions
     if (hasAllRoles) {
       // Full access - no route restrictions
       return;
     }
-    // For users with ALL URY roles (restricted + manager/cashier) - full access, no restrictions
-    else if (hasRestrictedRoles && hasManagerCashierRoles) {
-      // Full access - no route restrictions
+
+    // PRIORITY: Finance roles take precedence - restrict to finance routes only
+    if (hasFinanceRoles) {
+      const isAllowed = financeAllowedRoutes.some(route => 
+        currentPath === route || currentPath.startsWith(route + '/')
+      );
+
+      if (!isAllowed && currentPath !== '/') {
+        // Redirect to dashboard if trying to access restricted page
+        navigate('/dashboard', { replace: true });
+        return;
+      }
       return;
     }
-    // For users with HR roles only (HR Manager, HR User, Customer, System Manager) - NO other roles
-    else if (hasHRRoles && !hasRestrictedRoles && !hasManagerCashierRoles && 
-             !hasPurchaseRoles && !hasStockRoles && !hasManufacturingRoles) {
-      // Check if current path is allowed for HR
+
+    // PRIORITY: HR roles take precedence - restrict to HR and finance routes only
+    else if (hasHRRoles) {
       const isAllowed = hrAllowedRoutes.some(route => 
         currentPath === route || currentPath.startsWith(route + '/')
       );
 
       if (!isAllowed && currentPath !== '/') {
-        // Redirect to HR dashboard if trying to access restricted page
-        navigate('/hr', { replace: true });
+        // Redirect to dashboard if trying to access restricted page
+        navigate('/dashboard', { replace: true });
         return;
       }
+      return;
+    }
+
+    // PRIORITY: Purchase/Stock roles take precedence when present with Finance roles (for sale-pur case)
+    else if ((hasPurchaseRoles || hasStockRoles) && hasFinanceRoles && !hasHRRoles) {
+      const isAllowed = purchaseStockAllowedRoutes.some(route => 
+        currentPath === route || currentPath.startsWith(route + '/')
+      );
+
+      if (!isAllowed && currentPath !== '/') {
+        // Redirect to dashboard if trying to access restricted page
+        navigate('/dashboard', { replace: true });
+        return;
+      }
+      return;
+    }
+
+    // PRIORITY: Purchase/Stock roles take precedence - restrict to inventory routes only
+    else if (hasPurchaseRoles || hasStockRoles) {
+      const isAllowed = purchaseStockAllowedRoutes.some(route => 
+        currentPath === route || currentPath.startsWith(route + '/')
+      );
+
+      if (!isAllowed && currentPath !== '/') {
+        // Redirect to dashboard if trying to access restricted page
+        navigate('/dashboard', { replace: true });
+        return;
+      }
+      return;
+    }
+
+    // For users with ALL URY roles (restricted + manager/cashier) - full access, no restrictions
+    else if (hasRestrictedRoles && hasManagerCashierRoles) {
+      // Full access - no route restrictions
+      return;
     }
     // For users with only restricted roles (Captain, System Manager, Customer) - NO manager/cashier roles
     else if (hasRestrictedRoles && !hasManagerCashierRoles) {

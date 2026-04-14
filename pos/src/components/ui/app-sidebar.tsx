@@ -500,17 +500,50 @@ export function AppSidebar() {
         // Check if user has Manufacturing roles (Manufacturing Manager, Manufacturing User)
         const hasManufacturingRoles = hasRole(userRoles, ['Manufacturing Manager', 'Manufacturing User']);
 
+        // Check if user has Finance roles (Accounts Manager, Accounts User, Analytics, Auditor)
+        const hasFinanceRoles = hasRole(userRoles, ['Accounts Manager', 'Accounts User', 'Analytics', 'Auditor']);
+
         // Check if user has ALL roles (has roles from all categories)
         const hasAllRoles = hasRestrictedRoles && hasManagerCashierRoles && hasHRRoles &&
-            hasPurchaseRoles && hasStockRoles && hasManufacturingRoles;
+            hasPurchaseRoles && hasStockRoles && hasManufacturingRoles && hasFinanceRoles;
 
         return allSections.map(section => {
             let filteredItems = section.items;
 
-            // For users with ALL roles across all categories - show everything
+            // HIGHEST PRIORITY: Users with ALL roles across all categories - show everything
             if (hasAllRoles) {
                 // Show all sections and items - full access
                 filteredItems = section.items;
+            }
+            // PRIORITY: Purchase/Stock roles take precedence when present with Finance roles (for sale-pur case)
+            else if ((hasPurchaseRoles || hasStockRoles) && hasFinanceRoles && !hasHRRoles) {
+                if (section.id === 'inventory') {
+                    // Show all items in Inventory & Suppliers section
+                    filteredItems = section.items;
+                } else {
+                    // Hide all other sections
+                    filteredItems = [];
+                }
+            }
+            // PRIORITY: HR roles take precedence - show ONLY HR modules if user has HR roles (and no finance roles)
+            else if (hasHRRoles) {
+                if (section.id === 'hr') {
+                    // Show all items in Human Resources section
+                    filteredItems = section.items;
+                } else {
+                    // Hide all other sections
+                    filteredItems = [];
+                }
+            }
+            // PRIORITY: Purchase/Stock roles take precedence - show ONLY Inventory & Suppliers modules if user has these roles (and no finance/HR roles)
+            else if (hasPurchaseRoles || hasStockRoles) {
+                if (section.id === 'inventory') {
+                    // Show all items in Inventory & Suppliers section
+                    filteredItems = section.items;
+                } else {
+                    // Hide all other sections
+                    filteredItems = [];
+                }
             }
             // For users with ALL URY roles (restricted + manager/cashier) - show everything
             else if (hasRestrictedRoles && hasManagerCashierRoles) {
@@ -519,7 +552,7 @@ export function AppSidebar() {
             }
             // For users with HR roles only (HR Manager, HR User, Customer, System Manager) - NO URY/Purchase/Stock/Manufacturing roles
             else if (hasHRRoles && !hasRestrictedRoles && !hasManagerCashierRoles &&
-                !hasPurchaseRoles && !hasStockRoles && !hasManufacturingRoles) {
+                !hasPurchaseRoles && !hasStockRoles && !hasManufacturingRoles && !hasFinanceRoles) {
                 if (section.id === 'hr' || section.id === 'finance') {
                     // Show all items in Human Resources and Finance & Accounting (for Payroll)
                     filteredItems = section.items;
@@ -529,7 +562,7 @@ export function AppSidebar() {
                 }
             }
             // For users with only restricted roles (Captain, System Manager, Customer) - NO manager/cashier roles
-            else if (hasRestrictedRoles && !hasManagerCashierRoles) {
+            else if (hasRestrictedRoles && !hasManagerCashierRoles && !hasFinanceRoles) {
                 if (section.id === 'pos') {
                     // Show only EPOS Terminal, KOT, and Bar Order
                     filteredItems = section.items.filter(item =>
@@ -543,7 +576,7 @@ export function AppSidebar() {
                 }
             }
             // For users with only manager/cashier roles but no restricted roles
-            else if (hasManagerCashierRoles && !hasRestrictedRoles) {
+            else if (hasManagerCashierRoles && !hasRestrictedRoles && !hasFinanceRoles) {
                 if (section.id === 'pos' || section.id === 'restaurant') {
                     // Show all items in Point of Sale and Restaurant Operations
                     filteredItems = section.items;
