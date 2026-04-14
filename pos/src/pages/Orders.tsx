@@ -210,50 +210,12 @@ export default function Orders() {
     selectedOrder, selectedOrderItems, selectedOrderTaxes,
     selectedOrderLoading, selectedOrderError,
     fetchOrders, setSelectedStatus, goToNextPage, goToPreviousPage,
-    selectOrder, clearSelectedOrder, orderSearchQuery, setOrderSearchQuery,
-    user
+    selectOrder, clearSelectedOrder, orderSearchQuery, setOrderSearchQuery
   } = useRootStore();
 
   const posStore = usePOSStore();
   const navigate = useNavigate();
   const mounted  = useRef(false);
-
-  // ── Role-based access control ──────────────────────────────────────────────────
-  useEffect(() => {
-    if (!user?.roles) return;
-
-    const userRoles = user.roles;
-    
-    // Helper function to check if user has specific roles
-    const hasRole = (roles: string[], requiredRoles: string[]) => 
-      requiredRoles.some(role => roles.includes(role));
-
-    // Check if user has Finance roles (Accounts Manager, Accounts User, Analytics, Auditor)
-    const hasFinanceRoles = hasRole(userRoles, ['Accounts Manager', 'Accounts User', 'Analytics', 'Auditor']);
-    
-    // Check if user has HR roles (HR Manager, HR User)
-    const hasHRRoles = hasRole(userRoles, ['HR Manager', 'HR User']);
-    
-    // Check if user has Purchase/Stock roles
-    const hasPurchaseRoles = hasRole(userRoles, ['Purchase Manager', 'Purchase Master Manager', 'Purchase User']);
-    const hasStockRoles = hasRole(userRoles, ['Stock Manager', 'Stock User', 'Supplier']);
-
-    // PRIORITY: Finance roles take precedence - redirect to dashboard if user has finance roles
-    if (hasFinanceRoles) {
-      navigate('/dashboard');
-      return;
-    }
-    // PRIORITY: HR roles take precedence - redirect to dashboard if user has HR roles
-    else if (hasHRRoles) {
-      navigate('/dashboard');
-      return;
-    }
-    // PRIORITY: Purchase/Stock roles take precedence - redirect to dashboard if user has these roles
-    else if (hasPurchaseRoles || hasStockRoles) {
-      navigate('/dashboard');
-      return;
-    }
-  }, [user, navigate]);
 
   const [cancelDialogOpen,          setCancelDialogOpen]          = useState(false);
   const [cancelReason,              setCancelReason]              = useState('');

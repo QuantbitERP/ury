@@ -71,31 +71,6 @@ const Manufacturing: React.FC = () => {
   const [productionItems, setProductionItems] = useState<ProductionOrderItem[]>([]);
   const [stockLoading, setStockLoading] = useState(false);
   const [creatingOrder, setCreatingOrder] = useState(false);
-  const [companies, setCompanies] = useState<{ name: string; abbr: string }[]>([]);
-  const [selectedCompany, setSelectedCompany] = useState('');
-
-  // ── Fetch companies ────────────────────────────────────────────────────────// Get company abbreviation
-  const getCompanyAbbr = (companyName: string): string => {
-    const company = companies.find(c => c.name === companyName);
-    return company?.abbr || 'QR'; // Default to 'QR' if not found
-  };
-
-  // Fetch companies
-  const fetchCompanies = async () => {
-    try {
-      const res = await fetch('/api/resource/Company?fields=["name","abbr"]&limit_page_length=9999');
-      const data = await res.json();
-      if (data.data) {
-        setCompanies(data.data);
-        // Auto-select first company if none selected
-        if (!selectedCompany && data.data.length > 0) {
-          setSelectedCompany(data.data[0].name);
-        }
-      }
-    } catch (err: any) {
-      console.error('Failed to fetch companies:', err.message);
-    }
-  };
 
   // ── Fetch BOMs ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -117,7 +92,6 @@ const Manufacturing: React.FC = () => {
       finally { setLoading(false); }
     };
     fetchBOMs();
-    fetchCompanies();
   }, []);
 
   // ── Fetch production orders ───────────────────────────────────────────
@@ -178,23 +152,16 @@ const Manufacturing: React.FC = () => {
 
   const createProductionOrder = async () => {
     if (!selectedBOM || creatingOrder) return;
-    if (!selectedCompany) { alert('Please select a company first.'); return; }
     if (selectedBOM.docstatus !== 1) { alert(`BOM ${selectedBOM.name} is not submitted.`); return; }
     const qty = Number(productionQty) || 1;
     if (productionItems.some(i => i.status === 'insufficient')) { alert('Cannot create: Some ingredients have insufficient stock.'); return; }
-    
-    const companyAbbr = getCompanyAbbr(selectedCompany);
-    const fgWarehouse = `Finished Goods - ${companyAbbr}`;
-    const wipWarehouse = `Work In Progress - ${companyAbbr}`;
-    const storesWarehouse = `Stores - ${companyAbbr}`;
-    
     setCreatingOrder(true);
     try {
-      const woPayload = { production_item: selectedBOM.item, bom_no: selectedBOM.name, qty, planned_start_date: productionDate, fg_warehouse: fgWarehouse, wip_warehouse: wipWarehouse, company: selectedCompany, status: 'In Process', docstatus: 1 };
+      const woPayload = { production_item: selectedBOM.item, bom_no: selectedBOM.name, qty, planned_start_date: productionDate, fg_warehouse: 'Finished Goods - QR', wip_warehouse: 'Work In Progress - QR', status: 'In Process', docstatus: 1 };
       const woRes = await fetch('/api/resource/Work Order', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Frappe-CSRF-Token': (window as any).csrf_token || '' }, body: JSON.stringify(woPayload) });
       const woData = await woRes.json();
       if (!woRes.ok) throw new Error(woData?.exception || woData?.message || 'Failed to create Work Order');
-      const sePayload = { purpose: 'Material Consumption for Manufacture', stock_entry_type: 'Manufacture', work_order: woData.data.name, from_warehouse: storesWarehouse, to_warehouse: wipWarehouse, company: selectedCompany, fg_completed_qty: qty, items: [...productionItems.map(item => ({ item_code: item.bom_item.item_code, qty: item.required_qty, uom: item.bom_item.uom, basic_rate: item.bom_item.rate || 0, s_warehouse: storesWarehouse, t_warehouse: wipWarehouse })), { item_code: selectedBOM.item, item_name: selectedBOM.item_name, qty, uom: selectedBOM.uom, basic_rate: 0, s_warehouse: wipWarehouse, t_warehouse: fgWarehouse, is_finished_item: 1 }], docstatus: 1 };
+      const sePayload = { purpose: 'Material Consumption for Manufacture', stock_entry_type: 'Manufacture', work_order: woData.data.name, from_warehouse: 'Stores - QR', to_warehouse: 'Work In Progress - QR', fg_completed_qty: qty, items: [...productionItems.map(item => ({ item_code: item.bom_item.item_code, qty: item.required_qty, uom: item.bom_item.uom, basic_rate: item.bom_item.rate || 0, s_warehouse: 'Stores - QR', t_warehouse: 'Work In Progress - QR' })), { item_code: selectedBOM.item, item_name: selectedBOM.item_name, qty, uom: selectedBOM.uom, basic_rate: 0, s_warehouse: 'Work In Progress - QR', t_warehouse: 'Finished Goods - QR', is_finished_item: 1 }], docstatus: 1 };
       const seRes = await fetch('/api/resource/Stock Entry', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Frappe-CSRF-Token': (window as any).csrf_token || '' }, body: JSON.stringify(sePayload) });
       const seData = await seRes.json();
       if (!seRes.ok) throw new Error(seData?.exception || seData?.message || 'Failed to create Stock Entry');
@@ -319,7 +286,7 @@ const Manufacturing: React.FC = () => {
                       onChange={e => handleBOMSelect(e.target.value)}
                     >
                       <option value="">Select recipe</option>
-                      {boms.map(bom => <option key={bom.name} value={bom.name}>{bom.name}{bom.docstatus === 1 ? '' : ' (Draft)'}</option>)}
+                      {boms.map(bom => <option key={bom.name} value={bom.name}>{bom.item_name}{bom.docstatus === 1 ? '' : ' (Draft)'}</option>)}
                     </select>
                   </div>
                 </div>
@@ -337,27 +304,8 @@ const Manufacturing: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Company + Department */}
+                {/* Department + Batch */}
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className={labelCls}>Company *</label>
-                    <div className="relative">
-                      <select
-                        className={inputCls + ' pr-8'}
-                        style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23C69A11' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center', borderColor: selectedCompany ? '#E4B315' : '#e5e7eb' }}
-                        value={selectedCompany}
-                        onChange={e => setSelectedCompany(e.target.value)}
-                        required
-                      >
-                        <option value="">Select company</option>
-                        {companies.map(company => (
-                          <option key={company.name} value={company.name}>
-                            {company.name} ({company.abbr})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
                   <div>
                     <label className={labelCls}>Department (Optional)</label>
                     <div className="relative">
@@ -371,12 +319,10 @@ const Manufacturing: React.FC = () => {
                       </select>
                     </div>
                   </div>
-                </div>
-
-                {/* Batch Number */}
-                <div>
-                  <label className={labelCls}>Batch Number (Optional)</label>
-                  <input className={inputCls} type="text" placeholder="e.g. BATCH-001" value={batchNumber} onChange={e => setBatchNumber(e.target.value)} />
+                  <div>
+                    <label className={labelCls}>Batch Number (Optional)</label>
+                    <input className={inputCls} type="text" placeholder="e.g. BATCH-001" value={batchNumber} onChange={e => setBatchNumber(e.target.value)} />
+                  </div>
                 </div>
 
                 {/* Notes */}

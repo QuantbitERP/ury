@@ -8,7 +8,7 @@ import {
     ShoppingCart, FileText, TrendingUp, DollarSign,
     Receipt, BarChart3, ArrowRightLeft, ArrowUpDown,
     ChevronDown, Building, Building2, PieChart, Users,
-    ExternalLink, Banknote, Wallet2, Rocket,
+    ExternalLink, Banknote,
     Settings, UserCog
 } from 'lucide-react';
 
@@ -346,6 +346,13 @@ const hasRole = (userRoles: string[], requiredRoles: string[]): boolean => {
     return requiredRoles.some(role => userRoles.includes(role));
 };
 
+const FINANCE_ONLY_ROLES = [
+    'Accounts Manager',
+    'Accounts User',
+    'Auditor',
+    'Analytics',
+];
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Main AppSidebar
 // ─────────────────────────────────────────────────────────────────────────────
@@ -429,8 +436,8 @@ export function AppSidebar() {
             items: [
                 { icon: <UsersRound className="h-3.5 w-3.5" />, label: 'Payroll', href: '/payroll', sectionId: 'finance' },
                 { icon: <BarChart3 className="h-3.5 w-3.5" />, label: 'Financial Accounting', href: '/finance/accounting/financial-dashboard', sectionId: 'finance' },
-                { icon: <Building className="h-3.5 w-3.5" />, label: 'Bank Accounts', href: '/bank-accounts', sectionId: 'finance' },
-                { icon: <ArrowUpDown className="h-3.5 w-3.5" />, label: 'Bank Transactions', href: '/bank-transactions', sectionId: 'finance' },
+                { icon: <Building className="h-3.5 w-3.5" />, label: 'Bank Accounts', href: '/finance/accounting/bank-accounts', sectionId: 'finance' },
+                { icon: <ArrowUpDown className="h-3.5 w-3.5" />, label: 'Bank Transactions', href: '/finance/accounting/bank-transactions', sectionId: 'finance' },
                 { icon: <Receipt className="h-3.5 w-3.5" />, label: 'Accounts Payable', href: '/finance/accounting/accounts-payable', sectionId: 'finance' },
                 { icon: <DollarSign className="h-3.5 w-3.5" />, label: 'Accounts Receivable', href: '/finance/accounting/accounts-receivable', sectionId: 'finance' },
                 { icon: <Building2 className="h-3.5 w-3.5" />, label: 'Corporate Billing', href: '/finance/accounting/corporate-billing', sectionId: 'finance' },
@@ -481,6 +488,7 @@ export function AppSidebar() {
         if (!user?.roles) return [];
 
         const userRoles = user.roles;
+        const hasFinanceOnlyRoles = hasRole(userRoles, FINANCE_ONLY_ROLES);
 
         // Check if user has restricted roles (URY Captain, System Manager, Customer)
         const hasRestrictedRoles = hasRole(userRoles, ['URY Captain', 'System Manager', 'Customer']);
@@ -499,62 +507,90 @@ export function AppSidebar() {
 
         // Check if user has Manufacturing roles (Manufacturing Manager, Manufacturing User)
         const hasManufacturingRoles = hasRole(userRoles, ['Manufacturing Manager', 'Manufacturing User']);
-
-        // Check if user has Finance roles (Accounts Manager, Accounts User, Analytics, Auditor)
-        const hasFinanceRoles = hasRole(userRoles, ['Accounts Manager', 'Accounts User', 'Analytics', 'Auditor']);
+        const hasInventoryRoles = hasPurchaseRoles || hasStockRoles || hasManufacturingRoles;
+        const hasUryCoreRoles = hasRole(userRoles, ['URY Captain', 'URY Cashier', 'URY Manager']);
 
         // Check if user has ALL roles (has roles from all categories)
         const hasAllRoles = hasRestrictedRoles && hasManagerCashierRoles && hasHRRoles &&
-            hasPurchaseRoles && hasStockRoles && hasManufacturingRoles && hasFinanceRoles;
+            hasPurchaseRoles && hasStockRoles && hasManufacturingRoles;
+
+        if (!hasUryCoreRoles) {
+            const visible: string[] = [];
+            if (hasHRRoles) visible.push('hr');
+            if (hasFinanceOnlyRoles) visible.push('finance');
+            if (hasInventoryRoles) visible.push('inventory');
+
+            if (visible.length > 0) {
+                return allSections
+                    .map(section => visible.includes(section.id) ? section : { ...section, items: [] })
+                    .filter(section => section.items.length > 0);
+            }
+        }
+
+        if (!hasAllRoles && !(hasRestrictedRoles && hasManagerCashierRoles) && hasFinanceOnlyRoles) {
+            return allSections
+                .map(section => section.id === 'finance' ? section : { ...section, items: [] })
+                .filter(section => section.items.length > 0);
+        }
+
+        if (hasHRRoles && hasRestrictedRoles && hasManagerCashierRoles && !hasPurchaseRoles && !hasStockRoles && !hasManufacturingRoles) {
+            return allSections
+                .map(section =>
+                    section.id === 'pos' || section.id === 'restaurant' || section.id === 'hr'
+                        ? section
+                        : { ...section, items: [] }
+                )
+                .filter(section => section.items.length > 0);
+        }
+
+        if (hasRestrictedRoles && hasManagerCashierRoles && hasPurchaseRoles && hasStockRoles && !hasHRRoles) {
+            return allSections
+                .map(section =>
+                    section.id === 'pos' || section.id === 'restaurant' || section.id === 'inventory'
+                        ? section
+                        : { ...section, items: [] }
+                )
+                .filter(section => section.items.length > 0);
+        }
+
+        if (hasFinanceOnlyRoles && hasRestrictedRoles && hasManagerCashierRoles && !hasHRRoles && !hasPurchaseRoles && !hasStockRoles && !hasManufacturingRoles) {
+            return allSections
+                .map(section =>
+                    section.id === 'pos' || section.id === 'restaurant' || section.id === 'finance'
+                        ? section
+                        : { ...section, items: [] }
+                )
+                .filter(section => section.items.length > 0);
+        }
+
+        if (hasRestrictedRoles && hasManagerCashierRoles && !hasHRRoles && !hasPurchaseRoles && !hasStockRoles && !hasManufacturingRoles) {
+            return allSections
+                .map(section =>
+                    section.id === 'pos' || section.id === 'restaurant'
+                        ? section
+                        : { ...section, items: [] }
+                )
+                .filter(section => section.items.length > 0);
+        }
 
         return allSections.map(section => {
             let filteredItems = section.items;
 
-            // HIGHEST PRIORITY: Users with ALL roles across all categories - show everything
+            // For users with ALL roles across all categories - show everything
             if (hasAllRoles) {
                 // Show all sections and items - full access
                 filteredItems = section.items;
-            }
-            // PRIORITY: Purchase/Stock roles take precedence when present with Finance roles (for sale-pur case)
-            else if ((hasPurchaseRoles || hasStockRoles) && hasFinanceRoles && !hasHRRoles) {
-                if (section.id === 'inventory') {
-                    // Show all items in Inventory & Suppliers section
-                    filteredItems = section.items;
-                } else {
-                    // Hide all other sections
-                    filteredItems = [];
-                }
-            }
-            // PRIORITY: HR roles take precedence - show ONLY HR modules if user has HR roles (and no finance roles)
-            else if (hasHRRoles) {
-                if (section.id === 'hr') {
-                    // Show all items in Human Resources section
-                    filteredItems = section.items;
-                } else {
-                    // Hide all other sections
-                    filteredItems = [];
-                }
-            }
-            // PRIORITY: Purchase/Stock roles take precedence - show ONLY Inventory & Suppliers modules if user has these roles (and no finance/HR roles)
-            else if (hasPurchaseRoles || hasStockRoles) {
-                if (section.id === 'inventory') {
-                    // Show all items in Inventory & Suppliers section
-                    filteredItems = section.items;
-                } else {
-                    // Hide all other sections
-                    filteredItems = [];
-                }
             }
             // For users with ALL URY roles (restricted + manager/cashier) - show everything
             else if (hasRestrictedRoles && hasManagerCashierRoles) {
                 // Show all sections and items - full access
                 filteredItems = section.items;
             }
-            // For users with HR roles only (HR Manager, HR User, Customer, System Manager) - NO URY/Purchase/Stock/Manufacturing roles
+            // For users with HR roles only (HR Manager, HR User) - NO URY/Purchase/Stock/Manufacturing roles
             else if (hasHRRoles && !hasRestrictedRoles && !hasManagerCashierRoles &&
-                !hasPurchaseRoles && !hasStockRoles && !hasManufacturingRoles && !hasFinanceRoles) {
-                if (section.id === 'hr' || section.id === 'finance') {
-                    // Show all items in Human Resources and Finance & Accounting (for Payroll)
+                !hasPurchaseRoles && !hasStockRoles && !hasManufacturingRoles) {
+                if (section.id === 'hr') {
+                    // Show only HR section for HR-only users
                     filteredItems = section.items;
                 } else {
                     // Hide all other sections
@@ -562,7 +598,7 @@ export function AppSidebar() {
                 }
             }
             // For users with only restricted roles (Captain, System Manager, Customer) - NO manager/cashier roles
-            else if (hasRestrictedRoles && !hasManagerCashierRoles && !hasFinanceRoles) {
+            else if (hasRestrictedRoles && !hasManagerCashierRoles) {
                 if (section.id === 'pos') {
                     // Show only EPOS Terminal, KOT, and Bar Order
                     filteredItems = section.items.filter(item =>
@@ -576,7 +612,7 @@ export function AppSidebar() {
                 }
             }
             // For users with only manager/cashier roles but no restricted roles
-            else if (hasManagerCashierRoles && !hasRestrictedRoles && !hasFinanceRoles) {
+            else if (hasManagerCashierRoles && !hasRestrictedRoles) {
                 if (section.id === 'pos' || section.id === 'restaurant') {
                     // Show all items in Point of Sale and Restaurant Operations
                     filteredItems = section.items;
@@ -659,7 +695,7 @@ export function AppSidebar() {
                         <span className="text-white text-[9px] font-extrabold">Q</span>
                     </div>
                     <div className="min-w-0 flex-1">
-                        <div className="text-xs font-semibold text-[#2D2A26] truncate">QuantPOS Africa</div>
+                        <div className="text-xs font-semibold text-[#2D2A26] truncate">QuantPOS India</div>
                         <div className="text-[10px] text-muted-foreground truncate">v2.0 · Cloud ERP</div>
                     </div>
                 </div>
