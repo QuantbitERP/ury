@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   Clock, Printer, Pencil, X, ShoppingCart, AlertCircle, DollarSign,
   TrendingUp, ChevronDown, Search, Eye, Ban, Download,
-  Calendar, ChevronLeft, ChevronRight,
+  Calendar, ChevronLeft, ChevronRight, Users, Layers, ArrowRight,
 } from 'lucide-react';
 import { Button } from '../components/ui';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../components/ui/dialog';
@@ -297,6 +297,40 @@ export default function Orders() {
 
   const handleOrderClick = (order: any) => { if (!isTransferMode&&!isMergeMode) { selectOrder(order); setShowDetailModal(true); } };
 
+  const handleToggleTransferMode = () => {
+    setIsTransferMode(!isTransferMode);
+    setSelectedOrdersForTransfer([]);
+    if (isMergeMode) setIsMergeMode(false);
+  };
+
+  const handleToggleMergeMode = () => {
+    setIsMergeMode(!isMergeMode);
+    setSelectedOrdersForTransfer([]);
+    if (isTransferMode) setIsTransferMode(false);
+  };
+
+  const handleOrderSelection = (orderName: string) => {
+    setSelectedOrdersForTransfer(prev =>
+      prev.includes(orderName) ? prev.filter(n => n !== orderName) : [...prev, orderName]
+    );
+  };
+
+  const handleProceedWithTransfer = () => {
+    if (selectedOrdersForTransfer.length === 0) {
+      showToast.error('Please select at least one order to transfer.');
+      return;
+    }
+    setIsTransferDialogOpen(true);
+  };
+
+  const handleProceedWithMerge = () => {
+    if (selectedOrdersForTransfer.length < 2) {
+      showToast.error('Please select at least 2 orders to merge.');
+      return;
+    }
+    setIsMergeBillsDialogOpen(true);
+  };
+
   async function handleCancelOrder() {
     if (!selectedOrder) return;
     if (!cancelReason.trim()) { showToast.error('Please enter a reason.'); return; }
@@ -366,10 +400,46 @@ export default function Orders() {
       title="Order Management"
       subtitle="View, search and manage all restaurant orders"
       actions={
-        <button onClick={handleExportCSV}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 bg-white hover:border-[#E4B315]/40 hover:text-[#C69A11] transition-colors shadow-sm">
-          <Download className="w-4 h-4"/> Export CSV
-        </button>
+        <div className="flex items-center gap-2">
+          {isTransferMode ? (
+            <>
+              <button onClick={handleProceedWithTransfer}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors shadow-sm">
+                <ArrowRight className="w-4 h-4" /> Proceed Transfer ({selectedOrdersForTransfer.length})
+              </button>
+              <button onClick={handleToggleTransferMode}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-red-200 text-red-600 text-sm font-semibold hover:bg-red-50 transition-colors">
+                <X className="w-4 h-4" /> Cancel
+              </button>
+            </>
+          ) : isMergeMode ? (
+            <>
+              <button onClick={handleProceedWithMerge}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-green-600 text-white text-sm font-semibold hover:bg-green-700 transition-colors shadow-sm">
+                <ArrowRight className="w-4 h-4" /> Proceed Merge ({selectedOrdersForTransfer.length})
+              </button>
+              <button onClick={handleToggleMergeMode}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-red-200 text-red-600 text-sm font-semibold hover:bg-red-50 transition-colors">
+                <X className="w-4 h-4" /> Cancel
+              </button>
+            </>
+          ) : (
+            <>
+              <button onClick={handleToggleTransferMode}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 bg-white hover:border-[#E4B315]/40 hover:text-[#C69A11] transition-colors shadow-sm">
+                <Users className="w-4 h-4" /> Transfer Waiter
+              </button>
+              <button onClick={handleToggleMergeMode}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 bg-white hover:border-[#E4B315]/40 hover:text-[#C69A11] transition-colors shadow-sm">
+                <Layers className="w-4 h-4" /> Merge Bills
+              </button>
+              <button onClick={handleExportCSV}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 bg-white hover:border-[#E4B315]/40 hover:text-[#C69A11] transition-colors shadow-sm">
+                <Download className="w-4 h-4"/> Export CSV
+              </button>
+            </>
+          )}
+        </div>
       }
     >
       <div className="overflow-auto px-6 py-5 space-y-4 max-w-screen-2xl mx-auto w-full">
@@ -471,14 +541,24 @@ export default function Orders() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-gray-50 bg-gray-50/50">
-                    {['Order #','Date & Time','Service Type','Table/Customer','Items','Amount','Status','Payment','Actions'].map(h => (
+                    {(isTransferMode || isMergeMode ? ['Select','Order #','Date & Time','Service Type','Table/Customer','Items','Amount','Status','Payment','Actions'] : ['Order #','Date & Time','Service Type','Table/Customer','Items','Amount','Status','Payment','Actions']).map(h => (
                       <th key={h} className="px-4 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
                   {displayedOrders.map(order => (
-                    <tr key={order.name} className="hover:bg-[#E4B315]/3 transition-colors">
+                    <tr key={order.name} className={`hover:bg-[#E4B315]/3 transition-colors ${selectedOrdersForTransfer.includes(order.name) ? 'bg-blue-50' : ''}`}>
+                      {(isTransferMode || isMergeMode) && (
+                        <td className="px-4 py-3.5">
+                          <input
+                            type="checkbox"
+                            checked={selectedOrdersForTransfer.includes(order.name)}
+                            onChange={() => handleOrderSelection(order.name)}
+                            className="h-4 w-4 text-blue-600 rounded cursor-pointer"
+                          />
+                        </td>
+                      )}
                       <td className="px-4 py-3.5">
                         <button onClick={() => handleOrderClick(order)} className="text-sm font-bold text-[#C69A11] hover:text-[#E4B315] hover:underline transition-colors">{order.name}</button>
                       </td>

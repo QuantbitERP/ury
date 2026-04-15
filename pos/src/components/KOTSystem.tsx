@@ -208,13 +208,6 @@ const KOTSystem: React.FC = () => {
   const [loading,       setLoading]       = useState(true);
   const [searchTerm,    setSearchTerm]    = useState('');
 
-  /* ── Mock data ── */
-  const mockKOTData = {
-    pending: [{ name:"KOT-#00193", owner:"kiranupadhye@erpdata.in", creation:"2026-03-06 08:18:21.915561", modified:"2026-03-06 08:18:21.918495", modified_by:"kiranupadhye@erpdata.in", docstatus:1, idx:0, invoice:"INV00377", customer_name:"Prathamesh", date:"2026-03-06", time:"8:18:21.915274", type:"New Order", order_status:"Ready For Prepare", production:"Kitchen", start_time_prep:"8:18:21.915295", naming_series:"KOT-#", pos_profile:"Captain", branch:"00", verified:0, order_no:8, customer_group:"Government", table_takeaway:0, user:"Kiran", doctype:"URY KOT", kot_items:[{ name:"URYKOTITM00499", owner:"kiranupadhye@erpdata.in", creation:"2026-03-06 08:18:21.915561", modified:"2026-03-06 08:18:21.918495", modified_by:"kiranupadhye@erpdata.in", docstatus:1, idx:1, item:"Gin 750ml", item_name:"Gin 750ml", quantity:"1", comments:"", parent:"KOT-#00193", parentfield:"kot_items", parenttype:"URY KOT", doctype:"URY KOT Items" }] }],
-    preparing: [{ name:"KOT-#00194", owner:"kiranupadhye@erpdata.in", creation:"2026-03-06 07:45:00.000000", modified:"2026-03-06 07:45:00.000000", modified_by:"kiranupadhye@erpdata.in", docstatus:1, idx:0, invoice:"INV00378", customer_name:"John Doe", date:"2026-03-06", time:"7:30:00.000000", type:"New Order", order_status:"Preparing", production:"Kitchen", start_time_prep:"7:45:00.000000", naming_series:"KOT-#", pos_profile:"Captain", branch:"00", verified:0, order_no:9, customer_group:"Individual", table_takeaway:5, user:"Kiran", doctype:"URY KOT", kot_items:[{ name:"URYKOTITM00500", owner:"kiranupadhye@erpdata.in", creation:"2026-03-06 07:45:00.000000", modified:"2026-03-06 07:45:00.000000", modified_by:"kiranupadhye@erpdata.in", docstatus:1, idx:1, item:"Pizza Margherita", item_name:"Pizza Margherita", quantity:"2", comments:"Extra cheese", parent:"KOT-#00194", parentfield:"kot_items", parenttype:"URY KOT", doctype:"URY KOT Items" }] }],
-    ready: [],
-  };
-
   const fetchKOTs = async () => {
     setLoading(true);
     try {
@@ -223,19 +216,13 @@ const KOTSystem: React.FC = () => {
         kotAPI.getKOTsByStatus('Preparing'),
         kotAPI.getKOTsByStatus('Ready'),
       ]);
-      if (pending.length === 0 && preparing.length === 0 && ready.length === 0) {
-        setPendingKOTs(mockKOTData.pending);
-        setPreparingKOTs(mockKOTData.preparing);
-        setReadyKOTs(mockKOTData.ready);
-      } else {
-        setPendingKOTs(pending);
-        setPreparingKOTs(preparing);
-        setReadyKOTs(ready);
-      }
+      setPendingKOTs(pending);
+      setPreparingKOTs(preparing);
+      setReadyKOTs(ready);
     } catch {
-      setPendingKOTs(mockKOTData.pending);
-      setPreparingKOTs(mockKOTData.preparing);
-      setReadyKOTs(mockKOTData.ready);
+      setPendingKOTs([]);
+      setPreparingKOTs([]);
+      setReadyKOTs([]);
     } finally {
       setLoading(false);
     }
