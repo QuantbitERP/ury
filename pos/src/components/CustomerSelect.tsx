@@ -219,9 +219,10 @@ function NewCustomerForm({
 
 interface CustomerSelectProps {
   disabled?: boolean;
+  'data-tour'?: string;
 }
 
-export function CustomerSelect({ disabled }: CustomerSelectProps) {
+export function CustomerSelect({ disabled, 'data-tour': dataTour }: CustomerSelectProps) {
   const { selectedCustomer, setSelectedCustomer, selectedOrderType, isUpdatingOrder } = usePOSStore();
   const [showNewCustomerForm, setShowNewCustomerForm] = useState(false);
   const [isCreatingCustomer, setIsCreatingCustomer] = useState(false);
@@ -299,7 +300,7 @@ export function CustomerSelect({ disabled }: CustomerSelectProps) {
   }
 
   return (
-    <div className="relative">
+    <div className="relative" data-tour={dataTour}>
       {selectedCustomer ? (
         <div className="flex items-center justify-between bg-blue-50 p-3 rounded-lg">
           <div>

@@ -2,8 +2,9 @@
 // Shared layout wrapper: collapsible app sidebar + top bar with back-to-EPOS button
 // Used by Orders, FinancialDashboard, InventoryManagement, Reservations, etc.
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
+import { useRootStore } from '../store/root-store';
 import {
   House, Store, Monitor, ChefHat, Wine, CreditCard,
   UtensilsCrossed, BookOpen, Factory, Calendar,
@@ -30,6 +31,11 @@ const SECTION_COLORS: Record<string, {
   events:     { iconBg:'bg-sky-100 text-sky-600', headerOpen:'bg-sky-50 border-sky-200 text-[#2D2A26]', headerHover:'hover:bg-sky-50/60 hover:text-[#2D2A26]', itemActive:'bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white shadow-sm shadow-[#E4B315]/30', itemHover:'hover:bg-sky-50 hover:text-sky-700', dot:'bg-sky-400' },
   setup:      { iconBg:'bg-slate-100 text-slate-600', headerOpen:'bg-slate-50 border-slate-200 text-[#2D2A26]', headerHover:'hover:bg-slate-50/60 hover:text-[#2D2A26]', itemActive:'bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white shadow-sm shadow-[#E4B315]/30', itemHover:'hover:bg-slate-50 hover:text-slate-700', dot:'bg-slate-400' },
 };
+
+const FINANCE_ONLY_ROLES = ['Accounts Manager', 'Accounts User', 'Auditor', 'Analytics'];
+
+const hasRole = (userRoles: string[], requiredRoles: string[]): boolean =>
+  requiredRoles.some(role => userRoles.includes(role));
 
 // ─── Smooth animated section content ─────────────────────────────────────────
 function SectionContent({ open, children }: { open: boolean; children: React.ReactNode }) {
@@ -130,6 +136,7 @@ interface InlineSidebarProps { collapsed: boolean; }
 
 function InlineSidebar({ collapsed }: InlineSidebarProps) {
   const location = useLocation();
+  const { user } = useRootStore();
   const [open, setOpen] = React.useState<Record<string, boolean>>({
     dashboard:false, pos:false, restaurant:false, inventory:false,
     hr:false, finance:false, reports:false, events:false, setup:false,
@@ -160,12 +167,63 @@ function InlineSidebar({ collapsed }: InlineSidebarProps) {
     dashboard:['/dashboard'], pos:['/pos','/kot','/bar-display','/orders','/payment'],
     restaurant:['/menu','/recipes','/manufacturing','/reservations'],
     inventory:['/inventory','/stock-transfers','/stock-tracking','/suppliers','/purchase-orders'],
-    hr:['/hr','/staff-management','/workspace-management'],
-    finance:['/payroll','/finance','/bank-accounts','/bank-transactions'],
+    hr:['/hr','/staff-management','/workspace-management','/payroll'],
+    finance:['/finance','/bank-accounts','/bank-transactions'],
     reports:['/reports'], events:['/events'],
     setup:['/branch-setup', '/restaurant-setup', '/user-setup', '/room-setup', '/table-setup'],
   };
   const hasActive = (id: string) => (sectionPaths[id]??[]).some(p => location.pathname===p||(p!=='/'&&location.pathname.startsWith(p)));
+  const visibleSections = React.useMemo(() => {
+    const allSections = new Set(['dashboard', 'pos', 'restaurant', 'inventory', 'hr', 'finance', 'reports', 'events', 'setup']);
+    if (!user?.roles) return allSections;
+
+    const userRoles = user.roles;
+    const hasFinanceOnlyRoles = hasRole(userRoles, FINANCE_ONLY_ROLES);
+    const hasRestrictedRoles = hasRole(userRoles, ['URY Captain', 'System Manager', 'Customer']);
+    const hasManagerCashierRoles = hasRole(userRoles, ['URY Manager', 'URY Cashier']);
+    const hasHRRoles = hasRole(userRoles, ['HR Manager', 'HR User']);
+    const hasPurchaseRoles = hasRole(userRoles, ['Purchase Manager', 'Purchase Master Manager', 'Purchase User']);
+    const hasStockRoles = hasRole(userRoles, ['Stock Manager', 'Stock User', 'Supplier']);
+    const hasManufacturingRoles = hasRole(userRoles, ['Manufacturing Manager', 'Manufacturing User']);
+    const hasInventoryRoles = hasPurchaseRoles || hasStockRoles || hasManufacturingRoles;
+    const hasUryCoreRoles = hasRole(userRoles, ['URY Captain', 'URY Cashier', 'URY Manager']);
+    const hasAllRoles = hasRestrictedRoles && hasManagerCashierRoles && hasHRRoles && hasPurchaseRoles && hasStockRoles && hasManufacturingRoles;
+
+    if (!hasUryCoreRoles) {
+      const visible: string[] = [];
+      if (hasHRRoles) visible.push('hr');
+      if (hasFinanceOnlyRoles) visible.push('finance');
+      if (hasInventoryRoles) visible.push('inventory');
+      if (visible.length) return new Set(visible);
+    }
+
+    if (!hasAllRoles && !(hasRestrictedRoles && hasManagerCashierRoles) && hasFinanceOnlyRoles) {
+      return new Set(['finance']);
+    }
+    if (hasHRRoles && hasRestrictedRoles && hasManagerCashierRoles && !hasPurchaseRoles && !hasStockRoles && !hasManufacturingRoles) {
+      return new Set(['pos', 'restaurant', 'hr']);
+    }
+    if (hasRestrictedRoles && hasManagerCashierRoles && hasPurchaseRoles && hasStockRoles && !hasHRRoles) {
+      return new Set(['pos', 'restaurant', 'inventory']);
+    }
+    if (hasFinanceOnlyRoles && hasRestrictedRoles && hasManagerCashierRoles && !hasHRRoles && !hasPurchaseRoles && !hasStockRoles && !hasManufacturingRoles) {
+      return new Set(['pos', 'restaurant', 'finance']);
+    }
+    if (hasRestrictedRoles && hasManagerCashierRoles && !hasHRRoles && !hasPurchaseRoles && !hasStockRoles && !hasManufacturingRoles) {
+      return new Set(['pos', 'restaurant']);
+    }
+    if (hasHRRoles && !hasRestrictedRoles && !hasManagerCashierRoles && !hasPurchaseRoles && !hasStockRoles && !hasManufacturingRoles) {
+      return new Set(['hr']);
+    }
+    if (hasRestrictedRoles && !hasManagerCashierRoles) {
+      return new Set(['pos']);
+    }
+    if (hasManagerCashierRoles && !hasRestrictedRoles) {
+      return new Set(['pos', 'restaurant']);
+    }
+
+    return allSections;
+  }, [user]);
 
   const w = collapsed ? 'w-14' : 'w-56';
 
@@ -187,69 +245,69 @@ function InlineSidebar({ collapsed }: InlineSidebarProps) {
       {/* Nav */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden px-2 py-3 scrollbar-thin scrollbar-thumb-[#E4B315]/20 scrollbar-track-transparent">
         <nav>
-          <Section id="dashboard" title="Dashboard" Icon={House} open={open.dashboard} onToggle={() => toggle('dashboard')} hasActiveChild={hasActive('dashboard')} collapsed={collapsed}>
+          {visibleSections.has('dashboard') && <Section id="dashboard" title="Dashboard" Icon={House} open={open.dashboard} onToggle={() => toggle('dashboard')} hasActiveChild={hasActive('dashboard')} collapsed={collapsed}>
             <NavItem sectionId="dashboard" icon={<House className="h-3.5 w-3.5" />} label="Dashboard Home" href="/dashboard" badge="Home" collapsed={collapsed} />
             <NavItem sectionId="dashboard" icon={<Rocket className="h-3.5 w-3.5" />} label="CloudClic Landing" href="/dashboard/landing" collapsed={collapsed} />
-          </Section>
+          </Section>}
 
-          <Section id="pos" title="Point of Sale" Icon={Store} open={open.pos} onToggle={() => toggle('pos')} hasActiveChild={hasActive('pos')} collapsed={collapsed}>
+          {visibleSections.has('pos') && <Section id="pos" title="Point of Sale" Icon={Store} open={open.pos} onToggle={() => toggle('pos')} hasActiveChild={hasActive('pos')} collapsed={collapsed}>
             <NavItem sectionId="pos" icon={<Monitor className="h-3.5 w-3.5" />} label="EPOS Terminal" href="" badge="POS" collapsed={collapsed} />
             <NavItem sectionId="pos" icon={<ChefHat className="h-3.5 w-3.5" />} label="Kitchen Order Ticket" href="/kot" collapsed={collapsed} />
             <NavItem sectionId="pos" icon={<Wine className="h-3.5 w-3.5" />} label="Bar Order" href="/bar-display" collapsed={collapsed} />
             <NavItem sectionId="pos" icon={<ChefHat className="h-3.5 w-3.5" />} label="Order Management" href="/orders" collapsed={collapsed} />
             <NavItem sectionId="pos" icon={<CreditCard className="h-3.5 w-3.5" />} label="Payment Processing" href="/payment" collapsed={collapsed} />
-          </Section>
+          </Section>}
 
-          <Section id="restaurant" title="Restaurant Operations" Icon={UtensilsCrossed} open={open.restaurant} onToggle={() => toggle('restaurant')} hasActiveChild={hasActive('restaurant')} collapsed={collapsed}>
+          {visibleSections.has('restaurant') && <Section id="restaurant" title="Restaurant Operations" Icon={UtensilsCrossed} open={open.restaurant} onToggle={() => toggle('restaurant')} hasActiveChild={hasActive('restaurant')} collapsed={collapsed}>
             <NavItem sectionId="restaurant" icon={<UtensilsCrossed className="h-3.5 w-3.5" />} label="Menu Management" href="/menu" collapsed={collapsed} />
             <NavItem sectionId="restaurant" icon={<BookOpen className="h-3.5 w-3.5" />} label="Recipe Management" href="/recipes" collapsed={collapsed} />
             <NavItem sectionId="restaurant" icon={<Factory className="h-3.5 w-3.5" />} label="Manufacturing" href="/manufacturing" collapsed={collapsed} />
             <NavItem sectionId="restaurant" icon={<Calendar className="h-3.5 w-3.5" />} label="Reservations" href="/reservations" collapsed={collapsed} />
-          </Section>
+          </Section>}
 
-          <Section id="inventory" title="Inventory & Suppliers" Icon={Package} open={open.inventory} onToggle={() => toggle('inventory')} hasActiveChild={hasActive('inventory')} collapsed={collapsed}>
+          {visibleSections.has('inventory') && <Section id="inventory" title="Inventory & Suppliers" Icon={Package} open={open.inventory} onToggle={() => toggle('inventory')} hasActiveChild={hasActive('inventory')} collapsed={collapsed}>
             <NavItem sectionId="inventory" icon={<Boxes className="h-3.5 w-3.5" />} label="Inventory" href="/inventory" collapsed={collapsed} />
             <NavItem sectionId="inventory" icon={<ArrowRightLeft className="h-3.5 w-3.5" />} label="Stock Transfers" href="/stock-transfers" collapsed={collapsed} />
             <NavItem sectionId="inventory" icon={<TrendingUp className="h-3.5 w-3.5" />} label="Stock Tracking" href="/stock-tracking" collapsed={collapsed} />
             <NavItem sectionId="inventory" icon={<Truck className="h-3.5 w-3.5" />} label="Suppliers" href="/suppliers" collapsed={collapsed} />
             <NavItem sectionId="inventory" icon={<ShoppingCart className="h-3.5 w-3.5" />} label="Purchase Orders" href="/purchase-orders" collapsed={collapsed} />
-          </Section>
+          </Section>}
 
-          <Section id="hr" title="Human Resources" Icon={UsersRound} open={open.hr} onToggle={() => toggle('hr')} hasActiveChild={hasActive('hr')} collapsed={collapsed}>
+          {visibleSections.has('hr') && <Section id="hr" title="Human Resources" Icon={UsersRound} open={open.hr} onToggle={() => toggle('hr')} hasActiveChild={hasActive('hr')} collapsed={collapsed}>
             <NavItem sectionId="hr" icon={<UsersRound className="h-3.5 w-3.5" />} label="HR Dashboard" href="/hr" collapsed={collapsed} />
             <NavItem sectionId="hr" icon={<Users className="h-3.5 w-3.5" />} label="Staff Management" href="/staff-management" collapsed={collapsed} />
             <NavItem sectionId="hr" icon={<Building className="h-3.5 w-3.5" />} label="Workspace Management" href="/workspace-management" collapsed={collapsed} />
-          </Section>
+            <NavItem sectionId="hr" icon={<UsersRound className="h-3.5 w-3.5" />} label="Payroll" href="/payroll" collapsed={collapsed} />
+          </Section>}
 
-          <Section id="finance" title="Finance & Accounting" Icon={Banknote} open={open.finance} onToggle={() => toggle('finance')} hasActiveChild={hasActive('finance')} collapsed={collapsed}>
-            <NavItem sectionId="finance" icon={<UsersRound className="h-3.5 w-3.5" />} label="Payroll" href="/payroll" collapsed={collapsed} />
+          {visibleSections.has('finance') && <Section id="finance" title="Finance & Accounting" Icon={Banknote} open={open.finance} onToggle={() => toggle('finance')} hasActiveChild={hasActive('finance')} collapsed={collapsed}>
             <NavItem sectionId="finance" icon={<BarChart3 className="h-3.5 w-3.5" />} label="Financial Accounting" href="/finance/accounting" collapsed={collapsed} />
-            <NavItem sectionId="finance" icon={<Building className="h-3.5 w-3.5" />} label="Bank Accounts" href="/bank-accounts" collapsed={collapsed} />
-            <NavItem sectionId="finance" icon={<ArrowUpDown className="h-3.5 w-3.5" />} label="Bank Transactions" href="/bank-transactions" collapsed={collapsed} />
+            <NavItem sectionId="finance" icon={<Building className="h-3.5 w-3.5" />} label="Bank Accounts" href="/finance/accounting/bank-accounts" collapsed={collapsed} />
+            <NavItem sectionId="finance" icon={<ArrowUpDown className="h-3.5 w-3.5" />} label="Bank Transactions" href="/finance/accounting/bank-transactions" collapsed={collapsed} />
             <NavItem sectionId="finance" icon={<Receipt className="h-3.5 w-3.5" />} label="Accounts Payable" href="/finance/accounting/accounts-payable" collapsed={collapsed} />
             <NavItem sectionId="finance" icon={<DollarSign className="h-3.5 w-3.5" />} label="Accounts Receivable" href="/finance/accounting/accounts-receivable" collapsed={collapsed} />
             <NavItem sectionId="finance" icon={<Building2 className="h-3.5 w-3.5" />} label="Corporate Billing" href="/finance/accounting/corporate-billing" collapsed={collapsed} />
             <NavItem sectionId="finance" icon={<PieChart className="h-3.5 w-3.5" />} label="Loyalty Programme" href="/app/loyalty-program" external collapsed={collapsed} />
-          </Section>
+          </Section>}
 
-          <Section id="reports" title="Reports & Analytics" Icon={ChartColumn} open={open.reports} onToggle={() => toggle('reports')} hasActiveChild={hasActive('reports')} collapsed={collapsed}>
+          {visibleSections.has('reports') && <Section id="reports" title="Reports & Analytics" Icon={ChartColumn} open={open.reports} onToggle={() => toggle('reports')} hasActiveChild={hasActive('reports')} collapsed={collapsed}>
             <NavItem sectionId="reports" icon={<FileText className="h-3.5 w-3.5" />} label="Sales Report" href="/reports/sales-report" collapsed={collapsed} />
             <NavItem sectionId="reports" icon={<FileText className="h-3.5 w-3.5" />} label="VAT Summary" href="/reports/vat-summary" collapsed={collapsed} />
-          </Section>
+          </Section>}
 
-          <Section id="events" title="Event Management" Icon={Calendar} open={open.events} onToggle={() => toggle('events')} hasActiveChild={hasActive('events')} collapsed={collapsed}>
+          {visibleSections.has('events') && <Section id="events" title="Event Management" Icon={Calendar} open={open.events} onToggle={() => toggle('events')} hasActiveChild={hasActive('events')} collapsed={collapsed}>
             <NavItem sectionId="events" icon={<Calendar className="h-3.5 w-3.5" />} label="Calendar" href="/events/calendar" collapsed={collapsed} />
             <NavItem sectionId="events" icon={<FileText className="h-3.5 w-3.5" />} label="All Events" href="/events/all-events" collapsed={collapsed} />
             <NavItem sectionId="events" icon={<UtensilsCrossed className="h-3.5 w-3.5" />} label="Menu Packages" href="/events/menu-packages" collapsed={collapsed} />
-          </Section>
+          </Section>}
 
-          <Section id="setup" title="Set Up" Icon={Settings} open={open.setup} onToggle={() => toggle('setup')} hasActiveChild={hasActive('setup')} collapsed={collapsed}>
+          {visibleSections.has('setup') && <Section id="setup" title="Set Up" Icon={Settings} open={open.setup} onToggle={() => toggle('setup')} hasActiveChild={hasActive('setup')} collapsed={collapsed}>
             <NavItem sectionId="setup" icon={<Building2 className="h-3.5 w-3.5" />} label="Branch Setup" href="/branch-setup" collapsed={collapsed} />
             <NavItem sectionId="setup" icon={<Store className="h-3.5 w-3.5" />} label="Restaurant Setup" href="/restaurant-setup" collapsed={collapsed} />
             <NavItem sectionId="setup" icon={<UserCog className="h-3.5 w-3.5" />} label="User Setup" href="/user-setup" collapsed={collapsed} />
             <NavItem sectionId="setup" icon={<Building className="h-3.5 w-3.5" />} label="Room Setup" href="/room-setup" collapsed={collapsed} />
             <NavItem sectionId="setup" icon={<UtensilsCrossed className="h-3.5 w-3.5" />} label="Table Setup" href="/table-setup" collapsed={collapsed} />
-          </Section>
+          </Section>}
         </nav>
         <div className="h-6 shrink-0" />
       </div>

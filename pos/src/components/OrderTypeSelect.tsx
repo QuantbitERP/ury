@@ -10,9 +10,10 @@ import { isUserRestrictedFromTableOrders } from '../lib/role-utils';
 
 interface OrderTypeSelectProps {
   disabled?: boolean;
+  'data-tour'?: string;
 }
 
-const OrderTypeSelect = ({ disabled }: OrderTypeSelectProps) => {
+const OrderTypeSelect = ({ disabled, 'data-tour': dataTour }: OrderTypeSelectProps) => {
   const { selectedOrderType, setSelectedOrderType, selectedTable, posProfile, isUpdatingOrder } = usePOSStore();
   const { user } = useRootStore();
   const [showTableDialog, setShowTableDialog] = useState(false);
@@ -44,7 +45,7 @@ const OrderTypeSelect = ({ disabled }: OrderTypeSelectProps) => {
   };
 
   return (
-    <div>
+    <div data-tour={dataTour}>
       <div className="flex gap-2 overflow-x-auto pb-2 -mx-2 px-2">
         {ORDER_TYPES.map(({ label, value, icon: Icon }) => {
           const isDineIn = value === DINE_IN;

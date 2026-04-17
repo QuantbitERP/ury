@@ -141,13 +141,13 @@ const RecipeModal: React.FC<ModalProps> = ({ title, onClose, onSubmit, submitLab
             <div>
               <label className={labelCls}>Recipe Name *</label>
               <input className={inputCls} placeholder="e.g. Grilled Chicken" value={form.item_name}
-                onChange={e => setForm(f => ({ ...f, item_name: e.target.value }))} />
+                onChange={e => setForm(f => ({ ...f, item_name: e.target.value }))} data-tour="recipe-name" />
             </div>
             <div>
               <label className={labelCls}>Link to Menu Item</label>
               <ItemSearch value={form.linked_menu_item_name} placeholder="Type to search…"
                 onSelect={item => setForm(f => ({ ...f, linked_menu_item: item.item_code, linked_menu_item_name: item.item_name, item: item.item_code, item_uom: item.stock_uom || 'Nos', uom: item.stock_uom || 'Nos', item_name: f.item_name || item.item_name }))}
-                onClear={() => setForm(f => ({ ...f, linked_menu_item: '', linked_menu_item_name: '', item: '' }))} />
+                onClear={() => setForm(f => ({ ...f, linked_menu_item: '', linked_menu_item_name: '', item: '' }))} data-tour="link-menu-item" />
             </div>
           </div>
 
@@ -156,7 +156,7 @@ const RecipeModal: React.FC<ModalProps> = ({ title, onClose, onSubmit, submitLab
             <div>
               <label className={labelCls}>Company *</label>
               <select className={inputCls} value={form.company} required
-                onChange={e => handleCompanyChange(e.target.value)}>
+                onChange={e => handleCompanyChange(e.target.value)} data-tour="recipe-company">
                 <option value="">Select company</option>
                 {companies.map((c: Company) => <option key={c.name} value={c.name}>{c.name}</option>)}
               </select>
@@ -164,7 +164,7 @@ const RecipeModal: React.FC<ModalProps> = ({ title, onClose, onSubmit, submitLab
             <div>
               <label className={labelCls}>Description</label>
               <input className={inputCls} placeholder="Short description (optional)" value={form.description}
-                onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
+                onChange={e => setForm(f => ({ ...f, description: e.target.value }))} data-tour="recipe-description" />
             </div>
           </div>
 
@@ -173,13 +173,13 @@ const RecipeModal: React.FC<ModalProps> = ({ title, onClose, onSubmit, submitLab
             <div>
               <label className={labelCls}>Sell Price ({form.currency})</label>
               <input className={inputCls} type="number" min="0" placeholder="0" value={form.sell_price || ''}
-                onChange={e => setForm(f => ({ ...f, sell_price: parseFloat(e.target.value) || 0 }))} />
+                onChange={e => setForm(f => ({ ...f, sell_price: parseFloat(e.target.value) || 0 }))} data-tour="sell-price" />
             </div>
             <div></div>
           </div>
 
           {/* Ingredients */}
-          <div className="border border-gray-100 rounded-2xl overflow-hidden">
+          <div className="border border-gray-100 rounded-2xl overflow-hidden" data-tour="ingredients-section">
             <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-100">
               <div>
                 <span className="text-sm font-bold text-[#2D2A26]">Ingredients</span>
@@ -188,7 +188,9 @@ const RecipeModal: React.FC<ModalProps> = ({ title, onClose, onSubmit, submitLab
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold px-3 py-1 rounded-full bg-[#E4B315]/10 text-[#C69A11]">Total: {formatCurrency(totalCost, form.currency)}</span>
                 <button onClick={addIngredient}
-                  className="flex items-center gap-1.5 bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-sm shadow-[#E4B315]/20 hover:opacity-90 transition-opacity">
+                  className="flex items-center gap-1.5 bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-sm shadow-[#E4B315]/20 hover:opacity-90 transition-opacity"
+                  data-tour="add-ingredient"
+                >
                   <Plus size={13} /> Add Row
                 </button>
               </div>
@@ -226,7 +228,7 @@ const RecipeModal: React.FC<ModalProps> = ({ title, onClose, onSubmit, submitLab
 
           {/* Margin summary */}
           {(totalCost > 0 || form.sell_price > 0) && (
-            <div className="flex gap-6 p-3.5 bg-[#E4B315]/6 rounded-xl border border-[#E4B315]/20 text-sm flex-wrap">
+            <div className="flex gap-6 p-3.5 bg-[#E4B315]/6 rounded-xl border border-[#E4B315]/20 text-sm flex-wrap" data-tour="margin-summary">
               <span className="text-gray-500">Cost: <strong className="text-[#2D2A26]">{formatCurrency(totalCost, form.currency)}</strong></span>
               <span className="text-gray-500">Sell: <strong className="text-[#2D2A26]">{formatCurrency(form.sell_price, form.currency)}</strong></span>
               <span className="text-gray-500">Gross Margin: <strong className={parseFloat(gm) >= 0 ? 'text-green-600' : 'text-red-600'}>{gm}%</strong></span>
@@ -244,7 +246,9 @@ const RecipeModal: React.FC<ModalProps> = ({ title, onClose, onSubmit, submitLab
             className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold text-white transition-all ${saving || !form.item_name.trim() || !form.company.trim()
               ? 'bg-[#E4B315]/40 cursor-not-allowed'
               : 'bg-gradient-to-r from-[#E4B315] to-[#C69A11] shadow-md shadow-[#E4B315]/20 hover:opacity-90'
-              }`}>
+              }`}
+            data-tour="save-recipe"
+          >
             {saving && <Loader size={14} className="animate-spin" />}
             {submitLabel}
           </button>
@@ -395,7 +399,9 @@ const RecipeManagement: React.FC = () => {
             <Printer size={15} /> Print
           </button>
           <button onClick={() => { setAddForm(emptyForm()); setShowAdd(true); }}
-            className="flex items-center gap-2 px-5 py-2 rounded-xl bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white text-sm font-bold shadow-md shadow-[#E4B315]/20 hover:opacity-90 transition-opacity">
+            className="flex items-center gap-2 px-5 py-2 rounded-xl bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white text-sm font-bold shadow-md shadow-[#E4B315]/20 hover:opacity-90 transition-opacity"
+            data-tour="add-recipe"
+          >
             <Plus size={15} /> Add Recipe
           </button>
         </>
@@ -405,7 +411,7 @@ const RecipeManagement: React.FC = () => {
 
         {/* Search */}
         <div className="shrink-0 px-6 pt-5">
-          <div className="relative max-w-md">
+          <div className="relative max-w-md" data-tour="recipe-search">
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input className={inputCls + ' pl-9'} placeholder="Search recipes…" value={search} onChange={e => setSearch(e.target.value)} />
           </div>
@@ -421,7 +427,7 @@ const RecipeManagement: React.FC = () => {
               <button onClick={() => setShowAdd(true)} className="bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white border-none rounded-xl px-6 py-2.5 font-bold text-sm shadow-md shadow-[#E4B315]/20 hover:opacity-90 transition-opacity">+ Add Recipe</button>
             </div>
           ) : (
-            <div className="flex-1 flex flex-col min-h-0 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="flex-1 flex-col min-h-0 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden" data-tour="recipe-table">
               <div className="overflow-auto flex-1">
                 <table className="w-full" style={{ minWidth: 900 }}>
                   <thead className="sticky top-0 z-10">

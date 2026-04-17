@@ -12,6 +12,7 @@ interface BOMItem { name?: string; item_code: string; item_name: string; descrip
 interface StockInfo { item_code: string; item_name: string; available_qty: number; uom: string; valuation_rate?: number; }
 interface ProductionOrderItem { bom_item: BOMItem; required_qty: number; available_qty: number; cost: number; status: 'sufficient' | 'insufficient'; }
 interface ProductionOrder { name: string; item_name: string; category?: string; planned_qty: number; actual_qty?: number; status: string; department?: string; date: string; cost?: number; }
+interface Branch { name: string; branch: string; custom_branch_name?: string; custom_branch_code?: string; custom_fg_warehouse?: string; custom_wip_warehouse?: string; custom_from_warehouse?: string; custom_to_warehouse?: string; }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const formatCurrency = (n: number) => new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES' }).format(n || 0);
@@ -71,31 +72,8 @@ const Manufacturing: React.FC = () => {
   const [productionItems, setProductionItems] = useState<ProductionOrderItem[]>([]);
   const [stockLoading, setStockLoading] = useState(false);
   const [creatingOrder, setCreatingOrder] = useState(false);
-  const [companies, setCompanies] = useState<{ name: string; abbr: string }[]>([]);
-  const [selectedCompany, setSelectedCompany] = useState('');
-
-  // ── Fetch companies ────────────────────────────────────────────────────────// Get company abbreviation
-  const getCompanyAbbr = (companyName: string): string => {
-    const company = companies.find(c => c.name === companyName);
-    return company?.abbr || 'QR'; // Default to 'QR' if not found
-  };
-
-  // Fetch companies
-  const fetchCompanies = async () => {
-    try {
-      const res = await fetch('/api/resource/Company?fields=["name","abbr"]&limit_page_length=9999');
-      const data = await res.json();
-      if (data.data) {
-        setCompanies(data.data);
-        // Auto-select first company if none selected
-        if (!selectedCompany && data.data.length > 0) {
-          setSelectedCompany(data.data[0].name);
-        }
-      }
-    } catch (err: any) {
-      console.error('Failed to fetch companies:', err.message);
-    }
-  };
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
 
   // ── Fetch BOMs ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -117,7 +95,6 @@ const Manufacturing: React.FC = () => {
       finally { setLoading(false); }
     };
     fetchBOMs();
-    fetchCompanies();
   }, []);
 
   // ── Fetch production orders ───────────────────────────────────────────
@@ -130,6 +107,28 @@ const Manufacturing: React.FC = () => {
       } catch { /* silently fail */ }
     };
     fetchOrders();
+  }, []);
+
+  // ── Fetch branches with warehouse fields ────────────────────────────────
+  useEffect(() => {
+    const fetchBranches = async () => {
+      try {
+        const res = await fetch('/api/method/frappe.client.get_list', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            doctype: 'Branch',
+            fields: ['name', 'branch', 'custom_branch_name', 'custom_branch_code', 'custom_fg_warehouse', 'custom_wip_warehouse', 'custom_from_warehouse', 'custom_to_warehouse'],
+            limit_page_length: 100
+          })
+        });
+        const data = await res.json();
+        if (data.message) setBranches(data.message);
+      } catch (err) {
+        console.error('Failed to fetch branches:', err);
+      }
+    };
+    fetchBranches();
   }, []);
 
   // ── Fetch stock for BOM ───────────────────────────────────────────────
@@ -173,28 +172,30 @@ const Manufacturing: React.FC = () => {
 
   const openModal = () => {
     setSelectedBOM(null); setProductionQty(''); setProductionDate(new Date().toISOString().split('T')[0]);
-    setDepartment('Main Store (default)'); setBatchNumber(''); setNotes(''); setStockInfo([]); setProductionItems([]); setShowModal(true);
+    setDepartment('Main Store (default)'); setBatchNumber(''); setNotes(''); setStockInfo([]); setProductionItems([]);
+    setSelectedBranch(null); setShowModal(true);
   };
 
   const createProductionOrder = async () => {
     if (!selectedBOM || creatingOrder) return;
-    if (!selectedCompany) { alert('Please select a company first.'); return; }
     if (selectedBOM.docstatus !== 1) { alert(`BOM ${selectedBOM.name} is not submitted.`); return; }
+    if (!selectedBranch) { alert('Please select a branch to get warehouse configurations.'); return; }
     const qty = Number(productionQty) || 1;
     if (productionItems.some(i => i.status === 'insufficient')) { alert('Cannot create: Some ingredients have insufficient stock.'); return; }
     
-    const companyAbbr = getCompanyAbbr(selectedCompany);
-    const fgWarehouse = `Finished Goods - ${companyAbbr}`;
-    const wipWarehouse = `Work In Progress - ${companyAbbr}`;
-    const storesWarehouse = `Stores - ${companyAbbr}`;
+    // Get warehouse values from selected branch
+    const fgWarehouse = selectedBranch.custom_fg_warehouse || 'Finished Goods - QR';
+    const wipWarehouse = selectedBranch.custom_wip_warehouse || 'Work In Progress - QR';
+    const fromWarehouse = selectedBranch.custom_from_warehouse || 'Stores - QR';
+    const toWarehouse = selectedBranch.custom_to_warehouse || 'Work In Progress - QR';
     
     setCreatingOrder(true);
     try {
-      const woPayload = { production_item: selectedBOM.item, bom_no: selectedBOM.name, qty, planned_start_date: productionDate, fg_warehouse: fgWarehouse, wip_warehouse: wipWarehouse, company: selectedCompany, status: 'In Process', docstatus: 1 };
+      const woPayload = { production_item: selectedBOM.item, bom_no: selectedBOM.name, qty, planned_start_date: productionDate, fg_warehouse: fgWarehouse, wip_warehouse: wipWarehouse, status: 'In Process', docstatus: 1 };
       const woRes = await fetch('/api/resource/Work Order', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Frappe-CSRF-Token': (window as any).csrf_token || '' }, body: JSON.stringify(woPayload) });
       const woData = await woRes.json();
       if (!woRes.ok) throw new Error(woData?.exception || woData?.message || 'Failed to create Work Order');
-      const sePayload = { purpose: 'Material Consumption for Manufacture', stock_entry_type: 'Manufacture', work_order: woData.data.name, from_warehouse: storesWarehouse, to_warehouse: wipWarehouse, company: selectedCompany, fg_completed_qty: qty, items: [...productionItems.map(item => ({ item_code: item.bom_item.item_code, qty: item.required_qty, uom: item.bom_item.uom, basic_rate: item.bom_item.rate || 0, s_warehouse: storesWarehouse, t_warehouse: wipWarehouse })), { item_code: selectedBOM.item, item_name: selectedBOM.item_name, qty, uom: selectedBOM.uom, basic_rate: 0, s_warehouse: wipWarehouse, t_warehouse: fgWarehouse, is_finished_item: 1 }], docstatus: 1 };
+      const sePayload = { purpose: 'Material Consumption for Manufacture', stock_entry_type: 'Manufacture', work_order: woData.data.name, from_warehouse: fromWarehouse, to_warehouse: toWarehouse, fg_completed_qty: qty, items: [...productionItems.map(item => ({ item_code: item.bom_item.item_code, qty: item.required_qty, uom: item.bom_item.uom, basic_rate: item.bom_item.rate || 0, s_warehouse: fromWarehouse, t_warehouse: toWarehouse })), { item_code: selectedBOM.item, item_name: selectedBOM.item_name, qty, uom: selectedBOM.uom, basic_rate: 0, s_warehouse: wipWarehouse, t_warehouse: fgWarehouse, is_finished_item: 1 }], docstatus: 1 };
       const seRes = await fetch('/api/resource/Stock Entry', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Frappe-CSRF-Token': (window as any).csrf_token || '' }, body: JSON.stringify(sePayload) });
       const seData = await seRes.json();
       if (!seRes.ok) throw new Error(seData?.exception || seData?.message || 'Failed to create Stock Entry');
@@ -207,7 +208,7 @@ const Manufacturing: React.FC = () => {
 
   const totalCost = productionItems.reduce((s, i) => s + i.cost, 0);
   const hasInsufficient = productionItems.some(i => i.status === 'insufficient');
-  const canCreate = selectedBOM && Number(productionQty) >= 1 && !hasInsufficient && !stockLoading;
+  const canCreate = selectedBOM && selectedBranch && Number(productionQty) >= 1 && !hasInsufficient && !stockLoading;
   const todayOrders = productionOrders.filter(o => o.date === new Date().toISOString().split('T')[0]).length;
   const inProgress = productionOrders.filter(o => ['In Process', 'In Progress'].includes(o.status)).length;
   const completedWeek = productionOrders.filter(o => { const w = new Date(); w.setDate(w.getDate() - 7); return o.status === 'Completed' && new Date(o.date) >= w; }).length;
@@ -240,7 +241,9 @@ const Manufacturing: React.FC = () => {
       subtitle="Manage batch production, prep work, and production orders"
       actions={
         <button onClick={openModal}
-          className="flex items-center gap-2 px-5 py-2 rounded-xl bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white text-sm font-bold shadow-md shadow-[#E4B315]/20 hover:opacity-90 transition-opacity">
+          className="flex items-center gap-2 px-5 py-2 rounded-xl bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white text-sm font-bold shadow-md shadow-[#E4B315]/20 hover:opacity-90 transition-opacity"
+          data-tour="new-production-order"
+        >
           <Plus size={15} /> New Production Order
         </button>
       }
@@ -249,7 +252,7 @@ const Manufacturing: React.FC = () => {
 
         <div className="px-6 py-6 space-y-6">
           {/* Stats */}
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-4 gap-4" data-tour="mfg-stats">
             <StatCard accent label="Today's Orders" value={todayOrders} sub="Production orders for today" icon={BarChart2} />
             <StatCard label="In Progress" value={inProgress} sub="Currently being produced" icon={Clock} />
             <StatCard label="Completed This Week" value={completedWeek} sub="Last 7 days" icon={CheckCircle} />
@@ -257,7 +260,7 @@ const Manufacturing: React.FC = () => {
           </div>
 
           {/* Production Orders Table */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden" data-tour="production-table">
             <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
               <p className="text-xs font-bold uppercase tracking-wider text-[#C69A11]">Production Orders</p>
               <div className="flex items-center gap-2 border border-gray-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-gray-500 cursor-pointer hover:border-[#E4B315]/40 hover:text-[#C69A11] transition-colors bg-white">
@@ -317,11 +320,40 @@ const Manufacturing: React.FC = () => {
                       style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23C69A11' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center', borderColor: selectedBOM ? '#E4B315' : '#e5e7eb' }}
                       value={selectedBOM?.name || ''}
                       onChange={e => handleBOMSelect(e.target.value)}
+                      data-tour="recipe-select"
                     >
                       <option value="">Select recipe</option>
-                      {boms.map(bom => <option key={bom.name} value={bom.name}>{bom.name}{bom.docstatus === 1 ? '' : ' (Draft)'}</option>)}
+                      {boms.map(bom => <option key={bom.name} value={bom.name}>{bom.item_name}{bom.docstatus === 1 ? '' : ' (Draft)'}</option>)}
                     </select>
                   </div>
+                </div>
+
+                {/* Branch Select */}
+                <div>
+                  <label className={labelCls}>Branch</label>
+                  <div className="relative">
+                    <select
+                      className={inputCls + ' pr-8'}
+                      style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23C69A11' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center', borderColor: selectedBranch ? '#E4B315' : '#e5e7eb' }}
+                      value={selectedBranch?.name || ''}
+                      onChange={e => setSelectedBranch(branches.find(b => b.name === e.target.value) || null)}
+                    >
+                      <option value="">Select branch</option>
+                      {branches.map(branch => (
+                        <option key={branch.name} value={branch.name}>
+                          {branch.custom_branch_name || branch.branch} {branch.custom_branch_code ? `(${branch.custom_branch_code})` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {selectedBranch && (
+                    <div className="mt-2 text-xs text-gray-500">
+                      <div>FG Warehouse: <span className="font-medium text-gray-700">{selectedBranch.custom_fg_warehouse || 'Not set'}</span></div>
+                      <div>WIP Warehouse: <span className="font-medium text-gray-700">{selectedBranch.custom_wip_warehouse || 'Not set'}</span></div>
+                      <div>From Warehouse: <span className="font-medium text-gray-700">{selectedBranch.custom_from_warehouse || 'Not set'}</span></div>
+                      <div>To Warehouse: <span className="font-medium text-gray-700">{selectedBranch.custom_to_warehouse || 'Not set'}</span></div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Qty + Date */}
@@ -329,41 +361,22 @@ const Manufacturing: React.FC = () => {
                   <div>
                     <label className={labelCls}>Quantity to Produce</label>
                     <input className={inputCls} type="number" min="1" placeholder="1" value={productionQty}
-                      onChange={e => setProductionQty(e.target.value === '' ? '' : Number(e.target.value))} />
+                      onChange={e => setProductionQty(e.target.value === '' ? '' : Number(e.target.value))} data-tour="quantity" />
                   </div>
                   <div>
                     <label className={labelCls}>Production Date</label>
-                    <input className={inputCls} type="date" value={productionDate} onChange={e => setProductionDate(e.target.value)} />
+                    <input className={inputCls} type="date" value={productionDate} onChange={e => setProductionDate(e.target.value)} data-tour="production-date" />
                   </div>
                 </div>
 
-                {/* Company + Department */}
+                {/* Department + Batch */}
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className={labelCls}>Company *</label>
-                    <div className="relative">
-                      <select
-                        className={inputCls + ' pr-8'}
-                        style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23C69A11' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center', borderColor: selectedCompany ? '#E4B315' : '#e5e7eb' }}
-                        value={selectedCompany}
-                        onChange={e => setSelectedCompany(e.target.value)}
-                        required
-                      >
-                        <option value="">Select company</option>
-                        {companies.map(company => (
-                          <option key={company.name} value={company.name}>
-                            {company.name} ({company.abbr})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
                   <div>
                     <label className={labelCls}>Department (Optional)</label>
                     <div className="relative">
                       <select className={inputCls + ' pr-8'}
                         style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center' }}
-                        value={department} onChange={e => setDepartment(e.target.value)}>
+                        value={department} onChange={e => setDepartment(e.target.value)} data-tour="department">
                         <option>Main Store (default)</option>
                         <option>Kitchen</option>
                         <option>Bakery</option>
@@ -371,23 +384,21 @@ const Manufacturing: React.FC = () => {
                       </select>
                     </div>
                   </div>
-                </div>
-
-                {/* Batch Number */}
-                <div>
-                  <label className={labelCls}>Batch Number (Optional)</label>
-                  <input className={inputCls} type="text" placeholder="e.g. BATCH-001" value={batchNumber} onChange={e => setBatchNumber(e.target.value)} />
+                  <div>
+                    <label className={labelCls}>Batch Number (Optional)</label>
+                    <input className={inputCls} type="text" placeholder="e.g. BATCH-001" value={batchNumber} onChange={e => setBatchNumber(e.target.value)} data-tour="batch-number" />
+                  </div>
                 </div>
 
                 {/* Notes */}
                 <div>
                   <label className={labelCls}>Notes</label>
-                  <textarea className={inputCls} style={{ minHeight: 72, resize: 'vertical' }} value={notes} onChange={e => setNotes(e.target.value)} />
+                  <textarea className={inputCls} style={{ minHeight: 72, resize: 'vertical' }} value={notes} onChange={e => setNotes(e.target.value)} data-tour="notes" />
                 </div>
 
                 {/* Ingredients table */}
                 {selectedBOM && (
-                  <div>
+                  <div data-tour="ingredients-table">
                     <p className="text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-3">Required Ingredients</p>
                     {stockLoading ? (
                       <div className="flex items-center gap-2 justify-center py-6 text-sm text-gray-400">
@@ -448,7 +459,9 @@ const Manufacturing: React.FC = () => {
                     className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold text-white transition-all ${canCreate && !creatingOrder
                         ? 'bg-gradient-to-r from-[#E4B315] to-[#C69A11] shadow-md shadow-[#E4B315]/20 hover:opacity-90'
                         : 'bg-[#E4B315]/30 cursor-not-allowed'
-                      }`}>
+                      }`}
+                    data-tour="create-order"
+                  >
                     {creatingOrder && <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />}
                     Create Production Order
                   </button>

@@ -4,6 +4,7 @@ import {
     TrendingUp, FileText, ChevronRight, Search, RefreshCw,
     AlertCircle, Package, CheckCircle2, TriangleAlert, Info, ArrowLeft,
 } from 'lucide-react';
+import { useRootStore } from '../store/root-store';
 
 // ─── Frappe helpers ───────────────────────────────────────────────────────────
 const getCsrfToken = (): string => {
@@ -245,30 +246,30 @@ const ItemRow: React.FC<{
                         items={items}
                         placeholder="Select ingredient"
                         className={item.item_code ? '' : 'border-amber-400 focus-visible:ring-amber-400'}
+                        data-tour="po-item-ingredient"
                     />
                 </div>
 
                 {/* Quantity */}
                 <div className="space-y-1">
                     <label className="text-xs font-medium text-gray-400">Quantity</label>
-                    <input type="number" step="0.01" min="0" className={INPUT}
-                        value={item.qty || 0}
-                        onChange={e => handleQtyOrRate('qty', parseFloat(e.target.value) || 0)} />
+                    <input type="number" min="0" step="0.01" className={INPUT}
+                        value={item.qty} onChange={e => handleQtyOrRate('qty', parseFloat(e.target.value))} placeholder="0" data-tour="po-item-quantity" />
                 </div>
 
                 {/* Unit Price */}
                 <div className="space-y-1">
                     <label className="text-xs font-medium text-gray-400">Unit Price</label>
-                    <input type="number" step="0.01" min="0" className={INPUT}
-                        value={item.rate || 0}
-                        onChange={e => handleQtyOrRate('rate', parseFloat(e.target.value) || 0)} />
+                    <input type="number" min="0" step="0.01" className={INPUT}
+                        value={item.rate} onChange={e => handleQtyOrRate('rate', parseFloat(e.target.value))} placeholder="0" data-tour="po-item-rate" />
                 </div>
 
                 {/* Discount Type */}
                 <div className="space-y-1">
                     <label className="text-xs font-medium text-gray-400">Discount Type</label>
-                    <select className={INPUT} value={item.discount_type}
-                        onChange={e => onChange(item.id, 'discount_type', e.target.value)}>
+                    <select className={INPUT}
+                        value={item.discount_type}
+                        onChange={e => onChange(item.id, 'discount_type', e.target.value)} data-tour="po-item-discount-type">
                         {DISCOUNT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                     </select>
                 </div>
@@ -279,9 +280,8 @@ const ItemRow: React.FC<{
                         <label className="text-xs font-medium text-gray-400">
                             {item.discount_type === 'Percentage' ? 'Discount %' : 'Discount Amount'}
                         </label>
-                        <input type="number" step="0.01" min="0" className={INPUT}
-                            value={item.discount_value || 0}
-                            onChange={e => onChange(item.id, 'discount_value', parseFloat(e.target.value) || 0)} />
+                        <input type="number" min="0" step="0.01" className={INPUT}
+                        value={item.discount_value} onChange={e => onChange(item.id, 'discount_value', parseFloat(e.target.value))} placeholder="0" data-tour="po-item-discount-value" />
                     </div>
                 )}
 
@@ -299,12 +299,11 @@ const ItemRow: React.FC<{
                 <div className="flex-1 space-y-1">
                     <label className="text-xs font-medium text-gray-400">Notes</label>
                     <input type="text" className={INPUT} placeholder="Notes..."
-                        value={item.notes}
-                        onChange={e => onChange(item.id, 'notes', e.target.value)} />
+                        value={item.notes} onChange={e => onChange(item.id, 'notes', e.target.value)} data-tour="po-item-notes" />
                 </div>
                 <div className="pt-5">
                     <button type="button" onClick={() => onDelete(item.id)}
-                        className="inline-flex items-center justify-center h-10 w-16 rounded-md border border-destructive/30 bg-destructive/5 text-destructive hover:bg-destructive/10 transition-colors">
+                        className="inline-flex items-center justify-center h-10 w-16 rounded-md border border-destructive/30 bg-destructive/5 text-destructive hover:bg-destructive/10 transition-colors" data-tour="po-delete-item">
                         <Trash2 className="h-4 w-4" />
                     </button>
                 </div>
@@ -496,7 +495,7 @@ const CreatePOModal: React.FC<CreatePOModalProps> = ({ onClose, onCreated, suppl
                     </button>
                     <button type="button"
                         onClick={() => setTab('items')}
-                        className={`flex-1 py-3 text-sm font-medium transition-colors relative flex items-center justify-center gap-1.5 ${tab === 'items' ? 'text-[#2D2A26]' : 'text-gray-400 hover:text-[#2D2A26]'} ${itemsError ? 'text-red-500' : ''}`}>
+                        className={`flex-1 py-3 text-sm font-medium transition-colors relative flex items-center justify-center gap-1.5 ${tab === 'items' ? 'text-[#2D2A26]' : 'text-gray-400 hover:text-[#2D2A26]'} ${itemsError ? 'text-red-500' : ''}`} data-tour="po-items-tab">
                         Items ({itemCount})
                         {itemsError && <AlertCircle className="h-3.5 w-3.5 text-red-500" />}
                         {tab === 'items' && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-amber-500 rounded-t-full" />}
@@ -515,14 +514,14 @@ const CreatePOModal: React.FC<CreatePOModalProps> = ({ onClose, onCreated, suppl
                                         <label className="text-xs font-bold uppercase tracking-wider text-[#C69A11]">PO Number *</label>
                                         <input type="text" required className={INPUT}
                                             value={details.po_number}
-                                            onChange={e => setDetails({ ...details, po_number: e.target.value })} />
+                                            onChange={e => setDetails({ ...details, po_number: e.target.value })} data-tour="po-number" />
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-xs font-bold uppercase tracking-wider text-[#C69A11]">Supplier *</label>
                                         <div className="relative">
                                             <select required className={INPUT + ' appearance-none pr-8'}
                                                 value={details.supplier}
-                                                onChange={e => setDetails({ ...details, supplier: e.target.value })}>
+                                                onChange={e => setDetails({ ...details, supplier: e.target.value })} data-tour="po-supplier">
                                                 <option value="">Select supplier</option>
                                                 {suppliers.map(s => (
                                                     <option key={s.name} value={s.name}>{s.supplier_name || s.name}</option>
@@ -536,7 +535,7 @@ const CreatePOModal: React.FC<CreatePOModalProps> = ({ onClose, onCreated, suppl
                                         <div className="relative">
                                             <select required className={INPUT + ' appearance-none pr-8'}
                                                 value={details.company}
-                                                onChange={e => setDetails({ ...details, company: e.target.value })}>
+                                                onChange={e => setDetails({ ...details, company: e.target.value })} data-tour="po-company">
                                                 <option value="">Select company</option>
                                                 {companies.map(c => (
                                                     <option key={c.name} value={c.name}>{c.name}</option>
@@ -552,21 +551,21 @@ const CreatePOModal: React.FC<CreatePOModalProps> = ({ onClose, onCreated, suppl
                                         <label className="text-xs font-bold uppercase tracking-wider text-[#C69A11]">Expected Delivery Date</label>
                                         <input type="date" className={INPUT}
                                             value={details.schedule_date}
-                                            onChange={e => setDetails({ ...details, schedule_date: e.target.value })} />
+                                            onChange={e => setDetails({ ...details, schedule_date: e.target.value })} data-tour="po-delivery-date" />
                                         <p className="text-xs text-gray-400">Maps to <code className="font-mono">schedule_date</code></p>
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-xs font-bold uppercase tracking-wider text-[#C69A11]">Order Date</label>
                                         <input type="date" className={INPUT}
                                             value={details.transaction_date}
-                                            onChange={e => setDetails({ ...details, transaction_date: e.target.value })} />
+                                            onChange={e => setDetails({ ...details, transaction_date: e.target.value })} data-tour="po-order-date" />
                                         <p className="text-xs text-gray-400">Maps to <code className="font-mono">transaction_date</code></p>
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-xs font-bold uppercase tracking-wider text-[#C69A11]">Tax Amount</label>
                                         <input type="number" step="0.01" min="0" className={INPUT} placeholder="0"
                                             value={details.tax_amount || ''}
-                                            onChange={e => setDetails({ ...details, tax_amount: parseFloat(e.target.value) || 0 })} />
+                                            onChange={e => setDetails({ ...details, tax_amount: parseFloat(e.target.value) || 0 })} data-tour="po-tax-amount" />
                                     </div>
                                 </div>
 
@@ -575,7 +574,7 @@ const CreatePOModal: React.FC<CreatePOModalProps> = ({ onClose, onCreated, suppl
                                         <label className="text-xs font-bold uppercase tracking-wider text-[#C69A11]">Shipping Cost</label>
                                         <input type="number" step="0.01" min="0" className={INPUT} placeholder="0"
                                             value={details.shipping_cost || ''}
-                                            onChange={e => setDetails({ ...details, shipping_cost: parseFloat(e.target.value) || 0 })} />
+                                            onChange={e => setDetails({ ...details, shipping_cost: parseFloat(e.target.value) || 0 })} data-tour="po-shipping-cost" />
                                     </div>
                                 </div>
 
@@ -583,7 +582,7 @@ const CreatePOModal: React.FC<CreatePOModalProps> = ({ onClose, onCreated, suppl
                                     <label className="text-xs font-bold uppercase tracking-wider text-[#C69A11]">Notes</label>
                                     <textarea className={TEXTAREA} placeholder="Additional notes for this purchase order..."
                                         value={details.notes}
-                                        onChange={e => setDetails({ ...details, notes: e.target.value })} />
+                                        onChange={e => setDetails({ ...details, notes: e.target.value })} data-tour="po-notes" />
                                 </div>
                             </div>
                         )}
@@ -593,7 +592,7 @@ const CreatePOModal: React.FC<CreatePOModalProps> = ({ onClose, onCreated, suppl
                             <div className="p-6 space-y-4">
                                 <div className="flex items-center justify-between">
                                     <h3 className="text-base font-semibold text-[#2D2A26]">Order Items</h3>
-                                    <button type="button" onClick={addItem} className={BTN_P}>
+                                    <button type="button" onClick={addItem} className={BTN_P} data-tour="po-add-item">
                                         <Plus className="h-4 w-4" /> Add Item
                                     </button>
                                 </div>
@@ -660,7 +659,7 @@ const CreatePOModal: React.FC<CreatePOModalProps> = ({ onClose, onCreated, suppl
                     <button type="button" onClick={onClose} className={BTN_O}>
                         Cancel
                     </button>
-                    <button form="po-form" type="submit" disabled={isSubmitting} className={BTN_P}>
+                    <button form="po-form" type="submit" disabled={isSubmitting} className={BTN_P} data-tour="po-submit">
                         <FileText className="h-4 w-4" />
                         {isSubmitting ? 'Creating...' : 'Create PO'}
                     </button>
@@ -672,6 +671,7 @@ const CreatePOModal: React.FC<CreatePOModalProps> = ({ onClose, onCreated, suppl
 
 // ─── Main PurchaseOrders Component ───────────────────────────────────────────
 const PurchaseOrders: React.FC = () => {
+    const { setCurrentView: setGlobalCurrentView } = useRootStore();
     const [orders, setOrders] = useState<PurchaseOrder[]>([]);
     const [metrics, setMetrics] = useState<DashboardMetrics>({ total_orders: 0, pending_orders: 0, monthly_spend: 0, on_time_delivery_pct: 0 });
     const [loading, setLoading] = useState(true);
@@ -689,7 +689,8 @@ const PurchaseOrders: React.FC = () => {
         fetchOrders();
         fetchMetrics();
         fetchDropdowns();
-    }, []);
+        setGlobalCurrentView('purchase-orders');
+    }, [setGlobalCurrentView]);
 
     // ── Fetch PO list ─────────────────────────────────────────────────────────
     const fetchOrders = async () => {
@@ -837,7 +838,7 @@ const PurchaseOrders: React.FC = () => {
                             className="inline-flex items-center justify-center h-9 w-9 rounded-xl border border-gray-200 bg-white hover:border-[#E4B315]/40 hover:text-[#C69A11] text-gray-400 transition-colors shadow-sm">
                             <RefreshCw className="h-4 w-4" />
                         </button>
-                        <button onClick={() => setShowCreateModal(true)} className={BTN_P}>
+                        <button onClick={() => setShowCreateModal(true)} className={BTN_P} data-tour="create-po">
                             <Plus className="h-4 w-4" /> New Purchase Order
                         </button>
                     </div>
@@ -845,7 +846,7 @@ const PurchaseOrders: React.FC = () => {
             </div>
 
             {/* Dashboard Metric Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6" data-tour="po-dashboard-metrics">
                 <MetricCard
                     icon={<ShoppingCart className="h-5 w-5 text-blue-600" />}
                     label="Total Orders"
@@ -889,7 +890,7 @@ const PurchaseOrders: React.FC = () => {
                         <div className="relative flex-1 min-w-[200px] max-w-sm">
                             <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
                             <input className={INPUT + ' pl-9'} placeholder="Search by PO number or supplier..."
-                                value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                                value={searchTerm} onChange={e => setSearchTerm(e.target.value)} data-tour="po-search" />
                         </div>
                         <select className={INPUT + ' w-[180px]'} value={statusFilter}
                             onChange={e => setStatusFilter(e.target.value)}>

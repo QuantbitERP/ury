@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { kotAPI, KOTOrder } from '../lib/kot-api';
-import { useRootStore } from '../store/root-store';
 import {
   ArrowLeft, RefreshCw, Search, Clock, ChefHat, CheckCircle2,
   UtensilsCrossed, AlertTriangle, X,
@@ -75,7 +74,9 @@ const KOTCard: React.FC<KOTCardProps> = ({
       bg-white border border-gray-100 border-l-4 ${cfg.border}
       rounded-2xl shadow-sm hover:shadow-md hover:shadow-[#E4B315]/8
       transition-all duration-200 overflow-hidden
-    `}>
+    `}
+    data-tour="kot-card"
+    >
       {/* Card header */}
       <div className={`${cfg.headerBg} px-4 py-2.5 flex items-center justify-between`}>
         <div className="flex items-center gap-2 min-w-0">
@@ -123,7 +124,7 @@ const KOTCard: React.FC<KOTCardProps> = ({
         </ul>
 
         {/* Action buttons */}
-        <div className="flex gap-2 pt-2 border-t border-gray-50">
+        <div className="flex gap-2 pt-2 border-t border-gray-50" data-tour="status-buttons">
           {kot.order_status === 'Ready For Prepare' && (
             <button
               onClick={() => onStartPreparing(kot.name)}
@@ -203,56 +204,11 @@ function EmptyCol({ message }: { message: string }) {
 
 const KOTSystem: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useRootStore();
   const [pendingKOTs,   setPendingKOTs]   = useState<KOTOrder[]>([]);
   const [preparingKOTs, setPreparingKOTs] = useState<KOTOrder[]>([]);
   const [readyKOTs,     setReadyKOTs]     = useState<KOTOrder[]>([]);
   const [loading,       setLoading]       = useState(true);
   const [searchTerm,    setSearchTerm]    = useState('');
-
-  // ── Role-based access control ──────────────────────────────────────────────────
-  useEffect(() => {
-    if (!user?.roles) return;
-
-    const userRoles = user.roles;
-    
-    // Helper function to check if user has specific roles
-    const hasRole = (roles: string[], requiredRoles: string[]) => 
-      requiredRoles.some(role => roles.includes(role));
-
-    // Check if user has Finance roles (Accounts Manager, Accounts User, Analytics, Auditor)
-    const hasFinanceRoles = hasRole(userRoles, ['Accounts Manager', 'Accounts User', 'Analytics', 'Auditor']);
-    
-    // Check if user has HR roles (HR Manager, HR User)
-    const hasHRRoles = hasRole(userRoles, ['HR Manager', 'HR User']);
-    
-    // Check if user has Purchase/Stock roles
-    const hasPurchaseRoles = hasRole(userRoles, ['Purchase Manager', 'Purchase Master Manager', 'Purchase User']);
-    const hasStockRoles = hasRole(userRoles, ['Stock Manager', 'Stock User', 'Supplier']);
-
-    // PRIORITY: Finance roles take precedence - redirect to dashboard if user has finance roles
-    if (hasFinanceRoles) {
-      navigate('/dashboard');
-      return;
-    }
-    // PRIORITY: HR roles take precedence - redirect to dashboard if user has HR roles
-    else if (hasHRRoles) {
-      navigate('/dashboard');
-      return;
-    }
-    // PRIORITY: Purchase/Stock roles take precedence - redirect to dashboard if user has these roles
-    else if (hasPurchaseRoles || hasStockRoles) {
-      navigate('/dashboard');
-      return;
-    }
-  }, [user, navigate]);
-
-  /* ── Mock data ── */
-  const mockKOTData = {
-    pending: [{ name:"KOT-#00193", owner:"kiranupadhye@erpdata.in", creation:"2026-03-06 08:18:21.915561", modified:"2026-03-06 08:18:21.918495", modified_by:"kiranupadhye@erpdata.in", docstatus:1, idx:0, invoice:"INV00377", customer_name:"Prathamesh", date:"2026-03-06", time:"8:18:21.915274", type:"New Order", order_status:"Ready For Prepare", production:"Kitchen", start_time_prep:"8:18:21.915295", naming_series:"KOT-#", pos_profile:"Captain", branch:"00", verified:0, order_no:8, customer_group:"Government", table_takeaway:0, user:"Kiran", doctype:"URY KOT", kot_items:[{ name:"URYKOTITM00499", owner:"kiranupadhye@erpdata.in", creation:"2026-03-06 08:18:21.915561", modified:"2026-03-06 08:18:21.918495", modified_by:"kiranupadhye@erpdata.in", docstatus:1, idx:1, item:"Gin 750ml", item_name:"Gin 750ml", quantity:"1", comments:"", parent:"KOT-#00193", parentfield:"kot_items", parenttype:"URY KOT", doctype:"URY KOT Items" }] }],
-    preparing: [{ name:"KOT-#00194", owner:"kiranupadhye@erpdata.in", creation:"2026-03-06 07:45:00.000000", modified:"2026-03-06 07:45:00.000000", modified_by:"kiranupadhye@erpdata.in", docstatus:1, idx:0, invoice:"INV00378", customer_name:"John Doe", date:"2026-03-06", time:"7:30:00.000000", type:"New Order", order_status:"Preparing", production:"Kitchen", start_time_prep:"7:45:00.000000", naming_series:"KOT-#", pos_profile:"Captain", branch:"00", verified:0, order_no:9, customer_group:"Individual", table_takeaway:5, user:"Kiran", doctype:"URY KOT", kot_items:[{ name:"URYKOTITM00500", owner:"kiranupadhye@erpdata.in", creation:"2026-03-06 07:45:00.000000", modified:"2026-03-06 07:45:00.000000", modified_by:"kiranupadhye@erpdata.in", docstatus:1, idx:1, item:"Pizza Margherita", item_name:"Pizza Margherita", quantity:"2", comments:"Extra cheese", parent:"KOT-#00194", parentfield:"kot_items", parenttype:"URY KOT", doctype:"URY KOT Items" }] }],
-    ready: [],
-  };
 
   const fetchKOTs = async () => {
     setLoading(true);
@@ -262,19 +218,13 @@ const KOTSystem: React.FC = () => {
         kotAPI.getKOTsByStatus('Preparing'),
         kotAPI.getKOTsByStatus('Ready'),
       ]);
-      if (pending.length === 0 && preparing.length === 0 && ready.length === 0) {
-        setPendingKOTs(mockKOTData.pending);
-        setPreparingKOTs(mockKOTData.preparing);
-        setReadyKOTs(mockKOTData.ready);
-      } else {
-        setPendingKOTs(pending);
-        setPreparingKOTs(preparing);
-        setReadyKOTs(ready);
-      }
+      setPendingKOTs(pending);
+      setPreparingKOTs(preparing);
+      setReadyKOTs(ready);
     } catch {
-      setPendingKOTs(mockKOTData.pending);
-      setPreparingKOTs(mockKOTData.preparing);
-      setReadyKOTs(mockKOTData.ready);
+      setPendingKOTs([]);
+      setPreparingKOTs([]);
+      setReadyKOTs([]);
     } finally {
       setLoading(false);
     }
@@ -322,7 +272,7 @@ const KOTSystem: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50/80 flex flex-col">
       {/* ── Header ── */}
-      <div className="bg-white border-b border-gray-100 shadow-sm shrink-0">
+      <div className="bg-white border-b border-gray-100 shadow-sm shrink-0" data-tour="kot-header">
         <div className="px-6 py-4 flex items-center justify-between gap-4">
           {/* Left: back + title */}
           <div className="flex items-center gap-4 min-w-0">
@@ -340,7 +290,7 @@ const KOTSystem: React.FC = () => {
 
           {/* Right: search + refresh */}
           <div className="flex items-center gap-2 shrink-0">
-            <div className="relative">
+            <div className="relative" data-tour="kot-search">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
               <input
                 type="text"
@@ -358,6 +308,7 @@ const KOTSystem: React.FC = () => {
             <button
               onClick={fetchKOTs}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-100 bg-white text-sm font-semibold text-gray-600 hover:border-[#E4B315]/40 hover:text-[#C69A11] transition-all shadow-sm"
+              data-tour="kot-refresh"
             >
               <RefreshCw className="h-3.5 w-3.5" /> Refresh
             </button>
@@ -368,7 +319,7 @@ const KOTSystem: React.FC = () => {
       {/* ── Three columns ── */}
       <div className="flex flex-1 min-h-0 divide-x divide-gray-100">
         {/* Pending */}
-        <div className="flex-1 flex flex-col p-4 min-w-0">
+        <div className="flex-1 flex flex-col p-4 min-w-0" data-tour="pending-column">
           <ColumnHeader title="Pending" count={filterKOTs(pendingKOTs).length} color="red" />
           <div className="flex-1 overflow-y-auto space-y-3 pr-1">
             {filterKOTs(pendingKOTs).length === 0
@@ -386,7 +337,7 @@ const KOTSystem: React.FC = () => {
         </div>
 
         {/* Preparing */}
-        <div className="flex-1 flex flex-col p-4 min-w-0">
+        <div className="flex-1 flex flex-col p-4 min-w-0" data-tour="preparing-column">
           <ColumnHeader title="Preparing" count={filterKOTs(preparingKOTs).length} color="gold" />
           <div className="flex-1 overflow-y-auto space-y-3 pr-1">
             {filterKOTs(preparingKOTs).length === 0
@@ -404,7 +355,7 @@ const KOTSystem: React.FC = () => {
         </div>
 
         {/* Ready */}
-        <div className="flex-1 flex flex-col p-4 min-w-0">
+        <div className="flex-1 flex flex-col p-4 min-w-0" data-tour="ready-column">
           <ColumnHeader title="Ready to Serve" count={filterKOTs(readyKOTs).length} color="green" />
           <div className="flex-1 overflow-y-auto space-y-3 pr-1">
             {filterKOTs(readyKOTs).length === 0

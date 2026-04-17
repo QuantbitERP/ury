@@ -147,20 +147,22 @@ const ReservationModal = ({ initial, editName, tables, timeSlots, onClose, onSav
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {error && <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">{error}</div>}
           <div className="grid grid-cols-2 gap-4">
-            <div><label className={labelCls}>Customer Name *</label><input required className={inputCls} value={form.customer_name} onChange={e=>set('customer_name',e.target.value)} placeholder="Full name"/></div>
-            <div><label className={labelCls}>Phone Number</label><input className={inputCls} value={form.phone_number} onChange={e=>set('phone_number',e.target.value)} placeholder="+1 (555) 000-0000"/></div>
-            <div><label className={labelCls}>Email Address</label><input type="email" className={inputCls} value={form.email_address} onChange={e=>set('email_address',e.target.value)} placeholder="email@example.com"/></div>
-            <div><label className={labelCls}>Party Size</label><select className={inputCls} value={form.party_size} onChange={e=>set('party_size',e.target.value)}>{PARTY_SIZES.map(p=><option key={p}>{p}</option>)}</select></div>
-            <div><label className={labelCls}>Date *</label><input required type="date" className={inputCls} value={form.reservation_date} onChange={e=>set('reservation_date',e.target.value)}/></div>
-            <div><label className={labelCls}>Time *</label><select required className={inputCls} value={form.reservation_time} onChange={e=>set('reservation_time',e.target.value)}><option value="">Select time…</option>{timeSlots.map(t=><option key={t} value={t}>{t}</option>)}</select></div>
-            <div><label className={labelCls}>Duration</label><select className={inputCls} value={form.duration} onChange={e=>set('duration',e.target.value)}>{DURATIONS.map(d=><option key={d}>{d}</option>)}</select></div>
-            <div><label className={labelCls}>Status</label><select className={inputCls} value={form.status} onChange={e=>set('status',e.target.value)}>{STATUSES.map(s=><option key={s}>{s}</option>)}</select></div>
-            <div><label className={labelCls}>Assigned Table</label><select className={inputCls} value={form.assigned_table} onChange={e=>set('assigned_table',e.target.value)}><option value="">No preference</option>{tables.map(t=><option key={t.name} value={t.name}>{t.table_name||t.name}</option>)}</select></div>
+            <div><label className={labelCls}>Customer Name *</label><input required className={inputCls} value={form.customer_name} onChange={e=>set('customer_name',e.target.value)} placeholder="Full name" data-tour="customer-name"/></div>
+            <div><label className={labelCls}>Phone Number</label><input className={inputCls} value={form.phone_number} onChange={e=>set('phone_number',e.target.value)} placeholder="+1 (555) 000-0000" data-tour="phone-number"/></div>
+            <div><label className={labelCls}>Email Address</label><input type="email" className={inputCls} value={form.email_address} onChange={e=>set('email_address',e.target.value)} placeholder="email@example.com" data-tour="email-address"/></div>
+            <div><label className={labelCls}>Party Size</label><select className={inputCls} value={form.party_size} onChange={e=>set('party_size',e.target.value)} data-tour="party-size">{PARTY_SIZES.map(p=><option key={p}>{p}</option>)}</select></div>
+            <div><label className={labelCls}>Date *</label><input required type="date" className={inputCls} value={form.reservation_date} onChange={e=>set('reservation_date',e.target.value)} data-tour="reservation-date"/></div>
+            <div><label className={labelCls}>Time *</label><select required className={inputCls} value={form.reservation_time} onChange={e=>set('reservation_time',e.target.value)} data-tour="reservation-time"><option value="">Select time…</option>{timeSlots.map(t=><option key={t} value={t}>{t}</option>)}</select></div>
+            <div><label className={labelCls}>Duration</label><select className={inputCls} value={form.duration} onChange={e=>set('duration',e.target.value)} data-tour="duration">{DURATIONS.map(d=><option key={d}>{d}</option>)}</select></div>
+            <div><label className={labelCls}>Status</label><select className={inputCls} value={form.status} onChange={e=>set('status',e.target.value)} data-tour="status">{STATUSES.map(s=><option key={s}>{s}</option>)}</select></div>
+            <div><label className={labelCls}>Assigned Table</label><select className={inputCls} value={form.assigned_table} onChange={e=>set('assigned_table',e.target.value)} data-tour="assigned-table"><option value="">No preference</option>{tables.map(t=><option key={t.name} value={t.name}>{t.table_name||t.name}</option>)}</select></div>
           </div>
-          <div><label className={labelCls}>Special Requests</label><textarea className={inputCls} rows={3} value={form.special_requests} onChange={e=>set('special_requests',e.target.value)} placeholder="Any special requirements…"/></div>
+          <div><label className={labelCls}>Special Requests</label><textarea className={inputCls} rows={3} value={form.special_requests} onChange={e=>set('special_requests',e.target.value)} placeholder="Any special requirements…" data-tour="special-requests"/></div>
           <div className="flex justify-end gap-3 pt-2">
             <button type="button" onClick={onClose} className="px-5 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50">Cancel</button>
-            <button type="submit" disabled={saving} className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white text-sm font-bold shadow-md shadow-[#E4B315]/20 hover:opacity-90 disabled:opacity-50">
+            <button type="submit" disabled={saving} className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white text-sm font-bold shadow-md shadow-[#E4B315]/20 hover:opacity-90 disabled:opacity-50"
+              data-tour="save-reservation"
+            >
               {saving&&<div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin"/>}
               {editName ? 'Update' : 'Create'} Reservation
             </button>
@@ -301,7 +303,7 @@ const Reservations = () => {
         {error && <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 text-amber-700 rounded-2xl text-sm"><Info className="h-4 w-4 mt-0.5 shrink-0"/> {error}</div>}
 
         {/* Tab bar */}
-        <div className="flex bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm p-1 gap-1">
+        <div className="flex bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm p-1 gap-1" data-tour="tab-bar">
           {TABS.map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200 ${
@@ -316,7 +318,7 @@ const Reservations = () => {
 
         {/* ── Calendar tab ── */}
         {activeTab==='calendar' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" data-tour="calendar-tab">
             <div><h3 className="font-bold text-[#2D2A26] mb-3">Select Date</h3>
               <MiniCalendar selected={selectedDate} onSelect={d=>{ setSelectedDate(d); loadDateReservations(d); }}/>
             </div>
@@ -324,7 +326,9 @@ const Reservations = () => {
               <div className="flex justify-between items-center mb-4">
                 <h3 className="font-bold text-[#2D2A26]">{fmtDate(selectedDate)}</h3>
                 <button onClick={() => setShowAddReservation(true)}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white text-sm font-bold shadow-sm shadow-[#E4B315]/25 hover:opacity-90 transition-opacity">
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white text-sm font-bold shadow-sm shadow-[#E4B315]/25 hover:opacity-90 transition-opacity"
+                  data-tour="add-reservation"
+                >
                   <Plus className="h-4 w-4"/> Add
                 </button>
               </div>
@@ -363,7 +367,9 @@ const Reservations = () => {
                 {['All Dates','Today','Upcoming','Past'].map(d=><option key={d}>{d}</option>)}
               </select>
               <button onClick={() => setShowAddReservation(true)}
-                className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white text-sm font-bold shadow-sm shadow-[#E4B315]/25 hover:opacity-90 shrink-0">
+                className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white text-sm font-bold shadow-sm shadow-[#E4B315]/25 hover:opacity-90 shrink-0"
+                data-tour="add-reservation"
+              >
                 <Plus className="h-4 w-4"/> New
               </button>
             </div>

@@ -252,6 +252,31 @@ const newSalaryDetailRow = (): SalaryDetail => ({
     do_not_include_in_total: 0,
 });
 
+/* ─────────────── SUB-COMPONENTS ─────────────── */
+
+const CheckboxField = ({ id, label, description, checked, onChange }: {
+    id: string; label: string; description?: string; checked: boolean; onChange: (v: number) => void;
+}) => (
+    <div className="flex items-start gap-3">
+        <input type="checkbox" id={id} checked={checked} onChange={e => onChange(e.target.checked ? 1 : 0)} className="mt-1 w-4 h-4 rounded border-border" />
+        <div>
+            <label htmlFor={id} className="text-sm font-medium cursor-pointer">{label}</label>
+            {description && <p className="text-xs text-muted-foreground mt-0.5">{description}</p>}
+        </div>
+    </div>
+);
+
+const FormField = ({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) => (
+    <div>
+        <label className="text-sm font-medium block mb-1.5">
+            {label}{required && <span className="text-red-500 ml-1">*</span>}
+        </label>
+        {children}
+    </div>
+);
+
+const inputCls = "w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E4B315]/30 focus:border-[#E4B315]/50 bg-white text-sm text-[#2D2A26] transition-colors";
+
 /* ─────────────── COMPONENT ─────────────── */
 
 const PayrollPage: React.FC = () => {
@@ -355,6 +380,9 @@ const PayrollPage: React.FC = () => {
     const [currencies, setCurrencies] = useState<Array<{name: string, currency_name: string}>>([]);
     const [costCenters, setCostCenters] = useState<Array<{name: string, cost_center_name: string}>>([]);
     const [modesOfPayment, setModesOfPayment] = useState<Array<{name: string, mode_of_payment_name: string}>>([]);
+    const [branches, setBranches] = useState<Array<{name: string}>>([]);
+    const [departments, setDepartments] = useState<Array<{name: string}>>([]);
+    const [designations, setDesignations] = useState<Array<{name: string}>>([]);
     const [loadingDropdowns, setLoadingDropdowns] = useState(false);
 
     // Dropdown options for salary structure assignment form
@@ -393,7 +421,7 @@ const PayrollPage: React.FC = () => {
     const fetchPayrollEntries = async () => {
         try {
             setLoading(true); setError(null);
-            const res = await fetch('/api/method/quantbit_ury_customization.ury_customization.get_payroll_entries', {
+            const res = await fetch('/api/method/quantbit_ury_customization.ury_customization.purchase_order_api.get_payroll_entries', {
                 headers: { 'Content-Type': 'application/json' }
             });
             if (res.ok) {
@@ -409,7 +437,7 @@ const PayrollPage: React.FC = () => {
     const fetchSalarySlips = async () => {
         try {
             setLoading(true); setError(null);
-            const res = await fetch('/api/method/quantbit_ury_customization.ury_customization.get_salary_slips', {
+            const res = await fetch('/api/method/quantbit_ury_customization.ury_customization.purchase_order_api.get_salary_slips', {
                 headers: { 'Content-Type': 'application/json' }
             });
             if (res.ok) {
@@ -500,14 +528,14 @@ const PayrollPage: React.FC = () => {
 
     const fetchSalarySlipStatuses = async () => {
         try {
-            const res = await fetch('/api/method/quantbit_ury_customization.ury_customization.get_salary_slip_statuses', { headers: { 'Content-Type': 'application/json' } });
+            const res = await fetch('/api/method/quantbit_ury_customization.ury_customization.purchase_order_api.get_salary_slip_statuses', { headers: { 'Content-Type': 'application/json' } });
             if (res.ok) { const r = await res.json(); const d = r.message || r; if (d.success) setSalarySlipStatuses(d.statuses.map((s: string) => ({ value: s, label: s }))); }
         } catch { /* ignore */ }
     };
 
     const fetchPayrollFrequencies = async () => {
         try {
-            const res = await fetch('/api/method/quantbit_ury_customization.ury_customization.get_payroll_frequencies', { headers: { 'Content-Type': 'application/json' } });
+            const res = await fetch('/api/method/quantbit_ury_customization.ury_customization.purchase_order_api.get_payroll_frequencies', { headers: { 'Content-Type': 'application/json' } });
             if (res.ok) { const r = await res.json(); const d = r.message || r; if (d.success) setPayrollFrequencies(d.frequencies); }
         } catch { /* ignore */ }
     };
@@ -761,6 +789,27 @@ const PayrollPage: React.FC = () => {
             if (salaryComponentsRes.ok) {
                 const salaryComponentsData = await salaryComponentsRes.json();
                 setSalaryComponents(salaryComponentsData.data || []);
+            }
+            
+            // Fetch Branches
+            const branchesRes = await fetch('/api/resource/Branch?fields=["name"]&limit=9999', { headers: { 'Content-Type': 'application/json' } });
+            if (branchesRes.ok) {
+                const branchesData = await branchesRes.json();
+                setBranches(branchesData.data || []);
+            }
+            
+            // Fetch Departments
+            const departmentsRes = await fetch('/api/resource/Department?fields=["name"]&limit=9999', { headers: { 'Content-Type': 'application/json' } });
+            if (departmentsRes.ok) {
+                const departmentsData = await departmentsRes.json();
+                setDepartments(departmentsData.data || []);
+            }
+            
+            // Fetch Designations
+            const designationsRes = await fetch('/api/resource/Designation?fields=["name"]&limit=9999', { headers: { 'Content-Type': 'application/json' } });
+            if (designationsRes.ok) {
+                const designationsData = await designationsRes.json();
+                setDesignations(designationsData.data || []);
             }
             
         } catch (error) {
@@ -1333,44 +1382,60 @@ const PayrollPage: React.FC = () => {
         val === 'Yes' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
 
     const updateNew = (key: keyof NewPayrollEntry, value: any) => setNewEntry(prev => ({ ...prev, [key]: value }));
+
+    const fetchBranchDetails = async (branchName: string) => {
+        try {
+            const response = await fetch('/api/method/frappe.client.get', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    doctype: 'Branch',
+                    name: branchName,
+                    fields: ['name', 'custom_currency']
+                })
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                const branchData = data.message || {};
+                return branchData.custom_currency || null;
+            }
+            return null;
+        } catch (error) {
+            console.error('Error fetching branch details:', error);
+            return null;
+        }
+    };
+
+    const handleBranchChange = async (branchName: string) => {
+        updateNew('branch', branchName);
+        
+        if (branchName) {
+            const branchCurrency = await fetchBranchDetails(branchName);
+            if (branchCurrency) {
+                updateNew('currency', branchCurrency);
+            }
+        }
+    };
     const updateSetting = (key: keyof PayrollSettings, value: any) => setSettings(prev => ({ ...prev, [key]: value }));
     const updateStructure = (key: keyof NewSalaryStructure, value: any) => setNewStructure(prev => ({ ...prev, [key]: value }));
     const updateAssignment = (key: keyof NewSalaryStructureAssignment, value: any) => setNewAssignment(prev => ({ ...prev, [key]: value }));
 
-    /* ── Sub-components ── */
-
-    const CheckboxField = ({ id, label, description, checked, onChange }: {
-        id: string; label: string; description?: string; checked: boolean; onChange: (v: number) => void;
-    }) => (
-        <div className="flex items-start gap-3">
-            <input type="checkbox" id={id} checked={checked} onChange={e => onChange(e.target.checked ? 1 : 0)} className="mt-1 w-4 h-4 rounded border-border" />
-            <div>
-                <label htmlFor={id} className="text-sm font-medium cursor-pointer">{label}</label>
-                {description && <p className="text-xs text-muted-foreground mt-0.5">{description}</p>}
-            </div>
-        </div>
-    );
-
-    const FormField = ({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) => (
-        <div>
-            <label className="text-sm font-medium block mb-1.5">
-                {label}{required && <span className="text-red-500 ml-1">*</span>}
-            </label>
-            {children}
-        </div>
-    );
-
-    const inputCls = "w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E4B315]/30 focus:border-[#E4B315]/50 bg-white text-sm text-[#2D2A26] transition-colors";
-
     /* ── Salary Detail Table ── */
 
     const SalaryDetailTable = ({
-        title, rows, setRows, color
+        title, rows, setRows, color, salaryComponents, updateDetailRow, addDetailRow, removeDetailRow
     }: {
         title: string;
         rows: SalaryDetail[];
         setRows: React.Dispatch<React.SetStateAction<SalaryDetail[]>>;
         color: 'green' | 'red';
+        salaryComponents: Array<{name: string, salary_component_name?: string}>;
+        updateDetailRow: (rows: SalaryDetail[], setRows: React.Dispatch<React.SetStateAction<SalaryDetail[]>>, id: string, field: keyof SalaryDetail, value: any) => void;
+        addDetailRow: (setRows: React.Dispatch<React.SetStateAction<SalaryDetail[]>>) => void;
+        removeDetailRow: (rows: SalaryDetail[], setRows: React.Dispatch<React.SetStateAction<SalaryDetail[]>>, id: string) => void;
     }) => {
         const headerCls = color === 'green'
             ? 'bg-green-50 border-green-200 text-green-800'
@@ -1525,7 +1590,6 @@ const PayrollPage: React.FC = () => {
                     {selectedTab === 'salary' && (
                         <button onClick={fetchSalarySlips} className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-xl hover:border-[#E4B315]/40 hover:text-[#C69A11] text-sm font-medium text-gray-600 bg-white shadow-sm transition-colors">
                             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Refresh
-                            <RefreshCw className="w-4 h-4" /> Refresh
                         </button>
                     )}
                     {selectedTab === 'structures' && (
@@ -2715,6 +2779,14 @@ const PayrollPage: React.FC = () => {
                                 <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4 pb-1 border-b border-border">Overview</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <FormField label="Posting Date" required><input type="date" value={newEntry.posting_date} onChange={e => updateNew('posting_date', e.target.value)} className={inputCls} /></FormField>
+                                    <FormField label="Branch">
+                                        <select value={newEntry.branch} onChange={e => handleBranchChange(e.target.value)} className={inputCls}>
+                                            <option value="">Select Branch...</option>
+                                            {branches.map(branch => (
+                                                <option key={branch.name} value={branch.name}>{branch.name}</option>
+                                            ))}
+                                        </select>
+                                    </FormField>
                                     <FormField label="Company" required>
                                         <select value={newEntry.company} onChange={e => handleCompanyChange(e.target.value)} className={inputCls}>
                                             <option value="">Select Company...</option>
@@ -2771,10 +2843,23 @@ const PayrollPage: React.FC = () => {
                             </section>
                             <section>
                                 <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4 pb-1 border-b border-border">Filter Employees <span className="normal-case font-normal">(optional)</span></h3>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <FormField label="Branch"><input type="text" value={newEntry.branch} onChange={e => updateNew('branch', e.target.value)} placeholder="Branch name" className={inputCls} /></FormField>
-                                    <FormField label="Department"><input type="text" value={newEntry.department} onChange={e => updateNew('department', e.target.value)} placeholder="Department" className={inputCls} /></FormField>
-                                    <FormField label="Designation"><input type="text" value={newEntry.designation} onChange={e => updateNew('designation', e.target.value)} placeholder="Designation" className={inputCls} /></FormField>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <FormField label="Department">
+                                        <select value={newEntry.department} onChange={e => updateNew('department', e.target.value)} className={inputCls}>
+                                            <option value="">Select Department...</option>
+                                            {departments.map(department => (
+                                                <option key={department.name} value={department.name}>{department.name}</option>
+                                            ))}
+                                        </select>
+                                    </FormField>
+                                    <FormField label="Designation">
+                                        <select value={newEntry.designation} onChange={e => updateNew('designation', e.target.value)} className={inputCls}>
+                                            <option value="">Select Designation...</option>
+                                            {designations.map(designation => (
+                                                <option key={designation.name} value={designation.name}>{designation.name}</option>
+                                            ))}
+                                        </select>
+                                    </FormField>
                                 </div>
                                 <div className="mt-4"><CheckboxField id="val_attendance" label="Validate Attendance" checked={newEntry.validate_attendance === 1} onChange={v => updateNew('validate_attendance', v)} /></div>
                             </section>
@@ -2949,12 +3034,20 @@ const PayrollPage: React.FC = () => {
                                         rows={earningsRows}
                                         setRows={setEarningsRows}
                                         color="green"
+                                        salaryComponents={salaryComponents}
+                                        updateDetailRow={updateDetailRow}
+                                        addDetailRow={addDetailRow}
+                                        removeDetailRow={removeDetailRow}
                                     />
                                     <SalaryDetailTable
                                         title="Deductions"
                                         rows={deductionRows}
                                         setRows={setDeductionRows}
                                         color="red"
+                                        salaryComponents={salaryComponents}
+                                        updateDetailRow={updateDetailRow}
+                                        addDetailRow={addDetailRow}
+                                        removeDetailRow={removeDetailRow}
                                     />
                                 </div>
 

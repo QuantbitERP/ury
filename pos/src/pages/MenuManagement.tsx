@@ -972,7 +972,7 @@ const MenuManagement: React.FC = () => {
     <PageLayout title="Menu Management" subtitle="Manage your restaurant's menus and categories">
       <div className="flex h-full bg-gray-50">
         {/* Left Sidebar - Sub Menu */}
-        <div className="w-64 bg-white border-r border-gray-200 p-4">
+        <div className="w-64 bg-white border-r border-gray-200 p-4" data-tour="menu-sidebar">
           <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-4">
             Menu Management
           </h3>
@@ -1023,6 +1023,7 @@ const MenuManagement: React.FC = () => {
                     <button
                       onClick={() => setShowAddModal(true)}
                       className="bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-medium py-2 px-4 rounded-lg flex items-center gap-2 transition-colors"
+                      data-tour="add-menu-item"
                     >
                       <Plus className="h-4 w-4" />
                       Add Menu Item
@@ -1050,7 +1051,7 @@ const MenuManagement: React.FC = () => {
               {/* Search and Filters */}
               <div className="px-6 mt-6">
                 <div className="flex items-center gap-4 mb-6">
-                  <div className="flex-1 relative">
+                  <div className="flex-1 relative" data-tour="menu-search">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <input
                       type="text"
@@ -1063,7 +1064,7 @@ const MenuManagement: React.FC = () => {
                 </div>
 
                 {/* Category Filters */}
-                <div className="flex gap-2 overflow-x-auto pb-2">
+                <div className="flex gap-2 overflow-x-auto pb-2" data-tour="category-filters">
                   {categories.map((category) => (
                     <button
                       key={category}
@@ -1081,9 +1082,9 @@ const MenuManagement: React.FC = () => {
 
               {/* Menu Items Grid */}
               <div className="px-6 mt-6 pb-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" data-tour="menu-items-grid">
                   {filteredItems.map((item) => (
-                    <div key={item.id} className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
+                    <div key={item.id} className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow" data-tour="menu-item-card">
                       <div className="flex justify-between items-start mb-3">
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
@@ -1102,6 +1103,7 @@ const MenuManagement: React.FC = () => {
                             onClick={() => toggleItemStatus(item.id)}
                             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${item.enabled ? 'bg-green-500' : 'bg-gray-300'
                               }`}
+                            data-tour="toggle-status"
                           >
                             <span
                               className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${item.enabled ? 'translate-x-6' : 'translate-x-1'
@@ -1115,7 +1117,7 @@ const MenuManagement: React.FC = () => {
                         <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
                           {item.category}
                         </span>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2" data-tour="item-actions">
                           <button
                             onClick={() => handleEditItem(item)}
                             className="text-gray-400 hover:text-blue-600 transition-colors"

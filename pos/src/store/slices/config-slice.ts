@@ -41,6 +41,20 @@ const initialState: ConfigState = {
   posProfile: null,
 };
 
+const URY_ROLES = ['URY Captain', 'URY Cashier', 'URY Manager'];
+const FINANCE_ROLES = ['Accounts Manager', 'Accounts User', 'Auditor', 'Analytics'];
+const HR_ROLES = ['HR Manager', 'HR User'];
+const INVENTORY_ROLES = [
+  'Purchase Manager',
+  'Purchase Master Manager',
+  'Purchase User',
+  'Stock Manager',
+  'Stock User',
+  'Supplier',
+  'Manufacturing Manager',
+  'Manufacturing User',
+];
+
 export const createConfigSlice: StateCreator<
   ConfigSlice & AuthSlice,
   [],
@@ -89,13 +103,30 @@ export const createConfigSlice: StateCreator<
     const { user } = get();
     const { allowedRoles } = get();
 
-    if (!user || !user.roles || !allowedRoles.length) {
+    if (!user || !user.roles) {
+      set({ hasAccess: false });
+      return;
+    }
+
+    const userRoles = user.roles;
+    const hasUryRole = userRoles.some(role => URY_ROLES.includes(role));
+    const hasNonUryModuleRole = userRoles.some(role =>
+      FINANCE_ROLES.includes(role) || HR_ROLES.includes(role) || INVENTORY_ROLES.includes(role)
+    );
+
+    // If user has no URY roles but has valid module roles, allow app access.
+    if (!hasUryRole && hasNonUryModuleRole) {
+      set({ hasAccess: true, error: null });
+      return;
+    }
+
+    if (!allowedRoles.length) {
       set({ hasAccess: false });
       return;
     }
 
     // Check if user has any of the allowed roles
-    const hasAccess = user.roles.some(role => allowedRoles.includes(role));
+    const hasAccess = userRoles.some(role => allowedRoles.includes(role));
     set({ hasAccess });
 
     // If no access, we could redirect or show an error message

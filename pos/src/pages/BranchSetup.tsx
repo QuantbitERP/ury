@@ -45,8 +45,13 @@ interface Branch {
   custom_manager_contact?: string;
   custom_is_head_office?: string;
   custom_is_etims_branch?: number;
+  custom_currency?: string;
   custom_aggregator_settings?: AggregatorSettings[];
   user?: URYUser[];
+  custom_fg_warehouse?: string;
+  custom_wip_warehouse?: string;
+  custom_from_warehouse?: string;
+  custom_to_warehouse?: string;
 }
 
 const BranchSetup: React.FC = () => {
@@ -88,7 +93,11 @@ const BranchSetup: React.FC = () => {
     custom_no_taxes: 0,
     custom_is_etims_branch: 0,
     custom_aggregator_settings: [],
-    user: []
+    user: [],
+    custom_fg_warehouse: '',
+    custom_wip_warehouse: '',
+    custom_from_warehouse: '',
+    custom_to_warehouse: ''
   });
 
   // Tab configuration
@@ -411,12 +420,71 @@ const BranchSetup: React.FC = () => {
     }
   };
 
+  // Fetch warehouses for dropdown
+  const fetchWarehouses = async () => {
+    try {
+      const response = await fetch('/api/method/frappe.client.get_list', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          doctype: 'Warehouse',
+          fields: ['name'],
+          filters: { is_group: 0 },
+          limit_page_length: 100
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.message || [];
+      } else {
+        console.error('Failed to fetch warehouses');
+        return [];
+      }
+    } catch (error) {
+      console.error('Error fetching warehouses:', error);
+      return [];
+    }
+  };
+
+  // Fetch currencies for dropdown
+  const fetchCurrencies = async () => {
+    try {
+      const response = await fetch('/api/method/frappe.client.get_list', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          doctype: 'Currency',
+          fields: ['name'],
+          limit_page_length: 9999
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.message || [];
+      } else {
+        console.error('Failed to fetch currencies');
+        return [];
+      }
+    } catch (error) {
+      console.error('Error fetching currencies:', error);
+      return [];
+    }
+  };
+
   // State for dropdown options
   const [userOptions, setUserOptions] = useState<any[]>([]);
   const [roomOptions, setRoomOptions] = useState<any[]>([]);
   const [customerOptions, setCustomerOptions] = useState<any[]>([]);
   const [priceListOptions, setPriceListOptions] = useState<any[]>([]);
   const [modeOfPaymentOptions, setModeOfPaymentOptions] = useState<any[]>([]);
+  const [warehouseOptions, setWarehouseOptions] = useState<any[]>([]);
+  const [currencyOptions, setCurrencyOptions] = useState<any[]>([]);
   const [loadingOptions, setLoadingOptions] = useState(true);
 
   // Load dropdown options on component mount
@@ -424,18 +492,22 @@ const BranchSetup: React.FC = () => {
     const loadOptions = async () => {
       setLoadingOptions(true);
       try {
-        const [users, rooms, customers, priceLists, modeOfPayments] = await Promise.all([
+        const [users, rooms, customers, priceLists, modeOfPayments, warehouses, currencies] = await Promise.all([
           fetchUsers(),
           fetchRooms(),
           fetchCustomers(),
           fetchPriceLists(),
-          fetchModeOfPayments()
+          fetchModeOfPayments(),
+          fetchWarehouses(),
+          fetchCurrencies()
         ]);
         setUserOptions(users);
         setRoomOptions(rooms);
         setCustomerOptions(customers);
         setPriceListOptions(priceLists);
         setModeOfPaymentOptions(modeOfPayments);
+        setWarehouseOptions(warehouses);
+        setCurrencyOptions(currencies);
       } catch (error) {
         console.error('Error loading dropdown options:', error);
       } finally {
@@ -492,7 +564,11 @@ const BranchSetup: React.FC = () => {
       custom_no_taxes: 0,
       custom_is_etims_branch: 0,
       custom_aggregator_settings: [],
-      user: []
+      user: [],
+      custom_fg_warehouse: '',
+      custom_wip_warehouse: '',
+      custom_from_warehouse: '',
+      custom_to_warehouse: ''
     });
     showToast.info('Form reset. Ready to create a new branch.');
   };
@@ -554,7 +630,7 @@ const BranchSetup: React.FC = () => {
             <div className="p-4 border-t border-gray-200 bg-gray-50 flex-shrink-0">
               <Button
                 onClick={resetForm}
-                className="w-full bg-[#E4B315]/12 hover:bg-[#E4B315]/12 text-white h-10"
+                className="w-full bg-gradient-to-r from-[#E4B315] to-[#C69A11] hover:opacity-90 text-white h-10 shadow-md shadow-[#E4B315]/20"
                 variant={selectedBranch ? "outline" : "default"}
               >
                 <Plus className="w-4 h-4 mr-2" />
@@ -668,6 +744,23 @@ const BranchSetup: React.FC = () => {
                           placeholder="Enter PIN"
                         />
                       </div>
+                      <div>
+                        <label className="block text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-2">
+                          Currency
+                        </label>
+                        <select
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E4B315]/40"
+                          value={formData.custom_currency || ''}
+                          onChange={(e) => handleInputChange('custom_currency', e.target.value)}
+                        >
+                          <option value="">Select Currency</option>
+                          {currencyOptions.map((currency) => (
+                            <option key={currency.name} value={currency.name}>
+                              {currency.currency_name || currency.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -775,50 +868,125 @@ const BranchSetup: React.FC = () => {
                       <Settings className="w-5 h-5 mr-2 text-[#C69A11]" />
                       Settings
                     </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="flex items-center space-x-3">
-                        <input
-                          type="checkbox"
-                          className="w-4 h-4 text-[#C69A11] border-gray-300 rounded focus:ring-[#E4B315]/40"
-                          checked={formData.custom_make_unpaid === 1}
-                          onChange={(e) => handleInputChange('custom_make_unpaid', e.target.checked ? 1 : 0)}
-                        />
-                        <label className="text-sm font-medium text-gray-700">
-                          Make Unpaid
-                        </label>
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="flex items-center space-x-3">
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 text-[#C69A11] border-gray-300 rounded focus:ring-[#E4B315]/40"
+                            checked={formData.custom_make_unpaid === 1}
+                            onChange={(e) => handleInputChange('custom_make_unpaid', e.target.checked ? 1 : 0)}
+                          />
+                          <label className="text-sm font-medium text-gray-700">
+                            Make Unpaid
+                          </label>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 text-[#C69A11] border-gray-300 rounded focus:ring-[#E4B315]/40"
+                            checked={formData.custom_no_taxes === 1}
+                            onChange={(e) => handleInputChange('custom_no_taxes', e.target.checked ? 1 : 0)}
+                          />
+                          <label className="text-sm font-medium text-gray-700">
+                            No Taxes
+                          </label>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 text-[#C69A11] border-gray-300 rounded focus:ring-[#E4B315]/40"
+                            checked={formData.custom_is_head_office === 'Y'}
+                            onChange={(e) => handleInputChange('custom_is_head_office', e.target.checked ? 'Y' : 'N')}
+                          />
+                          <label className="text-sm font-medium text-gray-700">
+                            Is Head Office
+                          </label>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 text-[#C69A11] border-gray-300 rounded focus:ring-[#E4B315]/40"
+                            checked={formData.custom_is_etims_branch === 1}
+                            onChange={(e) => handleInputChange('custom_is_etims_branch', e.target.checked ? 1 : 0)}
+                          />
+                          <label className="text-sm font-medium text-gray-700">
+                            Is ETIMS Branch
+                          </label>
+                        </div>
                       </div>
-                      <div className="flex items-center space-x-3">
-                        <input
-                          type="checkbox"
-                          className="w-4 h-4 text-[#C69A11] border-gray-300 rounded focus:ring-[#E4B315]/40"
-                          checked={formData.custom_no_taxes === 1}
-                          onChange={(e) => handleInputChange('custom_no_taxes', e.target.checked ? 1 : 0)}
-                        />
-                        <label className="text-sm font-medium text-gray-700">
-                          No Taxes
-                        </label>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <input
-                          type="checkbox"
-                          className="w-4 h-4 text-[#C69A11] border-gray-300 rounded focus:ring-[#E4B315]/40"
-                          checked={formData.custom_is_head_office === 'Y'}
-                          onChange={(e) => handleInputChange('custom_is_head_office', e.target.checked ? 'Y' : 'N')}
-                        />
-                        <label className="text-sm font-medium text-gray-700">
-                          Is Head Office
-                        </label>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <input
-                          type="checkbox"
-                          className="w-4 h-4 text-[#C69A11] border-gray-300 rounded focus:ring-[#E4B315]/40"
-                          checked={formData.custom_is_etims_branch === 1}
-                          onChange={(e) => handleInputChange('custom_is_etims_branch', e.target.checked ? 1 : 0)}
-                        />
-                        <label className="text-sm font-medium text-gray-700">
-                          Is ETIMS Branch
-                        </label>
+                      <div className="border-t border-gray-200 pt-6">
+                        <h4 className="text-sm font-semibold text-gray-900 mb-4">Manufacturing Warehouses</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-2">
+                              FG Warehouse
+                            </label>
+                            <select
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E4B315]/40"
+                              value={formData.custom_fg_warehouse || ''}
+                              onChange={(e) => handleInputChange('custom_fg_warehouse', e.target.value)}
+                            >
+                              <option value="">Select FG Warehouse</option>
+                              {warehouseOptions.map((warehouse) => (
+                                <option key={warehouse.name} value={warehouse.name}>
+                                  {warehouse.warehouse_name || warehouse.name}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-2">
+                              WIP Warehouse
+                            </label>
+                            <select
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E4B315]/40"
+                              value={formData.custom_wip_warehouse || ''}
+                              onChange={(e) => handleInputChange('custom_wip_warehouse', e.target.value)}
+                            >
+                              <option value="">Select WIP Warehouse</option>
+                              {warehouseOptions.map((warehouse) => (
+                                <option key={warehouse.name} value={warehouse.name}>
+                                  {warehouse.warehouse_name || warehouse.name}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-2">
+                              From Warehouse
+                            </label>
+                            <select
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E4B315]/40"
+                              value={formData.custom_from_warehouse || ''}
+                              onChange={(e) => handleInputChange('custom_from_warehouse', e.target.value)}
+                            >
+                              <option value="">Select From Warehouse</option>
+                              {warehouseOptions.map((warehouse) => (
+                                <option key={warehouse.name} value={warehouse.name}>
+                                  {warehouse.warehouse_name || warehouse.name}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-2">
+                              To Warehouse
+                            </label>
+                            <select
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E4B315]/40"
+                              value={formData.custom_to_warehouse || ''}
+                              onChange={(e) => handleInputChange('custom_to_warehouse', e.target.value)}
+                            >
+                              <option value="">Select To Warehouse</option>
+                              {warehouseOptions.map((warehouse) => (
+                                <option key={warehouse.name} value={warehouse.name}>
+                                  {warehouse.warehouse_name || warehouse.name}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1006,7 +1174,7 @@ const BranchSetup: React.FC = () => {
                   <Button
                     onClick={saveBranch}
                     disabled={saving}
-                    className="px-6 py-2 h-10 bg-[#E4B315]/12 hover:bg-[#E4B315]/12 text-white"
+                    className="px-6 py-2 h-10 bg-gradient-to-r from-[#E4B315] to-[#C69A11] hover:opacity-90 text-white shadow-md shadow-[#E4B315]/20"
                   >
                     {saving ? (
                       <>

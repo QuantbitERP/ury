@@ -700,6 +700,7 @@ const WorkspaceManagement: React.FC = () => {
           <button
             onClick={loadAll}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border border-gray-100 rounded-xl text-gray-600 hover:border-[#E4B315]/40 hover:text-[#C69A11] transition-colors shadow-sm"
+            data-tour="workspace-refresh"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-[#E4B315]' : ''}`} />
             Refresh
@@ -728,7 +729,7 @@ const WorkspaceManagement: React.FC = () => {
         <div className="flex-1 overflow-hidden">
           <div className="max-w-7xl mx-auto h-full flex flex-col">
             {/* ── Stats ─────────────────────────────── */}
-            <div className="shrink-0 flex items-center justify-between mb-4">
+            <div className="shrink-0 flex items-center justify-between mb-4" data-tour="workspace-dashboard-stats">
               <CompactStat label="Total Employees" value={employees.length} icon={<Users className="w-4 h-4 text-white" />} accent="bg-[#E4B315]/20" gold />
               <CompactStat label="Present Today" value={presentToday} sub={`of ${employees.length}`} icon={<UserCheck className="w-4 h-4 text-emerald-600" />} accent="bg-emerald-100" />
               <CompactStat label="Shift Assignments" value={activeShifts} icon={<BarChart2 className="w-4 h-4 text-sky-600" />} accent="bg-sky-100" />
@@ -736,13 +737,13 @@ const WorkspaceManagement: React.FC = () => {
             </div>
 
             {/* ── Quick Check In/Out ────────────────── */}
-            <div className="shrink-0 mb-3">
+            <div className="shrink-0 mb-3" data-tour="workspace-quick-checkin">
               <QuickCheckin employees={employees} onCheckin={createCheckin} onSuccess={() => { loadAll(); addToast('success', 'Check-in recorded'); }} onError={msg => addToast('error', msg)} />
             </div>
 
             {/* ── Tabs ──────────────────────────────── */}
             <div className="shrink-0 mb-3">
-              <div className="flex items-center gap-1 bg-slate-100 rounded-2xl p-1 w-fit flex-wrap">
+              <div className="flex items-center gap-1 bg-slate-100 rounded-2xl p-1 w-fit flex-wrap" data-tour="workspace-tabs">
                 {([
                   { key: 'attendance', label: 'Attendance', icon: Clock },
                   { key: 'shifts', label: 'Shifts', icon: Calendar },
@@ -754,6 +755,7 @@ const WorkspaceManagement: React.FC = () => {
                     key={key}
                     onClick={() => setTab(key)}
                     className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${tab === key ? 'bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white shadow-md shadow-[#E4B315]/20' : 'text-gray-500 hover:text-[#2D2A26]'}`}
+                    data-tour={key === 'attendance' ? 'workspace-attendance-tab' : key === 'shifts' ? 'workspace-shifts-tab' : key === 'leaves' ? 'workspace-leaves-tab' : key === 'holidays' ? 'workspace-holidays-tab' : key === 'checkins' ? 'workspace-checkins-tab' : ''}
                   >
                     <Icon className="w-3.5 h-3.5" />{label}
                   </button>

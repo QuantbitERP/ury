@@ -180,10 +180,10 @@ const OrderPanel = () => {
   const isInteractionDisabled = isOrderInteractionDisabled() || isSubmitting;
 
   return (
-    <div className="w-96 bg-white border-l border-gray-200 flex flex-col h-[calc(100vh-4rem)] fixed right-0 z-10">
+    <div className="w-96 bg-white border-l border-gray-200 flex flex-col h-[calc(100vh-4rem)] fixed right-0 z-10" data-tour="order-panel">
       <div className="p-4 border-b border-gray-200 flex-shrink-0">
-        <OrderTypeSelect disabled={isInteractionDisabled} />
-        <div className="mt-3"><CustomerSelect disabled={isInteractionDisabled} /></div>
+        <OrderTypeSelect disabled={isInteractionDisabled} data-tour="order-type" />
+        <div className="mt-3"><CustomerSelect disabled={isInteractionDisabled} data-tour="customer-select" /></div>
       </div>
       
       {orderLoading ? (
@@ -299,6 +299,7 @@ const OrderPanel = () => {
                   )}
                   disabled={isInteractionDisabled}
                   title={orderComment ? "Edit comment" : "Add comment"}
+                  data-tour="comment-button"
                 >
                   <MessageSquare className="w-4 h-4" />
                 </Button>
@@ -312,6 +313,7 @@ const OrderPanel = () => {
               size="default"
               className="w-full"
               disabled={isInteractionDisabled}
+              data-tour="submit-order"
             >
               {isSubmitting ? (
                 <div className="flex items-center">

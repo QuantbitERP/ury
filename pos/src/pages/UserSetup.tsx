@@ -620,6 +620,12 @@ const UserSetup: React.FC = () => {
 
   // Initialize
   useEffect(() => {
+    // Always fetch roles on mount so they're available when adding/editing users
+    fetchRoles();
+  }, []);
+
+  // Load data based on active tab
+  useEffect(() => {
     if (activeTab === 'users') {
       fetchUsers();
     } else if (activeTab === 'roles') {

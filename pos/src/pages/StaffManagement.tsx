@@ -797,7 +797,7 @@ const StaffManagementPage: React.FC = () => {
           <button onClick={loadRecords} className="flex items-center gap-2 px-3 py-2 text-sm border border-gray-100 bg-white text-gray-600 rounded-xl hover:border-[#E4B315]/40 hover:text-[#C69A11] transition-colors shadow-sm">
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-[#E4B315]' : ''}`} /> Refresh
           </button>
-          <button onClick={() => setOnboardingModal({ mode: 'add', record: null })} className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white text-sm font-bold rounded-xl shadow-md shadow-[#E4B315]/20 hover:opacity-90">
+          <button onClick={() => setOnboardingModal({ mode: 'add', record: null })} className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white text-sm font-bold rounded-xl shadow-md shadow-[#E4B315]/20 hover:opacity-90" data-tour="staff-add-record">
             <UserPlus className="w-4 h-4" /> Add Staff Record
           </button>
         </div>
@@ -813,7 +813,7 @@ const StaffManagementPage: React.FC = () => {
       )}
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6" data-tour="staff-dashboard-stats">
         {[
           { label: 'Total Records', value: stats.total, Icon: Users, color: 'text-gray-700' },
           { label: 'Completed', value: stats.completed, Icon: UserCheck, color: 'text-green-600' },
@@ -840,9 +840,10 @@ const StaffManagementPage: React.FC = () => {
               onChange={e => setSearchTerm(e.target.value)}
               placeholder="Search staff records..."
               className="w-full pl-9 pr-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E4B315]/30 focus:border-[#E4B315]/50 transition-colors"
+              data-tour="staff-search"
             />
           </div>
-          <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E4B315]/30 focus:border-[#E4B315]/50 bg-white transition-colors">
+          <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E4B315]/30 focus:border-[#E4B315]/50 bg-white transition-colors" data-tour="staff-filter">
             <option value="">All Status</option>
             <option value="Pending">Pending</option>
             <option value="In Process">In Process</option>
@@ -853,7 +854,7 @@ const StaffManagementPage: React.FC = () => {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden" data-tour="staff-table">
         <div className="px-5 py-3.5 border-b border-gray-50">
           <h3 className="text-xs font-bold uppercase tracking-wider text-[#C69A11]">Staff Onboarding Records</h3>
         </div>
@@ -903,10 +904,10 @@ const StaffManagementPage: React.FC = () => {
                   <td className="px-4 py-3 text-sm text-gray-500">{formatDate(record.boarding_begins_on)}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1.5">
-                      <button onClick={() => setDetailRecord(record)} className="w-7 h-7 flex items-center justify-center rounded-xl text-gray-400 hover:text-[#C69A11] hover:bg-[#E4B315]/10 transition-colors" title="View">
+                      <button onClick={() => setDetailRecord(record)} className="w-7 h-7 flex items-center justify-center rounded-xl text-gray-400 hover:text-[#C69A11] hover:bg-[#E4B315]/10 transition-colors" title="View" data-tour="staff-view-details">
                         <Eye className="w-3.5 h-3.5" />
                       </button>
-                      <button onClick={() => setOnboardingModal({ mode: 'edit', record })} className="w-7 h-7 flex items-center justify-center rounded-xl text-gray-400 hover:text-[#C69A11] hover:bg-[#E4B315]/10 transition-colors" title="Edit">
+                      <button onClick={() => setOnboardingModal({ mode: 'edit', record })} className="w-7 h-7 flex items-center justify-center rounded-xl text-gray-400 hover:text-[#C69A11] hover:bg-[#E4B315]/10 transition-colors" title="Edit" data-tour="staff-edit-record">
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
                     </div>

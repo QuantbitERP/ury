@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   Clock, Printer, Pencil, X, ShoppingCart, AlertCircle, DollarSign,
   TrendingUp, ChevronDown, Search, Eye, Ban, Download,
-  Calendar, ChevronLeft, ChevronRight,
+  Calendar, ChevronLeft, ChevronRight, Users, Layers, ArrowRight,
 } from 'lucide-react';
 import { Button } from '../components/ui';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../components/ui/dialog';
@@ -210,50 +210,12 @@ export default function Orders() {
     selectedOrder, selectedOrderItems, selectedOrderTaxes,
     selectedOrderLoading, selectedOrderError,
     fetchOrders, setSelectedStatus, goToNextPage, goToPreviousPage,
-    selectOrder, clearSelectedOrder, orderSearchQuery, setOrderSearchQuery,
-    user
+    selectOrder, clearSelectedOrder, orderSearchQuery, setOrderSearchQuery
   } = useRootStore();
 
   const posStore = usePOSStore();
   const navigate = useNavigate();
   const mounted  = useRef(false);
-
-  // ── Role-based access control ──────────────────────────────────────────────────
-  useEffect(() => {
-    if (!user?.roles) return;
-
-    const userRoles = user.roles;
-    
-    // Helper function to check if user has specific roles
-    const hasRole = (roles: string[], requiredRoles: string[]) => 
-      requiredRoles.some(role => roles.includes(role));
-
-    // Check if user has Finance roles (Accounts Manager, Accounts User, Analytics, Auditor)
-    const hasFinanceRoles = hasRole(userRoles, ['Accounts Manager', 'Accounts User', 'Analytics', 'Auditor']);
-    
-    // Check if user has HR roles (HR Manager, HR User)
-    const hasHRRoles = hasRole(userRoles, ['HR Manager', 'HR User']);
-    
-    // Check if user has Purchase/Stock roles
-    const hasPurchaseRoles = hasRole(userRoles, ['Purchase Manager', 'Purchase Master Manager', 'Purchase User']);
-    const hasStockRoles = hasRole(userRoles, ['Stock Manager', 'Stock User', 'Supplier']);
-
-    // PRIORITY: Finance roles take precedence - redirect to dashboard if user has finance roles
-    if (hasFinanceRoles) {
-      navigate('/dashboard');
-      return;
-    }
-    // PRIORITY: HR roles take precedence - redirect to dashboard if user has HR roles
-    else if (hasHRRoles) {
-      navigate('/dashboard');
-      return;
-    }
-    // PRIORITY: Purchase/Stock roles take precedence - redirect to dashboard if user has these roles
-    else if (hasPurchaseRoles || hasStockRoles) {
-      navigate('/dashboard');
-      return;
-    }
-  }, [user, navigate]);
 
   const [cancelDialogOpen,          setCancelDialogOpen]          = useState(false);
   const [cancelReason,              setCancelReason]              = useState('');
@@ -335,6 +297,40 @@ export default function Orders() {
 
   const handleOrderClick = (order: any) => { if (!isTransferMode&&!isMergeMode) { selectOrder(order); setShowDetailModal(true); } };
 
+  const handleToggleTransferMode = () => {
+    setIsTransferMode(!isTransferMode);
+    setSelectedOrdersForTransfer([]);
+    if (isMergeMode) setIsMergeMode(false);
+  };
+
+  const handleToggleMergeMode = () => {
+    setIsMergeMode(!isMergeMode);
+    setSelectedOrdersForTransfer([]);
+    if (isTransferMode) setIsTransferMode(false);
+  };
+
+  const handleOrderSelection = (orderName: string) => {
+    setSelectedOrdersForTransfer(prev =>
+      prev.includes(orderName) ? prev.filter(n => n !== orderName) : [...prev, orderName]
+    );
+  };
+
+  const handleProceedWithTransfer = () => {
+    if (selectedOrdersForTransfer.length === 0) {
+      showToast.error('Please select at least one order to transfer.');
+      return;
+    }
+    setIsTransferDialogOpen(true);
+  };
+
+  const handleProceedWithMerge = () => {
+    if (selectedOrdersForTransfer.length < 2) {
+      showToast.error('Please select at least 2 orders to merge.');
+      return;
+    }
+    setIsMergeBillsDialogOpen(true);
+  };
+
   async function handleCancelOrder() {
     if (!selectedOrder) return;
     if (!cancelReason.trim()) { showToast.error('Please enter a reason.'); return; }
@@ -404,10 +400,48 @@ export default function Orders() {
       title="Order Management"
       subtitle="View, search and manage all restaurant orders"
       actions={
-        <button onClick={handleExportCSV}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 bg-white hover:border-[#E4B315]/40 hover:text-[#C69A11] transition-colors shadow-sm">
-          <Download className="w-4 h-4"/> Export CSV
-        </button>
+        <div className="flex items-center gap-2" data-tour="bulk-actions">
+          {isTransferMode ? (
+            <>
+              <button onClick={handleProceedWithTransfer}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors shadow-sm">
+                <ArrowRight className="w-4 h-4" /> Proceed Transfer ({selectedOrdersForTransfer.length})
+              </button>
+              <button onClick={handleToggleTransferMode}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-red-200 text-red-600 text-sm font-semibold hover:bg-red-50 transition-colors">
+                <X className="w-4 h-4" /> Cancel
+              </button>
+            </>
+          ) : isMergeMode ? (
+            <>
+              <button onClick={handleProceedWithMerge}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-green-600 text-white text-sm font-semibold hover:bg-green-700 transition-colors shadow-sm">
+                <ArrowRight className="w-4 h-4" /> Proceed Merge ({selectedOrdersForTransfer.length})
+              </button>
+              <button onClick={handleToggleMergeMode}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-red-200 text-red-600 text-sm font-semibold hover:bg-red-50 transition-colors">
+                <X className="w-4 h-4" /> Cancel
+              </button>
+            </>
+          ) : (
+            <>
+              <button onClick={handleToggleTransferMode}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 bg-white hover:border-[#E4B315]/40 hover:text-[#C69A11] transition-colors shadow-sm">
+                <Users className="w-4 h-4" /> Transfer Waiter
+              </button>
+              <button onClick={handleToggleMergeMode}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 bg-white hover:border-[#E4B315]/40 hover:text-[#C69A11] transition-colors shadow-sm">
+                <Layers className="w-4 h-4" /> Merge Bills
+              </button>
+              <button onClick={handleExportCSV}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 bg-white hover:border-[#E4B315]/40 hover:text-[#C69A11] transition-colors shadow-sm"
+                data-tour="export-csv"
+              >
+                <Download className="w-4 h-4"/> Export CSV
+              </button>
+            </>
+          )}
+        </div>
       }
     >
       <div className="overflow-auto px-6 py-5 space-y-4 max-w-screen-2xl mx-auto w-full">
@@ -419,7 +453,7 @@ export default function Orders() {
         )}
 
         {/* Stats row */}
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-4 gap-4" data-tour="orders-stats">
           <StatCard accent label="Revenue Today"  value={formatCurrency(revenueToday)} icon={DollarSign}/>
           <StatCard       label="Today's Orders"  value={todayOrders.length}           icon={ShoppingCart}/>
           <StatCard alert  label="Pending Orders" value={pendingOrders.length}          icon={Clock}/>
@@ -427,11 +461,11 @@ export default function Orders() {
         </div>
 
         {/* Filters panel */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5" data-tour="orders-filters">
           <p className="text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-4">Filter Orders</p>
 
           {/* Search */}
-          <div className="relative mb-4">
+          <div className="relative mb-4" data-tour="orders-search">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"/>
             <input type="text" value={orderSearchQuery} onChange={handleSearchChange}
               placeholder="Search by order #, customer name, phone, or table…"
@@ -439,7 +473,7 @@ export default function Orders() {
           </div>
 
           {/* Quick date chips */}
-          <div className="flex gap-2 mb-4 flex-wrap">
+          <div className="flex gap-2 mb-4 flex-wrap" data-tour="quick-dates">
             {['Today','Yesterday','Last 7 Days','Last 30 Days','All Time'].map(label => (
               <button key={label} onClick={() => handleQuickDate(label)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${quickDate===label?'bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white border-transparent shadow-sm shadow-[#E4B315]/20':'bg-white text-gray-600 border-gray-200 hover:border-[#E4B315]/40 hover:text-[#C69A11]'}`}>
@@ -483,7 +517,7 @@ export default function Orders() {
         </div>
 
         {/* Orders table */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden" data-tour="orders-table">
           <div className="px-5 py-3.5 border-b border-gray-50 flex items-center justify-between">
             <p className="text-xs font-bold uppercase tracking-wider text-[#C69A11]">
               Orders ({displayedOrders.length}{displayedOrders.length!==orders.length?` of ${orders.length}`:''})
@@ -509,14 +543,24 @@ export default function Orders() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-gray-50 bg-gray-50/50">
-                    {['Order #','Date & Time','Service Type','Table/Customer','Items','Amount','Status','Payment','Actions'].map(h => (
+                    {(isTransferMode || isMergeMode ? ['Select','Order #','Date & Time','Service Type','Table/Customer','Items','Amount','Status','Payment','Actions'] : ['Order #','Date & Time','Service Type','Table/Customer','Items','Amount','Status','Payment','Actions']).map(h => (
                       <th key={h} className="px-4 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
                   {displayedOrders.map(order => (
-                    <tr key={order.name} className="hover:bg-[#E4B315]/3 transition-colors">
+                    <tr key={order.name} className={`hover:bg-[#E4B315]/3 transition-colors ${selectedOrdersForTransfer.includes(order.name) ? 'bg-blue-50' : ''}`}>
+                      {(isTransferMode || isMergeMode) && (
+                        <td className="px-4 py-3.5">
+                          <input
+                            type="checkbox"
+                            checked={selectedOrdersForTransfer.includes(order.name)}
+                            onChange={() => handleOrderSelection(order.name)}
+                            className="h-4 w-4 text-blue-600 rounded cursor-pointer"
+                          />
+                        </td>
+                      )}
                       <td className="px-4 py-3.5">
                         <button onClick={() => handleOrderClick(order)} className="text-sm font-bold text-[#C69A11] hover:text-[#E4B315] hover:underline transition-colors">{order.name}</button>
                       </td>
@@ -530,7 +574,7 @@ export default function Orders() {
                       <td className="px-4 py-3.5"><StatusBadge status={order.status}/></td>
                       <td className="px-4 py-3.5">{order.payment_status?<StatusBadge status={order.payment_status}/>:<span className="text-xs text-gray-300 italic">—</span>}</td>
                       <td className="px-4 py-3.5">
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1" data-tour="action-buttons">
                           <button onClick={() => handleOrderClick(order)} className="p-1.5 hover:bg-[#E4B315]/10 rounded-lg transition-colors text-gray-400 hover:text-[#C69A11]" title="View"><Eye className="w-4 h-4"/></button>
                           {['Draft','Unbilled','Recently Paid'].includes(order.status)&&(
                             <button onClick={() => { selectOrder(order); setShowDetailModal(false); if (String(order.invoice_printed)==='0') { showToast.error('Please print invoice before making payment'); return; } setShowPaymentDialog(true); }}

@@ -5,14 +5,12 @@ import {
   Package, UserCheck, Calendar, RefreshCw, Clock,
   BarChart2, Settings, ChevronRight, UserPlus,
   Boxes, Truck, LayoutGrid, FileText, TrendingDown,
-  Building, Archive
 } from 'lucide-react';
 import {
   fetchTabData, TabId,
   OverviewData, OperationsData, StaffData, EventsData, AnalyticsData,
 } from '../lib/api/dashboard-api';
 import Sidebar from '../components/Sidebar';
-import { useRootStore } from '../store/root-store';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -294,23 +292,7 @@ const BarChart = ({ data }: { data: { hour: string; orders: number }[] }) => {
 // Tab content — Overview
 // ─────────────────────────────────────────────────────────────────────────────
 
-const OverviewTab = ({ 
-  data, 
-  navigate, 
-  hasFinanceRoles, 
-  hasHRRoles, 
-  hasPurchaseRoles, 
-  hasStockRoles,
-  hasAllRoles
-}: { 
-  data: OverviewData; 
-  navigate: (path: string) => void;
-  hasFinanceRoles: boolean;
-  hasHRRoles: boolean;
-  hasPurchaseRoles: boolean;
-  hasStockRoles: boolean;
-  hasAllRoles: boolean;
-}) => (
+const OverviewTab = ({ data, navigate }: { data: OverviewData; navigate: (path: string) => void }) => (
   <div className="space-y-5">
     {/* Primary KPIs */}
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -374,65 +356,10 @@ const OverviewTab = ({
     {/* Quick Actions */}
     <SectionCard title="Quick Actions">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {/* HIGHEST PRIORITY: Users with ALL roles across all categories - show all actions */}
-        {hasAllRoles && (
-          <>
-            <ActionBtn primary icon={<ShoppingCart className="h-5 w-5" />} label="New Order" onClick={() => navigate('/')} />
-            <ActionBtn icon={<Package className="h-5 w-5" />} label="Inventory" onClick={() => navigate('/inventory')} />
-            <ActionBtn icon={<BarChart2 className="h-5 w-5" />} label="Financial Reports" onClick={() => navigate('/finance/accounting/financial-reports')} />
-            <ActionBtn icon={<Users className="h-5 w-5" />} label="Staff Management" onClick={() => navigate('/staff-management')} />
-          </>
-        )}
-        
-        {/* PRIORITY: Purchase/Stock roles take precedence when present with Finance roles (for sale-pur case) */}
-        {(hasPurchaseRoles || hasStockRoles) && hasFinanceRoles && !hasHRRoles && (
-          <>
-            <ActionBtn primary icon={<Package className="h-5 w-5" />} label="Inventory" onClick={() => navigate('/inventory')} />
-            <ActionBtn icon={<Truck className="h-5 w-5" />} label="Suppliers" onClick={() => navigate('/suppliers')} />
-            <ActionBtn icon={<ShoppingCart className="h-5 w-5" />} label="Purchase Orders" onClick={() => navigate('/purchase-orders')} />
-            <ActionBtn icon={<Archive className="h-5 w-5" />} label="Stock Tracking" onClick={() => navigate('/stock-tracking')} />
-          </>
-        )}
-        
-        {/* PRIORITY: Finance roles take precedence (when not mixed with Purchase/Stock) */}
-        {hasFinanceRoles && !(hasPurchaseRoles || hasStockRoles) && (
-          <>
-            <ActionBtn primary icon={<BarChart2 className="h-5 w-5" />} label="Financial Reports" onClick={() => navigate('/finance/accounting/financial-reports')} />
-            <ActionBtn icon={<TrendingUp className="h-5 w-5" />} label="Analytics" onClick={() => navigate('/finance/accounting/payment-analysis')} />
-            <ActionBtn icon={<FileText className="h-5 w-5" />} label="Accounts Payable" onClick={() => navigate('/finance/accounting/accounts-payable')} />
-            <ActionBtn icon={<DollarSign className="h-5 w-5" />} label="Accounts Receivable" onClick={() => navigate('/finance/accounting/accounts-receivable')} />
-          </>
-        )}
-        
-        {/* PRIORITY: HR roles take precedence */}
-        {hasHRRoles && !hasFinanceRoles && !(hasPurchaseRoles || hasStockRoles) && (
-          <>
-            <ActionBtn primary icon={<Users className="h-5 w-5" />} label="Staff Management" onClick={() => navigate('/staff-management')} />
-            <ActionBtn icon={<UserCheck className="h-5 w-5" />} label="HR" onClick={() => navigate('/hr')} />
-            <ActionBtn icon={<Calendar className="h-5 w-5" />} label="Payroll" onClick={() => navigate('/payroll')} />
-            <ActionBtn icon={<Building className="h-5 w-5" />} label="Workspace" onClick={() => navigate('/workspace-management')} />
-          </>
-        )}
-        
-        {/* PRIORITY: Purchase/Stock roles take precedence */}
-        {(hasPurchaseRoles || hasStockRoles) && !hasFinanceRoles && !hasHRRoles && (
-          <>
-            <ActionBtn primary icon={<Package className="h-5 w-5" />} label="Inventory" onClick={() => navigate('/inventory')} />
-            <ActionBtn icon={<Truck className="h-5 w-5" />} label="Suppliers" onClick={() => navigate('/suppliers')} />
-            <ActionBtn icon={<ShoppingCart className="h-5 w-5" />} label="Purchase Orders" onClick={() => navigate('/purchase-orders')} />
-            <ActionBtn icon={<Archive className="h-5 w-5" />} label="Stock Tracking" onClick={() => navigate('/stock-tracking')} />
-          </>
-        )}
-        
-        {/* Default: Full access for users with no restricted roles */}
-        {!hasFinanceRoles && !hasHRRoles && !(hasPurchaseRoles || hasStockRoles) && (
-          <>
-            <ActionBtn primary icon={<ShoppingCart className="h-5 w-5" />} label="New Order" onClick={() => navigate('/')} />
-            <ActionBtn icon={<Package className="h-5 w-5" />} label="Inventory" onClick={() => navigate('/inventory')} />
-            <ActionBtn icon={<Calendar className="h-5 w-5" />} label="Events" onClick={() => navigate('/events/calendar')} />
-            <ActionBtn icon={<BarChart2 className="h-5 w-5" />} label="Reports" onClick={() => navigate('/reports/sales-report')} />
-          </>
-        )}
+        <ActionBtn primary icon={<ShoppingCart className="h-5 w-5" />} label="New Order" onClick={() => navigate('/')} />
+        <ActionBtn icon={<Package className="h-5 w-5" />} label="Inventory" onClick={() => navigate('/inventory')} />
+        <ActionBtn icon={<Calendar className="h-5 w-5" />} label="Events" onClick={() => navigate('/events/calendar')} />
+        <ActionBtn icon={<BarChart2 className="h-5 w-5" />} label="Reports" onClick={() => navigate('/reports/sales-report')} />
       </div>
     </SectionCard>
 
@@ -722,69 +649,12 @@ const TABS: TabDef[] = [
   { id: 'analytics',  label: 'Analytics',  icon: <BarChart2 className="h-4 w-4" /> },
 ];
 
-// Helper function to check if user has required role
-const hasRole = (userRoles: string[], requiredRoles: string[]): boolean => {
-    return requiredRoles.some(role => userRoles.includes(role));
-};
-
 const DashboardHome = () => {
   const navigate = useNavigate();
-  const { user } = useRootStore();
   const [activeTab, setActiveTab] = useState<TabId>(() => {
     const saved = sessionStorage.getItem('dashboardActiveTab');
     return (saved as TabId) || 'overview';
   });
-
-  // Role checks for use throughout the component
-  const userRoles = user?.roles || [];
-  
-  // Check if user has Finance roles (Accounts Manager, Accounts User, Analytics, Auditor)
-  const hasFinanceRoles = hasRole(userRoles, ['Accounts Manager', 'Accounts User', 'Analytics', 'Auditor']);
-
-  // Check if user has other role categories
-  const hasHRRoles = hasRole(userRoles, ['HR Manager', 'HR User']);
-  const hasPurchaseRoles = hasRole(userRoles, ['Purchase Manager', 'Purchase Master Manager', 'Purchase User']);
-  const hasStockRoles = hasRole(userRoles, ['Stock Manager', 'Stock User', 'Supplier']);
-  
-  // Check if user has ALL roles (has roles from all categories)
-  const hasAllRoles = hasRole(userRoles, ['URY Manager', 'URY Cashier', 'URY Captain']) &&
-                     hasRole(userRoles, ['HR Manager', 'HR User']) &&
-                     hasFinanceRoles &&
-                     (hasPurchaseRoles || hasStockRoles) &&
-                     hasRole(userRoles, ['Manufacturing Manager', 'Manufacturing User']);
-
-  // Filter tabs based on user roles
-  const getFilteredTabs = (): TabDef[] => {
-    if (!user?.roles) return TABS;
-
-    // HIGHEST PRIORITY: Users with ALL roles across all categories - show all tabs
-    if (hasAllRoles) {
-        return TABS;
-    }
-
-    // PRIORITY: Purchase/Stock roles take precedence when present with Finance roles (for sale-pur case)
-    if ((hasPurchaseRoles || hasStockRoles) && hasFinanceRoles && !hasHRRoles) {
-        return TABS.filter(tab => tab.id === 'overview' || tab.id === 'operations');
-    }
-    // PRIORITY: Finance roles take precedence (when not mixed with Purchase/Stock)
-    else if (hasFinanceRoles) {
-        return TABS.filter(tab => tab.id === 'overview' || tab.id === 'analytics');
-    }
-    // PRIORITY: HR roles take precedence - show only Overview and Staff tabs if user has HR roles (and no finance roles)
-    else if (hasHRRoles) {
-        return TABS.filter(tab => tab.id === 'overview' || tab.id === 'staff');
-    }
-    // PRIORITY: Purchase/Stock roles take precedence - show only Overview and Operations tabs if user has these roles (and no finance/HR roles)
-    else if (hasPurchaseRoles || hasStockRoles) {
-        return TABS.filter(tab => tab.id === 'overview' || tab.id === 'operations');
-    }
-
-    // For all other users, show all tabs
-    return TABS;
-  };
-
-  const filteredTabs = getFilteredTabs();
-
   const [loading,     setLoading]     = useState(true);
   const [error,       setError]       = useState<string | null>(null);
   const [lastRefresh, setLastRefresh] = useState(new Date());
@@ -862,7 +732,7 @@ const DashboardHome = () => {
 
             {/* ── Tab Bar ── */}
             <div className="flex bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm p-1 gap-1">
-              {filteredTabs.map((tab: TabDef) => (
+              {TABS.map(tab => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
@@ -891,7 +761,7 @@ const DashboardHome = () => {
               <Spinner />
             ) : (
               <>
-                {activeTab === 'overview'   && overview   && <OverviewTab   data={overview}   navigate={navigate} hasFinanceRoles={hasFinanceRoles} hasHRRoles={hasHRRoles} hasPurchaseRoles={hasPurchaseRoles} hasStockRoles={hasStockRoles} hasAllRoles={hasAllRoles} />}
+                {activeTab === 'overview'   && overview   && <OverviewTab   data={overview}   navigate={navigate} />}
                 {activeTab === 'operations' && operations && <OperationsTab data={operations} navigate={navigate} />}
                 {activeTab === 'staff'      && staff      && <StaffTab      data={staff}      navigate={navigate} />}
                 {activeTab === 'events'     && events     && <EventsTab     data={events}     navigate={navigate} />}
