@@ -24,7 +24,6 @@ interface EmployeeOnboarding {
   job_offer: string;
   company: string;
   boarding_status: string;
-  project: string;
   employee_name: string;
   department: string;
   designation: string;
@@ -43,7 +42,6 @@ interface OnboardingForm {
   job_offer: string;
   company: string;
   boarding_status: string;
-  project: string;
   department: string;
   designation: string;
   holiday_list: string;
@@ -121,7 +119,7 @@ const fetchHolidayLists = async (): Promise<{name: string; label: string}[]> => 
 const fetchOnboardingRecords = async (): Promise<EmployeeOnboarding[]> => {
   const fields = [
     'name','owner','creation','modified','modified_by','docstatus','idx',
-    'job_applicant','job_offer','company','boarding_status','project','employee_name',
+    'job_applicant','job_offer','company','boarding_status','employee_name',
     'department','designation','holiday_list','date_of_joining','boarding_begins_on',
     'notify_users_by_email','doctype'
   ];
@@ -139,7 +137,6 @@ const createOnboardingRecord = async (form: OnboardingForm): Promise<EmployeeOnb
     company: form.company,
     docstatus: 1,
     boarding_status: form.boarding_status,
-    project: form.project,
     department: form.department,
     designation: form.designation,
     holiday_list: form.holiday_list,
@@ -158,7 +155,6 @@ const updateOnboardingRecord = async (name: string, form: OnboardingForm): Promi
     job_offer: form.job_offer,
     company: form.company,
     boarding_status: form.boarding_status,
-    project: form.project,
     department: form.department,
     designation: form.designation,
     holiday_list: form.holiday_list,
@@ -431,7 +427,6 @@ const OnboardingModal: React.FC<{
     job_offer: onboarding.job_offer || '',
     company: onboarding.company || '',
     boarding_status: onboarding.boarding_status || 'Pending',
-    project: onboarding.project || '',
     department: onboarding.department || '',
     designation: onboarding.designation || '',
     holiday_list: onboarding.holiday_list || '',
@@ -444,7 +439,6 @@ const OnboardingModal: React.FC<{
     job_offer: '',
     company: '',
     boarding_status: 'Pending',
-    project: '',
     department: '',
     designation: '',
     holiday_list: '',
@@ -542,9 +536,6 @@ const OnboardingModal: React.FC<{
                   <option value="Completed">Completed</option>
                   <option value="Not Started">Not Started</option>
                 </select>
-              </Field>
-              <Field label="Project">
-                <input value={form.project} onChange={e => set({ project: e.target.value })} className={inp} />
               </Field>
               <Field label="Department">
                 <select value={form.department} onChange={e => set({ department: e.target.value })} className={inp}>
@@ -675,7 +666,6 @@ const DetailModal: React.FC<{
             ['Job Offer', record.job_offer || 'N/A'],
             ['Company', record.company],
             ['Boarding Status', record.boarding_status],
-            ['Project', record.project || 'N/A'],
           ]},
           { title: 'Employment Details', icon: Briefcase, fields: [
             ['Department', record.department || 'N/A'],

@@ -4,7 +4,7 @@ import {
   Coffee, ChevronDown, Search, X, CheckCircle, XCircle,
   RefreshCw, Briefcase, BarChart2, Bell,
   Loader2, Hash, Sun,
-  Eye
+  Eye, Trash2, MoreVertical, Ban
 } from 'lucide-react';
 import Pagination from '../components/Pagination';
 import { useNavigate } from 'react-router-dom';
@@ -437,6 +437,16 @@ const markAttendance = async (employee: string, date: string, status: string, in
   }
 };
 
+const cancelAttendance = async (name: string): Promise<any> => {
+  return resourceUpdate('Attendance', name, { docstatus: 2, status: 'Cancelled' });
+};
+
+const deleteAttendance = async (name: string): Promise<any> => {
+  return frappeFetch(`/api/resource/Attendance/${encodeURIComponent(name)}`, {
+    method: 'DELETE',
+  });
+};
+
 // Employee Checkin (HRMS preferred way for check-in/out)
 const createCheckin = async (employee: string, logType: 'IN' | 'OUT', shift?: string): Promise<any> => {
   const now = new Date();
@@ -557,6 +567,67 @@ const Modal: React.FC<{ title: string; open: boolean; onClose: () => void; child
 };
 
 // ─────────────────────────────────────────────────────
+// CONFIRMATION MODAL
+// ─────────────────────────────────────────────────────
+const ConfirmationModal: React.FC<{
+  open: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  title: string;
+  message: string;
+  confirmText?: string;
+  cancelText?: string;
+  type?: 'danger' | 'warning';
+}> = ({ open, onClose, onConfirm, title, message, confirmText = 'Confirm', cancelText = 'Cancel', type = 'warning' }) => {
+  if (!open) return null;
+  
+  return (
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md" style={{ animation: 'popIn .2s ease' }}>
+        <div className="px-6 py-5">
+          <div className="flex items-center gap-3 mb-4">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+              type === 'danger' ? 'bg-rose-100' : 'bg-amber-100'
+            }`}>
+              {type === 'danger' ? (
+                <Trash2 className={`w-5 h-5 ${type === 'danger' ? 'text-rose-600' : 'text-amber-600'}`} />
+              ) : (
+                <Ban className="w-5 h-5 text-amber-600" />
+              )}
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900 text-base">{title}</h3>
+              <p className="text-sm text-gray-600 mt-1">{message}</p>
+            </div>
+          </div>
+          <div className="flex gap-2 pt-2">
+            <button
+              onClick={onClose}
+              className="flex-1 px-4 py-2 text-sm font-semibold border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50 transition-colors"
+            >
+              {cancelText}
+            </button>
+            <button
+              onClick={() => {
+                onConfirm();
+                onClose();
+              }}
+              className={`flex-1 px-4 py-2 text-sm font-bold rounded-xl hover:opacity-90 shadow-sm transition-colors ${
+                type === 'danger' 
+                  ? 'bg-rose-600 text-white shadow-rose-600/20' 
+                  : 'bg-amber-600 text-white shadow-amber-600/20'
+              }`}
+            >
+              {confirmText}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────
 // SELECT
 // ─────────────────────────────────────────────────────
 const Select: React.FC<{
@@ -576,6 +647,56 @@ const Select: React.FC<{
     <ChevronDown className="absolute right-2.5 top-2.5 w-4 h-4 text-gray-400 pointer-events-none" />
   </div>
 );
+
+// ─────────────────────────────────────────────────────
+// DROPDOWN
+// ─────────────────────────────────────────────────────
+const Dropdown: React.FC<{
+  children: React.ReactNode;
+  options: { label: string; icon?: React.FC<any>; onClick: () => void }[];
+}> = ({ children, options }) => {
+  const [open, setOpen] = useState(false);
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button
+        onClick={() => setOpen(!open)}
+        className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-50 transition"
+      >
+        {children}
+      </button>
+      {open && (
+        <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+          {options.map((option, index) => (
+            <button
+              key={index}
+              onClick={() => {
+                option.onClick();
+                setOpen(false);
+              }}
+              className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+            >
+              {option.icon && <option.icon className="w-4 h-4" />}
+              {option.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 // ─────────────────────────────────────────────────────
 // COMPACT STAT
@@ -784,6 +905,16 @@ const WorkspaceManagement: React.FC = () => {
                     onMarkAttendance={(emp, date, status) =>
                       markAttendance(emp, date, status)
                         .then(() => { loadAll(); addToast('success', 'Attendance marked'); })
+                        .catch(e => addToast('error', e.message))
+                    }
+                    onCancelAttendance={(name) =>
+                      cancelAttendance(name)
+                        .then(() => { loadAll(); addToast('success', 'Attendance cancelled'); })
+                        .catch(e => addToast('error', e.message))
+                    }
+                    onDeleteAttendance={(name) =>
+                      deleteAttendance(name)
+                        .then(() => { loadAll(); addToast('success', 'Attendance deleted'); })
                         .catch(e => addToast('error', e.message))
                     }
                   />
@@ -1326,11 +1457,28 @@ const AttendanceTab: React.FC<{
   onPageChange: (page: number) => void;
   onItemsPerPageChange: (itemsPerPage: number) => void;
   onMarkAttendance: (emp: string, date: string, status: string) => void;
-}> = ({ attendance, employees, loading, months, years, selectedMonth, selectedYear, onMonthChange, onYearChange, currentPage, itemsPerPage, onPageChange, onItemsPerPageChange, onMarkAttendance }) => {
+  onCancelAttendance: (name: string) => void;
+  onDeleteAttendance: (name: string) => void;
+}> = ({ attendance, employees, loading, months, years, selectedMonth, selectedYear, onMonthChange, onYearChange, currentPage, itemsPerPage, onPageChange, onItemsPerPageChange, onMarkAttendance, onCancelAttendance, onDeleteAttendance }) => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [markModal, setMarkModal] = useState(false);
   const [form, setForm] = useState({ employee: '', attendance_date: today(), status: 'Present' });
+  
+  // Confirmation modal state
+  const [confirmModal, setConfirmModal] = useState<{
+    open: boolean;
+    type: 'cancel' | 'delete';
+    recordName: string;
+    employeeName: string;
+    attendanceDate: string;
+  }>({
+    open: false,
+    type: 'cancel',
+    recordName: '',
+    employeeName: '',
+    attendanceDate: ''
+  });
 
   const filtered = attendance.filter(a =>
     (!search || a.employee_name.toLowerCase().includes(search.toLowerCase())) &&
@@ -1362,7 +1510,14 @@ const AttendanceTab: React.FC<{
 
       {/* Table Container */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden mt-4" style={{ maxHeight: 'calc(100vh - 420px)' }}>
-        <TableCard title="Attendance Records" count={filtered.length}>
+        <TableCard title="Attendance Records" count={filtered.length}
+          action={
+            <button onClick={() => setMarkModal(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white rounded-xl hover:opacity-90 transition">
+              <Plus className="w-3 h-3" />Mark Attendance
+            </button>
+          }
+        >
           <table className="w-full">
             <thead className="bg-slate-50 border-b border-slate-100 sticky top-0 z-10">
               <tr><Th>Employee</Th><Th>Date</Th><Th>Status</Th><Th>Check In</Th><Th>Check Out</Th><Th>Hours</Th><Th>Shift</Th><Th>Actions</Th></tr>
@@ -1384,10 +1539,48 @@ const AttendanceTab: React.FC<{
                       <Td className="mono text-xs">{r.working_hours || '—'}</Td>
                       <Td>{r.shift || '—'}</Td>
                       <Td>
-                        <button onClick={() => onMarkAttendance(r.employee, r.attendance_date, r.status === 'Present' ? 'Absent' : 'Present')}
-                          className="p-1.5 rounded-lg text-amber-500 hover:bg-amber-50 transition" title="Mark attendance">
-                          <CheckCircle className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => {
+                              setConfirmModal({
+                                open: true,
+                                type: 'cancel',
+                                recordName: r.name,
+                                employeeName: r.employee_name,
+                                attendanceDate: r.attendance_date
+                              });
+                            }}
+                            disabled={r.status === 'Cancelled'}
+                            className={`p-1.5 rounded-lg transition ${
+                              r.status === 'Cancelled' 
+                                ? 'text-gray-300 cursor-not-allowed' 
+                                : 'text-amber-500 hover:bg-amber-50'
+                            }`}
+                            title={r.status === 'Cancelled' ? 'Already cancelled' : 'Cancel Attendance'}
+                          >
+                            <Ban className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              setConfirmModal({
+                                open: true,
+                                type: 'delete',
+                                recordName: r.name,
+                                employeeName: r.employee_name,
+                                attendanceDate: r.attendance_date
+                              });
+                            }}
+                            disabled={r.status !== 'Cancelled'}
+                            className={`p-1.5 rounded-lg transition ${
+                              r.status === 'Cancelled' 
+                                ? 'text-rose-500 hover:bg-rose-50 cursor-pointer' 
+                                : 'text-gray-300 cursor-not-allowed'
+                            }`}
+                            title={r.status === 'Cancelled' ? 'Delete Attendance' : 'Must cancel attendance first'}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </Td>
                     </tr>
                   ))}
@@ -1426,6 +1619,22 @@ const AttendanceTab: React.FC<{
           </div>
         </div>
       </Modal>
+
+      <ConfirmationModal
+        open={confirmModal.open}
+        onClose={() => setConfirmModal(prev => ({ ...prev, open: false }))}
+        onConfirm={() => {
+          if (confirmModal.type === 'cancel') {
+            onCancelAttendance(confirmModal.recordName);
+          } else if (confirmModal.type === 'delete') {
+            onDeleteAttendance(confirmModal.recordName);
+          }
+        }}
+        title={confirmModal.type === 'cancel' ? 'Cancel Attendance' : 'Delete Attendance'}
+        message={`Are you sure you want to ${confirmModal.type} attendance record for ${confirmModal.employeeName} on ${formatDate(confirmModal.attendanceDate)}${confirmModal.type === 'delete' ? '? This action cannot be undone.' : '?'}`}
+        confirmText={confirmModal.type === 'cancel' ? 'Cancel Attendance' : 'Delete Attendance'}
+        type={confirmModal.type === 'delete' ? 'danger' : 'warning'}
+      />
     </div>
   );
 };
