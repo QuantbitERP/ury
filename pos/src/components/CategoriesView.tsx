@@ -285,7 +285,7 @@ const CategoriesView: React.FC<CategoriesViewProps> = ({ onNavigateBack }) => {
                             <div className="flex items-center gap-2">
                                 <button
                                     onClick={() => setShowAddModal(true)}
-                                    className="justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 flex items-center gap-2"
+                                    className="justify-center whitespace-nowrap rounded-xl text-sm font-bold transition-all bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white shadow-md shadow-[#E4B315]/20 hover:opacity-90 hover:-translate-y-px h-10 px-4 py-2 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                     data-tour="add-category"
                                 >
                                     <Plus className="h-4 w-4" />

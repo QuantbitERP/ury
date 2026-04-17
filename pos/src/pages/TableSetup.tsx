@@ -381,7 +381,7 @@ const TableSetup: React.FC = () => {
             variant="outline"
             onClick={fetchTables}
             disabled={loading}
-            className="flex items-center space-x-2"
+            className="flex items-center space-x-2 border-gray-200 text-gray-600 hover:border-[#E4B315]/40 hover:text-[#C69A11]"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             <span>Refresh</span>
@@ -391,7 +391,7 @@ const TableSetup: React.FC = () => {
               resetForm();
               setShowCreateTableForm(true);
             }}
-            className="flex items-center space-x-2"
+            className="flex items-center space-x-2 bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white font-bold rounded-xl shadow-md shadow-[#E4B315]/20 hover:opacity-90 transition-all"
           >
             <Plus className="w-4 h-4" />
             <span>Add New Table</span>
@@ -494,6 +494,7 @@ const TableSetup: React.FC = () => {
                               variant="outline"
                               size="sm"
                               onClick={() => editTable(table)}
+                              className="border-gray-200 text-gray-600 hover:border-[#E4B315]/40 hover:text-[#C69A11]"
                             >
                               <Edit className="w-3 h-3" />
                             </Button>
@@ -504,7 +505,7 @@ const TableSetup: React.FC = () => {
                                 console.log('Delete button clicked for table:', table.name, table);
                                 deleteTable(table.name!);
                               }}
-                              className="text-red-600 hover:text-red-700"
+                              className="text-red-600 hover:text-red-700 border-red-200 hover:border-red-300"
                             >
                               <Trash2 className="w-3 h-3" />
                             </Button>
@@ -669,7 +670,7 @@ const TableSetup: React.FC = () => {
                     <Button
                       onClick={saveTable}
                       disabled={saving}
-                      className="w-full flex items-center justify-center space-x-2"
+                      className="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white font-bold rounded-xl shadow-md shadow-[#E4B315]/20 hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Save className="w-4 h-4" />
                       <span>{saving ? 'Saving...' : (selectedTable ? 'Update Table' : 'Create Table')}</span>

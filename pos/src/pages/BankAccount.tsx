@@ -469,17 +469,17 @@ const BankAccountPage: React.FC = () => {
                 <div className="flex items-center gap-2">
                     <button
                         onClick={openCreateModal}
-                        className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white font-bold rounded-xl shadow-md shadow-[#E4B315]/20 hover:opacity-90 transition-all text-sm"
                     >
                         <Plus className="w-4 h-4" />
                         Add Bank Account
                     </button>
                     <button
                         onClick={() => setShowCompanyOnly(!showCompanyOnly)}
-                        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                        className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
                             showCompanyOnly 
-                                ? 'bg-primary text-primary-foreground' 
-                                : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                                ? 'bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white shadow-md shadow-[#E4B315]/20 hover:opacity-90' 
+                                : 'border border-gray-200 text-gray-600 hover:border-[#E4B315]/40 hover:text-[#C69A11]'
                         }`}
                     >
                         {showCompanyOnly ? 'Company Accounts' : 'All Accounts'}
@@ -972,7 +972,7 @@ const BankAccountPage: React.FC = () => {
                             <button
                                 onClick={createBankAccount}
                                 disabled={isSubmitting}
-                                className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50"
+                                className="px-4 py-2 bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white font-bold rounded-xl shadow-md shadow-[#E4B315]/20 hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {isSubmitting ? 'Creating...' : 'Create Account'}
                             </button>
@@ -1128,7 +1128,7 @@ const BankAccountPage: React.FC = () => {
                             <button
                                 onClick={updateBankAccount}
                                 disabled={isSubmitting}
-                                className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50"
+                                className="px-4 py-2 bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white font-bold rounded-xl shadow-md shadow-[#E4B315]/20 hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {isSubmitting ? 'Updating...' : 'Update Account'}
                             </button>

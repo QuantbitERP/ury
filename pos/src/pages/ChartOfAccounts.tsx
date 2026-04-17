@@ -399,14 +399,14 @@ const ChartOfAccounts = () => {
                     <div className="flex gap-2">
                         <button
                             onClick={() => setViewMode('list')}
-                            className={`px-3 py-2 rounded-md transition-colors ${viewMode === 'list' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+                            className={`px-3 py-2 rounded-xl transition-all text-sm font-bold ${viewMode === 'list' ? '!bg-gradient-to-r from-[#E4B315] to-[#C69A11] !text-white !shadow-md !shadow-[#E4B315]/20 hover:!opacity-90' : 'border border-gray-200 text-gray-600 hover:border-[#E4B315]/40 hover:text-[#C69A11]'
                                 }`}
                         >
                             List View
                         </button>
                         <button
                             onClick={() => setViewMode('tree')}
-                            className={`px-3 py-2 rounded-md transition-colors ${viewMode === 'tree' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+                            className={`px-3 py-2 rounded-xl transition-all text-sm font-bold ${viewMode === 'tree' ? '!bg-gradient-to-r from-[#E4B315] to-[#C69A11] !text-white !shadow-md !shadow-[#E4B315]/20 hover:!opacity-90' : 'border border-gray-200 text-gray-600 hover:border-[#E4B315]/40 hover:text-[#C69A11]'
                                 }`}
                         >
                             Tree View

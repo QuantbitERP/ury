@@ -399,10 +399,13 @@ const AccountsPayable: React.FC = () => {
     return (
         <>
             {/* Header Actions */}
-            <button onClick={openCreateBill}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white font-bold rounded-xl shadow-md shadow-[#E4B315]/20 hover:opacity-90 transition-opacity text-sm mb-4">
-              <Plus className="h-4 w-4" />New Bill
-            </button>
+            <div className="flex justify-between items-center mb-4">
+                <div className="text-lg font-semibold text-gray-900">Accounts Payable</div>
+                <button onClick={openCreateBill}
+                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white font-bold rounded-xl shadow-md shadow-[#E4B315]/20 hover:opacity-90 transition-opacity text-sm">
+                  <Plus className="h-4 w-4" />New Bill
+                </button>
+            </div>
 
         <div className="overflow-auto px-6 py-5 space-y-5 h-full">
 
