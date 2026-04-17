@@ -400,7 +400,7 @@ export default function Orders() {
       title="Order Management"
       subtitle="View, search and manage all restaurant orders"
       actions={
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2" data-tour="bulk-actions">
           {isTransferMode ? (
             <>
               <button onClick={handleProceedWithTransfer}
@@ -434,7 +434,9 @@ export default function Orders() {
                 <Layers className="w-4 h-4" /> Merge Bills
               </button>
               <button onClick={handleExportCSV}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 bg-white hover:border-[#E4B315]/40 hover:text-[#C69A11] transition-colors shadow-sm">
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 bg-white hover:border-[#E4B315]/40 hover:text-[#C69A11] transition-colors shadow-sm"
+                data-tour="export-csv"
+              >
                 <Download className="w-4 h-4"/> Export CSV
               </button>
             </>
@@ -451,7 +453,7 @@ export default function Orders() {
         )}
 
         {/* Stats row */}
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-4 gap-4" data-tour="orders-stats">
           <StatCard accent label="Revenue Today"  value={formatCurrency(revenueToday)} icon={DollarSign}/>
           <StatCard       label="Today's Orders"  value={todayOrders.length}           icon={ShoppingCart}/>
           <StatCard alert  label="Pending Orders" value={pendingOrders.length}          icon={Clock}/>
@@ -459,11 +461,11 @@ export default function Orders() {
         </div>
 
         {/* Filters panel */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5" data-tour="orders-filters">
           <p className="text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-4">Filter Orders</p>
 
           {/* Search */}
-          <div className="relative mb-4">
+          <div className="relative mb-4" data-tour="orders-search">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"/>
             <input type="text" value={orderSearchQuery} onChange={handleSearchChange}
               placeholder="Search by order #, customer name, phone, or table…"
@@ -471,7 +473,7 @@ export default function Orders() {
           </div>
 
           {/* Quick date chips */}
-          <div className="flex gap-2 mb-4 flex-wrap">
+          <div className="flex gap-2 mb-4 flex-wrap" data-tour="quick-dates">
             {['Today','Yesterday','Last 7 Days','Last 30 Days','All Time'].map(label => (
               <button key={label} onClick={() => handleQuickDate(label)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${quickDate===label?'bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white border-transparent shadow-sm shadow-[#E4B315]/20':'bg-white text-gray-600 border-gray-200 hover:border-[#E4B315]/40 hover:text-[#C69A11]'}`}>
@@ -515,7 +517,7 @@ export default function Orders() {
         </div>
 
         {/* Orders table */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden" data-tour="orders-table">
           <div className="px-5 py-3.5 border-b border-gray-50 flex items-center justify-between">
             <p className="text-xs font-bold uppercase tracking-wider text-[#C69A11]">
               Orders ({displayedOrders.length}{displayedOrders.length!==orders.length?` of ${orders.length}`:''})
@@ -572,7 +574,7 @@ export default function Orders() {
                       <td className="px-4 py-3.5"><StatusBadge status={order.status}/></td>
                       <td className="px-4 py-3.5">{order.payment_status?<StatusBadge status={order.payment_status}/>:<span className="text-xs text-gray-300 italic">—</span>}</td>
                       <td className="px-4 py-3.5">
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1" data-tour="action-buttons">
                           <button onClick={() => handleOrderClick(order)} className="p-1.5 hover:bg-[#E4B315]/10 rounded-lg transition-colors text-gray-400 hover:text-[#C69A11]" title="View"><Eye className="w-4 h-4"/></button>
                           {['Draft','Unbilled','Recently Paid'].includes(order.status)&&(
                             <button onClick={() => { selectOrder(order); setShowDetailModal(false); if (String(order.invoice_printed)==='0') { showToast.error('Please print invoice before making payment'); return; } setShowPaymentDialog(true); }}

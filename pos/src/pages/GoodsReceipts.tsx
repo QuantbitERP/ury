@@ -4,6 +4,7 @@ import {
     TrendingUp, ChevronRight, Search, RefreshCw,
     AlertCircle, CheckCircle2, TriangleAlert,
 } from 'lucide-react';
+import { useRootStore } from '../store/root-store';
 
 // ─── Frappe helpers ───────────────────────────────────────────────────────────
 const getCsrfToken = (): string => {
@@ -163,6 +164,7 @@ const ItemRow: React.FC<{
                             onChange={e => onSelectItem(item.id, e.target.value)}
                             className={INPUT + ' border-amber-400 focus-visible:ring-amber-400 appearance-none pr-8'}
                             style={{ borderColor: item.item_code ? undefined : '#f59e0b' }}
+                            data-tour="gr-item-ingredient"
                         >
                             <option value="">Select ingredient</option>
                             {items.map(i => (
@@ -177,20 +179,28 @@ const ItemRow: React.FC<{
                     <label className="text-xs font-medium text-gray-400">Received Qty</label>
                     <input type="number" step="0.01" min="0" className={INPUT}
                         value={item.received_qty || 0}
-                        onChange={e => handleQtyOrRate('received_qty', parseFloat(e.target.value) || 0)} />
+                        onChange={e => handleQtyOrRate('received_qty', parseFloat(e.target.value) || 0)}
+                        placeholder="0"
+                        data-tour="gr-item-qty"
+                    />
                 </div>
 
                 <div className="space-y-1">
                     <label className="text-xs font-medium text-gray-400">Unit Price</label>
                     <input type="number" step="0.01" min="0" className={INPUT}
                         value={item.rate || 0}
-                        onChange={e => handleQtyOrRate('rate', parseFloat(e.target.value) || 0)} />
+                        onChange={e => handleQtyOrRate('rate', parseFloat(e.target.value) || 0)}
+                        placeholder="0"
+                        data-tour="gr-item-rate"
+                    />
                 </div>
 
                 <div className="space-y-1">
                     <label className="text-xs font-medium text-gray-400">Discount Type</label>
                     <select className={INPUT} value={item.discount_type}
-                        onChange={e => onChange(item.id, 'discount_type', e.target.value)}>
+                        onChange={e => onChange(item.id, 'discount_type', e.target.value)}
+                        data-tour="gr-item-discount-type"
+                    >
                         {DISCOUNT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                     </select>
                 </div>
@@ -202,13 +212,18 @@ const ItemRow: React.FC<{
                         </label>
                         <input type="number" step="0.01" min="0" className={INPUT}
                             value={item.discount_value || 0}
-                            onChange={e => onChange(item.id, 'discount_value', parseFloat(e.target.value) || 0)} />
+                            onChange={e => onChange(item.id, 'discount_value', parseFloat(e.target.value) || 0)}
+                            placeholder="0"
+                            data-tour="gr-item-discount-value"
+                        />
                     </div>
                 )}
 
                 <div className="space-y-1">
                     <label className="text-xs font-medium text-gray-400">Total</label>
-                    <div className={INPUT + ' bg-muted text-gray-400 cursor-default flex items-center'}>
+                    <div className={INPUT + ' bg-muted text-gray-400 cursor-default flex items-center'}
+                        data-tour="gr-item-total"
+                    >
                         {fmtCurrency(item.amount, currency)}
                     </div>
                 </div>
@@ -217,9 +232,11 @@ const ItemRow: React.FC<{
             <div className="grid grid-cols-[1fr_1fr_1fr_1fr] gap-3">
                 <div className="space-y-1">
                     <label className="text-xs font-medium text-gray-400">Batch Number</label>
-                    <input type="text" className={INPUT} placeholder="Optional"
+                    <input type="text" className={INPUT} placeholder="Batch no..."
                         value={item.batch_no || ''}
-                        onChange={e => onChange(item.id, 'batch_no', e.target.value)} />
+                        onChange={e => onChange(item.id, 'batch_no', e.target.value)}
+                        data-tour="gr-item-batch"
+                    />
                 </div>
 
                 <div className="space-y-1">
@@ -227,7 +244,9 @@ const ItemRow: React.FC<{
                     <div className="flex items-center h-10">
                         <input type="checkbox" id={`vat-${item.id}`} className="mr-2"
                             checked={item.vat_exempt}
-                            onChange={e => onChange(item.id, 'vat_exempt', e.target.checked)} />
+                            onChange={e => onChange(item.id, 'vat_exempt', e.target.checked)}
+                            data-tour="gr-item-vat-exempt"
+                        />
                         <label htmlFor={`vat-${item.id}`} className="text-sm">Exempt from VAT</label>
                     </div>
                 </div>
@@ -236,13 +255,17 @@ const ItemRow: React.FC<{
                     <label className="text-xs font-medium text-gray-400">Notes</label>
                     <input type="text" className={INPUT} placeholder="Notes..."
                         value={item.notes}
-                        onChange={e => onChange(item.id, 'notes', e.target.value)} />
+                        onChange={e => onChange(item.id, 'notes', e.target.value)}
+                        data-tour="gr-item-notes"
+                    />
                 </div>
             </div>
 
             <div className="flex justify-end">
                 <button type="button" onClick={() => onDelete(item.id)}
-                    className="inline-flex items-center justify-center h-10 w-16 rounded-md border border-destructive/30 bg-destructive/5 text-destructive hover:bg-destructive/10 transition-colors">
+                    className="inline-flex items-center justify-center h-10 w-16 rounded-md border border-destructive/30 bg-destructive/5 text-destructive hover:bg-destructive/10 transition-colors"
+                    data-tour="gr-delete-item"
+                >
                     <Trash2 className="h-4 w-4" />
                 </button>
             </div>
@@ -475,7 +498,7 @@ const CreateGRModal: React.FC<CreateGRModalProps> = ({ onClose, onCreated, suppl
                         {tab === 'details' && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[#E4B315] to-[#C69A11] rounded-t-full" />}
                     </button>
                     <button type="button" onClick={() => setTab('items')}
-                        className={`flex-1 py-3 text-sm font-medium transition-colors relative flex items-center justify-center gap-1.5 ${tab === 'items' ? 'text-[#2D2A26]' : 'text-gray-400 hover:text-[#2D2A26]'} ${itemsError ? 'text-red-500' : ''}`}>
+                        className={`flex-1 py-3 text-sm font-medium transition-colors relative flex items-center justify-center gap-1.5 ${tab === 'items' ? 'text-[#2D2A26]' : 'text-gray-400 hover:text-[#2D2A26]'} ${itemsError ? 'text-red-500' : ''}`} data-tour="gr-items-tab">
                         Receipt Items ({itemCount})
                         {itemsError && <AlertCircle className="h-3.5 w-3.5 text-red-500" />}
                         {tab === 'items' && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[#E4B315] to-[#C69A11] rounded-t-full" />}
@@ -493,7 +516,7 @@ const CreateGRModal: React.FC<CreateGRModalProps> = ({ onClose, onCreated, suppl
                                         <div className="relative">
                                             <select required className={INPUT + ' appearance-none pr-8'}
                                                 value={details.supplier}
-                                                onChange={e => setDetails({ ...details, supplier: e.target.value })}>
+                                                onChange={e => setDetails({ ...details, supplier: e.target.value })} data-tour="gr-supplier">
                                                 <option value="">Select supplier</option>
                                                 {suppliers.map(s => (
                                                     <option key={s.name} value={s.name}>{s.supplier_name || s.name}</option>
@@ -507,7 +530,7 @@ const CreateGRModal: React.FC<CreateGRModalProps> = ({ onClose, onCreated, suppl
                                         <div className="relative">
                                             <select className={INPUT + ' appearance-none pr-8'}
                                                 value={details.purchase_order}
-                                                onChange={e => setDetails({ ...details, purchase_order: e.target.value })}>
+                                                onChange={e => setDetails({ ...details, purchase_order: e.target.value })} data-tour="gr-purchase-order">
                                                 <option value="">Select purchase order</option>
                                                 {purchaseOrders.map(po => (
                                                     <option key={po.name} value={po.name}>
@@ -523,7 +546,7 @@ const CreateGRModal: React.FC<CreateGRModalProps> = ({ onClose, onCreated, suppl
                                         <div className="relative">
                                             <select required className={INPUT + ' appearance-none pr-8'}
                                                 value={details.company}
-                                                onChange={e => setDetails({ ...details, company: e.target.value })}>
+                                                onChange={e => setDetails({ ...details, company: e.target.value })} data-tour="gr-company">
                                                 <option value="">Select company</option>
                                                 {companies.map(c => (
                                                     <option key={c.name} value={c.name}>{c.name}</option>
@@ -540,7 +563,7 @@ const CreateGRModal: React.FC<CreateGRModalProps> = ({ onClose, onCreated, suppl
                                         <div className="relative">
                                             <select required className={INPUT + ' appearance-none pr-8'}
                                                 value={details.set_warehouse}
-                                                onChange={e => setDetails({ ...details, set_warehouse: e.target.value })}>
+                                                onChange={e => setDetails({ ...details, set_warehouse: e.target.value })} data-tour="gr-warehouse">
                                                 <option value="">Select warehouse</option>
                                                 {warehouses.map(w => (
                                                     <option key={w.name} value={w.name}>{w.name}</option>
@@ -553,7 +576,7 @@ const CreateGRModal: React.FC<CreateGRModalProps> = ({ onClose, onCreated, suppl
                                         <label className="text-xs font-bold uppercase tracking-wider text-[#C69A11]">Delivery Note Number</label>
                                         <input type="text" className={INPUT}
                                             value={details.supplier_delivery_note}
-                                            onChange={e => setDetails({ ...details, supplier_delivery_note: e.target.value })} />
+                                            onChange={e => setDetails({ ...details, supplier_delivery_note: e.target.value })} data-tour="gr-delivery-note" />
                                         <p className="text-xs text-gray-400">Maps to <code className="font-mono">supplier_delivery_note</code></p>
                                     </div>
                                 </div>
@@ -563,13 +586,13 @@ const CreateGRModal: React.FC<CreateGRModalProps> = ({ onClose, onCreated, suppl
                                         <label className="text-xs font-bold uppercase tracking-wider text-[#C69A11]">Supplier Invoice Number</label>
                                         <input type="text" className={INPUT}
                                             value={details.notes}
-                                            onChange={e => setDetails({ ...details, notes: e.target.value })} />
+                                            onChange={e => setDetails({ ...details, notes: e.target.value })} data-tour="gr-supplier-invoice" />
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-xs font-bold uppercase tracking-wider text-[#C69A11]">Invoice Date</label>
                                         <input type="date" className={INPUT}
                                             value={details.posting_date}
-                                            onChange={e => setDetails({ ...details, posting_date: e.target.value })} />
+                                            onChange={e => setDetails({ ...details, posting_date: e.target.value })} data-tour="gr-invoice-date" />
                                         <p className="text-xs text-gray-400">Maps to <code className="font-mono">posting_date</code></p>
                                     </div>
                                 </div>
@@ -578,7 +601,7 @@ const CreateGRModal: React.FC<CreateGRModalProps> = ({ onClose, onCreated, suppl
                                     <label className="text-xs font-bold uppercase tracking-wider text-[#C69A11]">Overall Notes (Supplier Performance)</label>
                                     <textarea className={TEXTAREA} placeholder="Notes about supplier performance, delivery quality, etc..."
                                         value={details.overall_notes}
-                                        onChange={e => setDetails({ ...details, overall_notes: e.target.value })} />
+                                        onChange={e => setDetails({ ...details, overall_notes: e.target.value })} data-tour="gr-overall-notes" />
                                 </div>
                             </div>
                         )}
@@ -587,7 +610,7 @@ const CreateGRModal: React.FC<CreateGRModalProps> = ({ onClose, onCreated, suppl
                             <div className="p-6 space-y-4">
                                 <div className="flex items-center justify-between">
                                     <h3 className="text-base font-semibold text-[#2D2A26]">Receipt Items</h3>
-                                    <button type="button" onClick={addItem} className={BTN_P}>
+                                    <button type="button" onClick={addItem} className={BTN_P} data-tour="gr-add-item">
                                         <Plus className="h-4 w-4" /> Add Item
                                     </button>
                                 </div>
@@ -653,7 +676,7 @@ const CreateGRModal: React.FC<CreateGRModalProps> = ({ onClose, onCreated, suppl
                     <button type="button" onClick={onClose} className={BTN_O}>
                         Cancel
                     </button>
-                    <button form="gr-form" type="submit" disabled={isSubmitting} className={BTN_P}>
+                    <button form="gr-form" type="submit" disabled={isSubmitting} className={BTN_P} data-tour="gr-submit">
                         <Package className="h-4 w-4" />
                         {isSubmitting ? 'Creating...' : 'Create Receipt'}
                     </button>
@@ -665,6 +688,7 @@ const CreateGRModal: React.FC<CreateGRModalProps> = ({ onClose, onCreated, suppl
 
 // ─── Main GoodsReceipts Component ─────────────────────────────────────────────
 const GoodsReceipts: React.FC = () => {
+    const { setCurrentView: setGlobalCurrentView } = useRootStore();
     const [receipts, setReceipts] = useState<GoodsReceipt[]>([]);
     const [metrics, setMetrics] = useState<DashboardMetrics>({ total_receipts: 0, pending_receipts: 0, monthly_receipts: 0, total_value: 0 });
     const [loading, setLoading] = useState(true);
@@ -683,7 +707,8 @@ const GoodsReceipts: React.FC = () => {
         fetchReceipts();
         fetchMetrics();
         fetchDropdowns();
-    }, []);
+        setGlobalCurrentView('goods-receipts');
+    }, [setGlobalCurrentView]);
 
     const fetchReceipts = async () => {
         try {
@@ -823,14 +848,14 @@ const GoodsReceipts: React.FC = () => {
                             className="inline-flex items-center justify-center h-9 w-9 rounded-xl border border-gray-200 bg-white hover:border-[#E4B315]/40 hover:text-[#C69A11] text-gray-400 transition-colors shadow-sm">
                             <RefreshCw className="h-4 w-4" />
                         </button>
-                        <button onClick={() => setShowCreateModal(true)} className={BTN_P}>
+                        <button onClick={() => setShowCreateModal(true)} className={BTN_P} data-tour="create-gr">
                             <Plus className="h-4 w-4" /> Receive Goods
                         </button>
                     </div>
                 </div>
             </div>
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6" data-tour="gr-dashboard-metrics">
                 <MetricCard
                     icon={<Package className="h-5 w-5 text-blue-600" />}
                     label="Total Receipts"
@@ -873,7 +898,7 @@ const GoodsReceipts: React.FC = () => {
                         <div className="relative flex-1 min-w-[200px] max-w-sm">
                             <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
                             <input className={INPUT + ' pl-9'} placeholder="Search receipts..."
-                                value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                                value={searchTerm} onChange={e => setSearchTerm(e.target.value)} data-tour="gr-search" />
                         </div>
                         <select className={INPUT + ' w-[180px]'} value={statusFilter}
                             onChange={e => setStatusFilter(e.target.value)}>

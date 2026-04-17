@@ -518,7 +518,7 @@ const EmployeeModal: React.FC<{
         <div className="flex-1 overflow-y-auto px-6 pb-2">
           <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
             {step === 0 && (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4" data-tour="hr-step-1">
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">Employee Number</label>
                   <input disabled value="Auto-generated" className={`${inp} bg-gray-50 text-gray-400 cursor-not-allowed`} />
@@ -537,14 +537,14 @@ const EmployeeModal: React.FC<{
               </div>
             )}
             {step === 1 && (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4" data-tour="hr-step-2">
                 {([['pan_number','KRA PIN / PAN'],['pf_number','NSSF / PF Number'],['esi_number','NHIF / ESI Number']] as [keyof EmployeeForm, string][]).map(([k, l]) => (
                   <Fld key={k} label={l}><input value={form[k] as string} onChange={e => set({ [k]: e.target.value })} className={inp} /></Fld>
                 ))}
               </div>
             )}
             {step === 2 && (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4" data-tour="hr-step-3">
                 <Fld label="Bank Name" span><input value={form.bank_name} onChange={e => set({ bank_name: e.target.value })} className={inp} /></Fld>
                 <Fld label="Account Number"><input value={form.bank_ac_no} onChange={e => set({ bank_ac_no: e.target.value })} className={inp} /></Fld>
                 <Fld label="IFSC / Branch Code"><input value={form.ifsc_code} onChange={e => set({ ifsc_code: e.target.value })} className={inp} /></Fld>
@@ -552,14 +552,14 @@ const EmployeeModal: React.FC<{
               </div>
             )}
             {step === 3 && (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4" data-tour="hr-step-4">
                 <Fld label="Personal Email"><input type="email" value={form.personal_email} onChange={e => set({ personal_email: e.target.value })} className={inp} /></Fld>
                 <Fld label="Company Email"><input type="email" value={form.company_email} onChange={e => set({ company_email: e.target.value })} className={inp} /></Fld>
                 <Fld label="Phone / Cell" span><input value={form.cell_number} onChange={e => set({ cell_number: e.target.value })} className={inp} /></Fld>
               </div>
             )}
             {step === 4 && (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4" data-tour="hr-step-5">
                 <Fld label="Company">
                   <select value={form.company} onChange={e => set({ company: e.target.value })} className={inp}>
                     <option value="">Select</option>{companies.map(c => <option key={c.name} value={c.name}>{c.company_name || c.name}</option>)}
@@ -604,7 +604,7 @@ const EmployeeModal: React.FC<{
               </div>
             )}
             {step === 5 && (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4" data-tour="hr-step-6">
                 <Fld label="Contract Type">
                   <select value={form.contract_type} onChange={e => set({ contract_type: e.target.value })} className={inp}>
                     <option value="">Select</option>{['Permanent','Fixed Term','Casual'].map(t => <option key={t}>{t}</option>)}
@@ -622,8 +622,8 @@ const EmployeeModal: React.FC<{
           <div className="flex gap-2">
             {step > 0 && <button onClick={() => setStep(s => s - 1)} className="flex items-center gap-1 px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50"><ChevronLeft className="w-4 h-4" />Back</button>}
             {step < EMP_STEPS.length - 1
-              ? <button onClick={() => setStep(s => s + 1)} className="flex items-center gap-1 px-5 py-2 text-sm font-medium bg-amber-500 text-white rounded-lg hover:bg-amber-600">Next<ChevronRight className="w-4 h-4" /></button>
-              : <button onClick={handleSave} disabled={saving} className="flex items-center gap-1 px-5 py-2 text-sm font-medium bg-amber-500 text-white rounded-lg hover:bg-amber-600 disabled:opacity-60">
+              ? <button onClick={() => setStep(s => s + 1)} className="flex items-center gap-1 px-5 py-2 text-sm font-medium bg-amber-500 text-white rounded-lg hover:bg-amber-600" data-tour="hr-next-button">Next<ChevronRight className="w-4 h-4" /></button>
+              : <button onClick={handleSave} disabled={saving} className="flex items-center gap-1 px-5 py-2 text-sm font-medium bg-amber-500 text-white rounded-lg hover:bg-amber-600 disabled:opacity-60" data-tour="hr-save-employee">
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                   {saving ? 'Saving...' : 'Save Employee'}
                 </button>}
@@ -927,7 +927,7 @@ const ContractDetailModal: React.FC<{
 
           <div className="flex justify-between items-center pt-1">
             <button onClick={handleTerminate} disabled={terminating || contract.docstatus === 2}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50 transition-colors">
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50 transition-colors" data-tour="hr-terminate-contract">
               {terminating && <Loader2 className="w-4 h-4 animate-spin" />}
               Terminate Contract
             </button>
@@ -1001,7 +1001,7 @@ const ContractsTab: React.FC<{ employees: Employee[] }> = ({ employees }) => {
       </div>
 
       {/* Sub-tabs + New Contract button */}
-      <div className="flex items-end justify-between border-b border-gray-200 mb-0">
+      <div className="flex items-end justify-between border-b border-gray-200 mb-0" data-tour="hr-contract-sub-tabs">
         <div className="flex gap-0">
           {(['Active','Probation','Expiring','Terminated'] as const).map(tab => (
             <button key={tab} onClick={() => setSubTab(tab)}
@@ -1013,7 +1013,7 @@ const ContractsTab: React.FC<{ employees: Employee[] }> = ({ employees }) => {
           ))}
         </div>
         <button onClick={() => setContractModal({ mode: 'add', contract: null })}
-          className="flex items-center gap-1.5 mb-1 px-4 py-1.5 bg-amber-500 text-white text-sm font-medium rounded-xl hover:bg-amber-600 transition-colors">
+          className="flex items-center gap-1.5 mb-1 px-4 py-1.5 bg-amber-500 text-white text-sm font-medium rounded-xl hover:bg-amber-600 transition-colors" data-tour="hr-new-contract">
           <Plus className="w-4 h-4" /> New Contract
         </button>
       </div>
@@ -1021,7 +1021,7 @@ const ContractsTab: React.FC<{ employees: Employee[] }> = ({ employees }) => {
       {error && <div className="mt-4 flex items-center gap-2 text-red-600 text-sm bg-red-50 border border-red-100 rounded-xl px-4 py-3"><AlertCircle className="w-4 h-4" />{error}</div>}
 
       {/* Table */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mt-4">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mt-4" data-tour="hr-contract-table">
         <div className="px-5 py-3 border-b border-gray-100">
           <h3 className="font-semibold text-gray-800">
             {subTab === 'Active' ? 'Active Employee Contracts'
@@ -1066,8 +1066,8 @@ const ContractsTab: React.FC<{ employees: Employee[] }> = ({ employees }) => {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1.5">
-                      <button onClick={() => handleView(c)} className="w-7 h-7 flex items-center justify-center rounded-xl text-gray-400 hover:text-[#C69A11] hover:bg-[#E4B315]/10 transition-colors" title="View"><Eye className="w-3.5 h-3.5" /></button>
-                      <button onClick={() => setContractModal({ mode: 'edit', contract: c })} disabled={c.docstatus === 2} className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-amber-600 hover:bg-amber-50 disabled:opacity-40" title="Edit"><Edit2 className="w-3.5 h-3.5" /></button>
+                      <button onClick={() => handleView(c)} className="w-7 h-7 flex items-center justify-center rounded-xl text-gray-400 hover:text-[#C69A11] hover:bg-[#E4B315]/10 transition-colors" title="View" data-tour="hr-view-contract"><Eye className="w-3.5 h-3.5" /></button>
+                      <button onClick={() => setContractModal({ mode: 'edit', contract: c })} disabled={c.docstatus === 2} className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-amber-600 hover:bg-amber-50 disabled:opacity-40" title="Edit" data-tour="hr-edit-contract"><Edit2 className="w-3.5 h-3.5" /></button>
                     </div>
                   </td>
                 </tr>
@@ -1161,7 +1161,7 @@ const HRPage: React.FC = () => {
           </button>
           {activeTab === 'employees' && (
             <button onClick={() => setEditModal({ mode: 'add', employee: null })}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white text-sm font-bold rounded-xl shadow-md shadow-[#E4B315]/20 hover:opacity-90 transition-opacity">
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white text-sm font-bold rounded-xl shadow-md shadow-[#E4B315]/20 hover:opacity-90 transition-opacity" data-tour="hr-add-employee">
               <UserPlus className="w-4 h-4" />Add Employee
             </button>
           )}
@@ -1174,7 +1174,7 @@ const HRPage: React.FC = () => {
       {error && <div className="shrink-0 mb-4 flex items-center gap-2 text-red-600 text-sm bg-red-50 border border-red-100 rounded-xl px-4 py-3"><AlertCircle className="w-4 h-4 flex-shrink-0" />{error}</div>}
 
       {/* Summary Stats */}
-      <div className="shrink-0 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+      <div className="shrink-0 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6" data-tour="hr-dashboard-stats">
         {[
           { label: 'Total Employees', value: stats.total, Icon: Users, color: 'text-gray-700' },
           { label: 'Active', value: stats.active, Icon: UserCheck, color: 'text-[#C69A11]', dot: true },
@@ -1196,10 +1196,17 @@ const HRPage: React.FC = () => {
       </div>
 
       {/* Main Tabs */}
-      <div className="shrink-0 flex gap-1 bg-gray-100 rounded-xl p-1 mb-6 w-fit">
+      <div className="shrink-0 flex gap-1 bg-gray-100 rounded-xl p-1 mb-6 w-fit" data-tour="hr-tabs">
         {(['employees', 'contracts'] as const).map(tab => (
-          <button key={tab} onClick={() => setActiveTab(tab)}
-            className={`px-6 py-2 rounded-xl text-sm font-semibold transition-all capitalize ${activeTab === tab ? 'bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white shadow-md shadow-[#E4B315]/20' : 'text-gray-500 hover:text-[#2D2A26]'}`}>
+          <button key={tab} onClick={() => {
+            setActiveTab(tab);
+            // Close employee modals when switching to contracts tab
+            if (tab === 'contracts') {
+              setEditModal(null);
+              setDetailEmployee(null);
+            }
+          }}
+            className={`px-6 py-2 rounded-xl text-sm font-semibold transition-all capitalize ${activeTab === tab ? 'bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white shadow-md shadow-[#E4B315]/20' : 'text-gray-500 hover:text-[#2D2A26]'}`} data-tour={tab === 'contracts' ? 'hr-contracts-tab' : ''}>
             {tab === 'employees' ? 'Employees' : 'Contracts'}
           </button>
         ))}
@@ -1209,11 +1216,11 @@ const HRPage: React.FC = () => {
       {activeTab === 'employees' && (
         <>
           <div className="shrink-0 bg-white rounded-xl border border-gray-100 shadow-sm p-4 mb-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3" data-tour="hr-filters">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="Search employees..."
-                  className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#E4B315]/30 focus:border-[#E4B315]/50" />
+                  className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#E4B315]/30 focus:border-[#E4B315]/50" data-tour="hr-search" />
               </div>
               <select value={filterDept} onChange={e => setFilterDept(e.target.value)} className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-200 bg-white">
                 <option value="">All Departments</option>
@@ -1230,7 +1237,7 @@ const HRPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex-1 flex flex-col min-h-0 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="flex-1 flex flex-col min-h-0 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden" data-tour="hr-employee-table">
             <div className="shrink-0 px-5 py-4 border-b border-gray-100">
               <h2 className="font-semibold text-gray-800">Employee Directory</h2>
             </div>
@@ -1268,8 +1275,8 @@ const HRPage: React.FC = () => {
                       <td className="px-4 py-3 text-xs text-gray-600"><div className="flex items-center gap-1"><Phone className="w-3 h-3 text-gray-400" />{emp.cell_number || '—'}</div></td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1.5">
-                          <button onClick={() => setDetailEmployee(emp)} className="w-7 h-7 flex items-center justify-center rounded-xl text-gray-400 hover:text-[#C69A11] hover:bg-[#E4B315]/10 transition-colors" title="View"><Eye className="w-3.5 h-3.5" /></button>
-                          <button onClick={() => setEditModal({ mode: 'edit', employee: emp })} className="w-7 h-7 flex items-center justify-center rounded-xl text-gray-400 hover:text-[#C69A11] hover:bg-[#E4B315]/10 transition-colors" title="Edit"><Edit2 className="w-3.5 h-3.5" /></button>
+                          <button onClick={() => setDetailEmployee(emp)} className="w-7 h-7 flex items-center justify-center rounded-xl text-gray-400 hover:text-[#C69A11] hover:bg-[#E4B315]/10 transition-colors" title="View" data-tour="hr-view-employee"><Eye className="w-3.5 h-3.5" /></button>
+                          <button onClick={() => setEditModal({ mode: 'edit', employee: emp })} className="w-7 h-7 flex items-center justify-center rounded-xl text-gray-400 hover:text-[#C69A11] hover:bg-[#E4B315]/10 transition-colors" title="Edit" data-tour="hr-edit-employee"><Edit2 className="w-3.5 h-3.5" /></button>
                         </div>
                       </td>
                     </tr>

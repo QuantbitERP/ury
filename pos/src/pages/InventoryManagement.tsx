@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useRootStore } from '../store/root-store';
 import {
     Search, Plus, CircleHelp,
     Package, Tags, Ruler, Truck, FileText, Package2, PackageMinus,
@@ -189,12 +190,18 @@ const InventoryManagement: React.FC = () => {
         return 'stock'; // default for /inventory
     };
 
+    const { setCurrentView: setGlobalCurrentView } = useRootStore();
     const [currentView, setCurrentView] = useState<'stock' | 'categories' | 'units' | 'suppliers' | 'purchase-orders' | 'goods-receipts' | 'supplier-returns' | 'stock-transfers' | 'stock-tracking' | 'requisitions'>(getInitialView());
 
     useEffect(() => {
         const newView = getInitialView();
         setCurrentView(newView);
-    }, [location.pathname]);
+        setGlobalCurrentView(newView);
+    }, [location.pathname, setGlobalCurrentView]);
+
+    useEffect(() => {
+        setGlobalCurrentView(currentView);
+    }, [currentView, setGlobalCurrentView]);
 
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('');
@@ -638,7 +645,7 @@ const InventoryManagement: React.FC = () => {
         >
             <div className="flex h-full overflow-hidden">
                 {/* Internal inventory module sidebar */}
-                <aside className="w-56 shrink-0 border-r border-gray-100 bg-white sticky top-0 h-full z-10 overflow-y-auto hidden md:flex flex-col" aria-label="Inventory navigation">
+                <aside className="w-56 shrink-0 border-r border-gray-100 bg-white sticky top-0 h-full z-10 overflow-y-auto hidden md:flex flex-col" aria-label="Inventory navigation" data-tour="sidebar-nav">
                     <nav className="py-3 px-2 flex-1">
                         <div className="mb-4">
                             <div className="px-3 py-2 text-[10px] font-bold text-[#C69A11] uppercase tracking-widest">Master Data</div>
@@ -693,20 +700,20 @@ const InventoryManagement: React.FC = () => {
                                                 <p className="text-sm text-muted-foreground mt-1">Manage your restaurant's stock inventory</p>
                                             </div>
                                             <div className="flex items-center gap-2">
-                                                <button onClick={() => setShowAddModal(true)} className={BTN_P}><Plus className="h-4 w-4" />Add Stock Item</button>
-                                                <button onClick={fetchStockItems} className={BTN_O}>Refresh</button>
+                                                <button onClick={() => setShowAddModal(true)} className={BTN_P} data-tour="add-stock-item"><Plus className="h-4 w-4" />Add Stock Item</button>
+                                                <button onClick={fetchStockItems} className={BTN_O} data-tour="refresh-button">Refresh</button>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-2 mt-4 pt-4 border-t border-border flex-wrap">
                                             <div className="relative flex-1 min-w-[200px] max-w-sm">
                                                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                                                <input className={INPUT + ' pl-9'} placeholder="Search stock items..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                                                <input className={INPUT + ' pl-9'} placeholder="Search stock items..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} data-tour="search-bar" />
                                             </div>
-                                            <select value={selectedCategory} onChange={e => setSelectedCategory(e.target.value)} className={INPUT + ' w-[180px]'}>
+                                            <select value={selectedCategory} onChange={e => setSelectedCategory(e.target.value)} className={INPUT + ' w-[180px]'} data-tour="category-filter">
                                                 <option value="">All Categories</option>
                                                 {categories.map(c => <option key={c.name} value={c.name}>{c.item_group_name || c.name}</option>)}
                                             </select>
-                                            <select value={selectedDepartment} onChange={e => setSelectedDepartment(e.target.value)} className={INPUT + ' w-[180px]'}>
+                                            <select value={selectedDepartment} onChange={e => setSelectedDepartment(e.target.value)} className={INPUT + ' w-[180px]'} data-tour="department-filter">
                                                 <option value="">All Departments</option>
                                                 {warehouses.map(w => <option key={w.name} value={w.name}>{w.name}</option>)}
                                             </select>
@@ -848,22 +855,22 @@ const InventoryManagement: React.FC = () => {
             {showAddModal && (
                 <Modal title="Add New Stock Item" onClose={() => setShowAddModal(false)}>
                     <form className="space-y-4" onSubmit={handleAddStockItem}>
-                        <F label="Stock Item Name *" id="a_name"><input id="a_name" type="text" required className={INPUT} placeholder="e.g., Tomatoes, Flour" value={newItem.item_name} onChange={e => setNewItem({ ...newItem, item_name: e.target.value })} /></F>
-                        <F label="Description" id="a_desc"><textarea id="a_desc" rows={2} className={TEXTAREA} placeholder="Optional description" value={newItem.description} onChange={e => setNewItem({ ...newItem, description: e.target.value })} /></F>
-                        <F label="Category *" id="a_cat"><select id="a_cat" required className={INPUT} value={newItem.item_group} onChange={e => setNewItem({ ...newItem, item_group: e.target.value })}><option value="">Select a category</option>{categories.map(c => <option key={c.name} value={c.name}>{c.item_group_name || c.name}</option>)}</select></F>
-                        <F label="Unit *" hint="From UOM Doctype" id="a_uom"><select id="a_uom" required className={INPUT} value={newItem.stock_uom} onChange={e => setNewItem({ ...newItem, stock_uom: e.target.value })}><option value="">Select a unit</option>{uoms.map(u => <option key={u.name} value={u.name}>{u.name}</option>)}</select></F>
-                        <F label="Department (Warehouse)" id="a_wh"><select id="a_wh" className={INPUT} value={newItem.warehouse} onChange={e => setNewItem({ ...newItem, warehouse: e.target.value })}><option value="">Select warehouse</option>{warehouses.map(w => <option key={w.name} value={w.name}>{w.name}</option>)}</select></F>
+                        <F label="Stock Item Name *" id="a_name"><input id="a_name" type="text" required className={INPUT} placeholder="e.g., Tomatoes, Flour" value={newItem.item_name} onChange={e => setNewItem({ ...newItem, item_name: e.target.value })} data-tour="item-name" /></F>
+                        <F label="Description" id="a_desc"><textarea id="a_desc" rows={2} className={TEXTAREA} placeholder="Optional description" value={newItem.description} onChange={e => setNewItem({ ...newItem, description: e.target.value })} data-tour="item-description" /></F>
+                        <F label="Category *" id="a_cat"><select id="a_cat" required className={INPUT} value={newItem.item_group} onChange={e => setNewItem({ ...newItem, item_group: e.target.value })} data-tour="item-category"><option value="">Select a category</option>{categories.map(c => <option key={c.name} value={c.name}>{c.item_group_name || c.name}</option>)}</select></F>
+                        <F label="Unit *" hint="From UOM Doctype" id="a_uom"><select id="a_uom" required className={INPUT} value={newItem.stock_uom} onChange={e => setNewItem({ ...newItem, stock_uom: e.target.value })} data-tour="item-unit"><option value="">Select a unit</option>{uoms.map(u => <option key={u.name} value={u.name}>{u.name}</option>)}</select></F>
+                        <F label="Department (Warehouse)" id="a_wh"><select id="a_wh" className={INPUT} value={newItem.warehouse} onChange={e => setNewItem({ ...newItem, warehouse: e.target.value })} data-tour="item-warehouse"><option value="">Select warehouse</option>{warehouses.map(w => <option key={w.name} value={w.name}>{w.name}</option>)}</select></F>
                         <div className="grid grid-cols-2 gap-4">
-                            <F label="Cost Per Unit" hint="uoms[].conversion_factor" id="a_cost"><input id="a_cost" type="number" step="0.01" min="0" className={INPUT} placeholder="0.00" value={newItem.conversion_factor || ''} onChange={e => setNewItem({ ...newItem, conversion_factor: parseFloat(e.target.value) || 0 })} /></F>
-                            <F label="Opening Stock" hint="Creates a Stock Entry" id="a_stock"><input id="a_stock" type="number" step="0.01" min="0" className={INPUT} placeholder="0.00" value={newItem.current_stock || ''} onChange={e => setNewItem({ ...newItem, current_stock: parseFloat(e.target.value) || 0 })} /></F>
+                            <F label="Cost Per Unit" hint="uoms[].conversion_factor" id="a_cost"><input id="a_cost" type="number" step="0.01" min="0" className={INPUT} placeholder="0.00" value={newItem.conversion_factor || ''} onChange={e => setNewItem({ ...newItem, conversion_factor: parseFloat(e.target.value) || 0 })} data-tour="item-cost" /></F>
+                            <F label="Opening Stock" hint="Creates a Stock Entry" id="a_stock"><input id="a_stock" type="number" step="0.01" min="0" className={INPUT} placeholder="0.00" value={newItem.current_stock || ''} onChange={e => setNewItem({ ...newItem, current_stock: parseFloat(e.target.value) || 0 })} data-tour="item-opening-stock" /></F>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
-                            <F label="Minimum Stock" hint="reorder_levels[0].warehouse_reorder_level" id="a_min"><input id="a_min" type="number" step="0.01" min="0" className={INPUT} placeholder="0.00" value={newItem.minimum_stock || ''} onChange={e => setNewItem({ ...newItem, minimum_stock: parseFloat(e.target.value) || 0 })} /></F>
-                            <F label="Supplier" hint="supplier_items[0].supplier" id="a_sup"><select id="a_sup" className={INPUT} value={newItem.supplier_id} onChange={e => setNewItem({ ...newItem, supplier_id: e.target.value })}><option value="">Select supplier</option>{suppliers.map(s => <option key={s.name} value={s.name}>{s.supplier_name || s.name}</option>)}</select></F>
+                            <F label="Minimum Stock" hint="reorder_levels[0].warehouse_reorder_level" id="a_min"><input id="a_min" type="number" step="0.01" min="0" className={INPUT} placeholder="0.00" value={newItem.minimum_stock || ''} onChange={e => setNewItem({ ...newItem, minimum_stock: parseFloat(e.target.value) || 0 })} data-tour="item-min-stock" /></F>
+                            <F label="Supplier" hint="supplier_items[0].supplier" id="a_sup"><select id="a_sup" className={INPUT} value={newItem.supplier_id} onChange={e => setNewItem({ ...newItem, supplier_id: e.target.value })} data-tour="item-supplier"><option value="">Select supplier</option>{suppliers.map(s => <option key={s.name} value={s.name}>{s.supplier_name || s.name}</option>)}</select></F>
                         </div>
                         <div className="flex justify-end gap-3 pt-4 border-t border-border">
                             <button type="button" className={BTN_O} onClick={() => setShowAddModal(false)}>Cancel</button>
-                            <button type="submit" className={BTN_P} disabled={isSubmitting}>{isSubmitting ? 'Adding...' : 'Add Stock Item'}</button>
+                            <button type="submit" className={BTN_P} disabled={isSubmitting} data-tour="save-item">{isSubmitting ? 'Adding...' : 'Add Stock Item'}</button>
                         </div>
                     </form>
                 </Modal>

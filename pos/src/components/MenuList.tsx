@@ -107,7 +107,7 @@ const MenuList: React.FC<MenuListProps> = ({ onItemClick }) => {
 
   // ── Item grid ───────────────────────────────────────────────────────────
   return (
-    <div className="flex-1 overflow-auto bg-gray-50/80">
+    <div className="flex-1 overflow-auto bg-gray-50/80" data-tour="menu-items">
       <div className="max-w-screen-xl mx-auto p-4 pb-40">
         <div
           className={cn(

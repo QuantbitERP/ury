@@ -4,6 +4,7 @@ import {
     Building, ChevronDown, Package, ShoppingCart,
     RefreshCw, ArrowLeft, Printer,
 } from 'lucide-react';
+import { useRootStore } from '../store/root-store';
 
 // ─── Frappe CSRF helper ───────────────────────────────────────────────────────
 const getCsrfToken = (): string => {
@@ -101,6 +102,7 @@ const MetricCard: React.FC<{
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 const Suppliers: React.FC = () => {
+    const { setCurrentView: setGlobalCurrentView } = useRootStore();
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
     const [supplierGroups, setSupplierGroups] = useState<SupplierGroup[]>([]);
     const [paymentTerms, setPaymentTerms] = useState<PaymentTerm[]>([]);
@@ -125,7 +127,8 @@ const Suppliers: React.FC = () => {
     // ── Data fetching ─────────────────────────────────────────────────────────
     useEffect(() => {
         fetchAll();
-    }, []);
+        setGlobalCurrentView('suppliers');
+    }, [setGlobalCurrentView]);
 
     const fetchAll = () => {
         fetchSuppliers();
@@ -303,10 +306,11 @@ const Suppliers: React.FC = () => {
                         </button>
                         <button
                             onClick={fetchAll}
-                            className="inline-flex items-center justify-center h-9 w-9 rounded-xl border border-gray-200 bg-white hover:border-[#E4B315]/40 hover:text-[#C69A11] text-gray-400 transition-colors shadow-sm">
+                            className="inline-flex items-center justify-center h-9 w-9 rounded-xl border border-gray-200 bg-white hover:border-[#E4B315]/40 hover:text-[#C69A11] text-gray-400 transition-colors shadow-sm"
+                            data-tour="suppliers-refresh">
                             <RefreshCw className="h-4 w-4" />
                         </button>
-                        <button onClick={() => openModal()} className={BTN_P}>
+                        <button onClick={() => openModal()} className={BTN_P} data-tour="add-supplier">
                             <Plus className="h-4 w-4" /> New Supplier
                         </button>
                     </div>
@@ -368,6 +372,7 @@ const Suppliers: React.FC = () => {
                                 placeholder="Search by name, email or phone…"
                                 value={search}
                                 onChange={e => setSearch(e.target.value)}
+                                data-tour="suppliers-search"
                             />
                         </div>
                         <button className={BTN_O + ' gap-1'}>
@@ -506,6 +511,7 @@ const Suppliers: React.FC = () => {
                                     className={`px-5 py-2.5 text-sm font-semibold border-b-2 transition-colors -mb-px ${activeTab === tab
                                         ? 'border-[#E4B315] text-[#C69A11]'
                                         : 'border-transparent text-gray-400 hover:text-gray-600'}`}
+                                    data-tour={tab === 'Financial Terms' ? 'financial-tab' : tab === 'Operations' ? 'operations-tab' : ''}
                                 >
                                     {tab}
                                 </button>
@@ -524,39 +530,39 @@ const Suppliers: React.FC = () => {
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-1">
                                             <label className="text-xs font-medium text-gray-400">Supplier Name *</label>
-                                            <input className={INPUT} value={formData.supplier_name || ''} onChange={e => setFormData({ ...formData, supplier_name: e.target.value })} placeholder="Enter supplier name" />
+                                            <input className={INPUT} value={formData.supplier_name || ''} onChange={e => setFormData({ ...formData, supplier_name: e.target.value })} placeholder="Enter supplier name" data-tour="supplier-name" />
                                         </div>
                                         <div className="space-y-1">
                                             <label className="text-xs font-medium text-gray-400">Contact Person</label>
-                                            <input className={INPUT} value={formData.contact_person || ''} onChange={e => setFormData({ ...formData, contact_person: e.target.value })} placeholder="Contact person name" />
+                                            <input className={INPUT} value={formData.contact_person || ''} onChange={e => setFormData({ ...formData, contact_person: e.target.value })} placeholder="Contact person name" data-tour="contact-person" />
                                         </div>
                                         <div className="space-y-1">
                                             <label className="text-xs font-medium text-gray-400">Email</label>
-                                            <input className={INPUT} type="email" value={formData.email || ''} onChange={e => setFormData({ ...formData, email: e.target.value })} placeholder="Email address" />
+                                            <input className={INPUT} type="email" value={formData.email || ''} onChange={e => setFormData({ ...formData, email: e.target.value })} placeholder="Email address" data-tour="supplier-email" />
                                         </div>
                                         <div className="space-y-1">
                                             <label className="text-xs font-medium text-gray-400">Phone</label>
-                                            <input className={INPUT} value={formData.mobile_no || ''} onChange={e => setFormData({ ...formData, mobile_no: e.target.value })} placeholder="Phone number" />
+                                            <input className={INPUT} value={formData.mobile_no || ''} onChange={e => setFormData({ ...formData, mobile_no: e.target.value })} placeholder="Phone number" data-tour="supplier-phone" />
                                         </div>
                                         <div className="col-span-2 space-y-1">
                                             <label className="text-xs font-medium text-gray-400">Address</label>
-                                            <input className={INPUT} value={formData.address || ''} onChange={e => setFormData({ ...formData, address: e.target.value })} placeholder="Street address" />
+                                            <input className={INPUT} value={formData.address || ''} onChange={e => setFormData({ ...formData, address: e.target.value })} placeholder="Street address" data-tour="supplier-address" />
                                         </div>
                                         <div className="space-y-1">
                                             <label className="text-xs font-medium text-gray-400">City</label>
-                                            <input className={INPUT} value={formData.city || ''} onChange={e => setFormData({ ...formData, city: e.target.value })} placeholder="City" />
+                                            <input className={INPUT} value={formData.city || ''} onChange={e => setFormData({ ...formData, city: e.target.value })} placeholder="City" data-tour="supplier-city" />
                                         </div>
                                         <div className="space-y-1">
                                             <label className="text-xs font-medium text-gray-400">Country</label>
-                                            <input className={INPUT} value={formData.country || ''} onChange={e => setFormData({ ...formData, country: e.target.value })} placeholder="Country" />
+                                            <input className={INPUT} value={formData.country || ''} onChange={e => setFormData({ ...formData, country: e.target.value })} placeholder="Country" data-tour="supplier-country" />
                                         </div>
                                         <div className="space-y-1">
                                             <label className="text-xs font-medium text-gray-400">Tax ID</label>
-                                            <input className={INPUT} value={formData.tax_id || ''} onChange={e => setFormData({ ...formData, tax_id: e.target.value })} placeholder="Tax ID" />
+                                            <input className={INPUT} value={formData.tax_id || ''} onChange={e => setFormData({ ...formData, tax_id: e.target.value })} placeholder="Tax ID" data-tour="tax-id" />
                                         </div>
                                         <div className="space-y-1">
                                             <label className="text-xs font-medium text-gray-400">Supplier Group</label>
-                                            <select className={INPUT + ' appearance-none'} value={formData.supplier_group || ''} onChange={e => setFormData({ ...formData, supplier_group: e.target.value })}>
+                                            <select className={INPUT + ' appearance-none'} value={formData.supplier_group || ''} onChange={e => setFormData({ ...formData, supplier_group: e.target.value })} data-tour="supplier-group">
                                                 <option value="">Select Group</option>
                                                 {supplierGroups.map(g => <option key={g.name} value={g.name}>{g.supplier_group_name}</option>)}
                                             </select>
@@ -581,18 +587,19 @@ const Suppliers: React.FC = () => {
                                                 onChange={e => {
                                                     const selected = paymentTerms.find(t => t.name === e.target.value);
                                                     setFormData({ ...formData, payment_terms: e.target.value, credit_limit: selected?.credit_days || 0 });
-                                                }}>
+                                                }}
+                                                data-tour="payment-terms">
                                                 <option value="">Select Payment Terms</option>
                                                 {paymentTerms.map(t => <option key={t.name} value={t.name}>{t.payment_term}</option>)}
                                             </select>
                                         </div>
                                         <div className="space-y-1">
                                             <label className="text-xs font-medium text-gray-400">Credit Limit (KES)</label>
-                                            <input className={INPUT} type="number" min="0" value={formData.credit_limit || ''} onChange={e => setFormData({ ...formData, credit_limit: parseFloat(e.target.value) || 0 })} placeholder="0" />
+                                            <input className={INPUT} type="number" min="0" value={formData.credit_limit || ''} onChange={e => setFormData({ ...formData, credit_limit: parseFloat(e.target.value) || 0 })} placeholder="0" data-tour="credit-limit" />
                                         </div>
                                         <div className="space-y-1">
                                             <label className="text-xs font-medium text-gray-400">Default Price List</label>
-                                            <select className={INPUT + ' appearance-none'} value={formData.default_price_list || ''} onChange={e => setFormData({ ...formData, default_price_list: e.target.value })}>
+                                            <select className={INPUT + ' appearance-none'} value={formData.default_price_list || ''} onChange={e => setFormData({ ...formData, default_price_list: e.target.value })} data-tour="price-list">
                                                 <option value="">Select Price List</option>
                                                 {priceLists.map(pl => <option key={pl.name} value={pl.name}>{pl.price_list_name}</option>)}
                                             </select>
@@ -611,7 +618,7 @@ const Suppliers: React.FC = () => {
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-1">
                                             <label className="text-xs font-medium text-gray-400">Lead Time (days)</label>
-                                            <input className={INPUT} type="number" min="0" value={formData.lead_time || ''} onChange={e => setFormData({ ...formData, lead_time: parseInt(e.target.value) || 0 })} placeholder="0" />
+                                            <input className={INPUT} type="number" min="0" value={formData.lead_time || ''} onChange={e => setFormData({ ...formData, lead_time: parseInt(e.target.value) || 0 })} placeholder="0" data-tour="lead-time" />
                                         </div>
                                         <div className="flex items-end pb-1">
                                             <label className="flex items-center gap-2.5 cursor-pointer select-none">
@@ -621,6 +628,7 @@ const Suppliers: React.FC = () => {
                                                     checked={!formData.disabled}
                                                     onChange={e => setFormData({ ...formData, disabled: !e.target.checked })}
                                                     className="h-4 w-4 rounded accent-[#E4B315]"
+                                                    data-tour="enable-supplier"
                                                 />
                                                 <span className="text-sm text-gray-600 font-medium">Enable Supplier</span>
                                             </label>
@@ -632,6 +640,7 @@ const Suppliers: React.FC = () => {
                                                 value={formData.billing_address || ''}
                                                 onChange={e => setFormData({ ...formData, billing_address: e.target.value })}
                                                 placeholder="Billing address"
+                                                data-tour="billing-address"
                                             />
                                         </div>
                                         <div className="col-span-2 space-y-1">
@@ -641,6 +650,7 @@ const Suppliers: React.FC = () => {
                                                 value={formData.shipping_address || ''}
                                                 onChange={e => setFormData({ ...formData, shipping_address: e.target.value })}
                                                 placeholder="Shipping address"
+                                                data-tour="shipping-address"
                                             />
                                         </div>
                                     </div>
@@ -655,7 +665,8 @@ const Suppliers: React.FC = () => {
                                 <button
                                     onClick={saveSupplier}
                                     disabled={saving || !formData.supplier_name?.trim()}
-                                    className={BTN_P}>
+                                    className={BTN_P}
+                                    data-tour="save-supplier">
                                     {saving && (
                                         <div className="h-3.5 w-3.5 rounded-full border-2 border-white/40 border-t-white animate-spin" />
                                     )}

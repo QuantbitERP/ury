@@ -74,7 +74,9 @@ const KOTCard: React.FC<KOTCardProps> = ({
       bg-white border border-gray-100 border-l-4 ${cfg.border}
       rounded-2xl shadow-sm hover:shadow-md hover:shadow-[#E4B315]/8
       transition-all duration-200 overflow-hidden
-    `}>
+    `}
+    data-tour="kot-card"
+    >
       {/* Card header */}
       <div className={`${cfg.headerBg} px-4 py-2.5 flex items-center justify-between`}>
         <div className="flex items-center gap-2 min-w-0">
@@ -122,7 +124,7 @@ const KOTCard: React.FC<KOTCardProps> = ({
         </ul>
 
         {/* Action buttons */}
-        <div className="flex gap-2 pt-2 border-t border-gray-50">
+        <div className="flex gap-2 pt-2 border-t border-gray-50" data-tour="status-buttons">
           {kot.order_status === 'Ready For Prepare' && (
             <button
               onClick={() => onStartPreparing(kot.name)}
@@ -270,7 +272,7 @@ const KOTSystem: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50/80 flex flex-col">
       {/* ── Header ── */}
-      <div className="bg-white border-b border-gray-100 shadow-sm shrink-0">
+      <div className="bg-white border-b border-gray-100 shadow-sm shrink-0" data-tour="kot-header">
         <div className="px-6 py-4 flex items-center justify-between gap-4">
           {/* Left: back + title */}
           <div className="flex items-center gap-4 min-w-0">
@@ -288,7 +290,7 @@ const KOTSystem: React.FC = () => {
 
           {/* Right: search + refresh */}
           <div className="flex items-center gap-2 shrink-0">
-            <div className="relative">
+            <div className="relative" data-tour="kot-search">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
               <input
                 type="text"
@@ -306,6 +308,7 @@ const KOTSystem: React.FC = () => {
             <button
               onClick={fetchKOTs}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-100 bg-white text-sm font-semibold text-gray-600 hover:border-[#E4B315]/40 hover:text-[#C69A11] transition-all shadow-sm"
+              data-tour="kot-refresh"
             >
               <RefreshCw className="h-3.5 w-3.5" /> Refresh
             </button>
@@ -316,7 +319,7 @@ const KOTSystem: React.FC = () => {
       {/* ── Three columns ── */}
       <div className="flex flex-1 min-h-0 divide-x divide-gray-100">
         {/* Pending */}
-        <div className="flex-1 flex flex-col p-4 min-w-0">
+        <div className="flex-1 flex flex-col p-4 min-w-0" data-tour="pending-column">
           <ColumnHeader title="Pending" count={filterKOTs(pendingKOTs).length} color="red" />
           <div className="flex-1 overflow-y-auto space-y-3 pr-1">
             {filterKOTs(pendingKOTs).length === 0
@@ -334,7 +337,7 @@ const KOTSystem: React.FC = () => {
         </div>
 
         {/* Preparing */}
-        <div className="flex-1 flex flex-col p-4 min-w-0">
+        <div className="flex-1 flex flex-col p-4 min-w-0" data-tour="preparing-column">
           <ColumnHeader title="Preparing" count={filterKOTs(preparingKOTs).length} color="gold" />
           <div className="flex-1 overflow-y-auto space-y-3 pr-1">
             {filterKOTs(preparingKOTs).length === 0
@@ -352,7 +355,7 @@ const KOTSystem: React.FC = () => {
         </div>
 
         {/* Ready */}
-        <div className="flex-1 flex flex-col p-4 min-w-0">
+        <div className="flex-1 flex flex-col p-4 min-w-0" data-tour="ready-column">
           <ColumnHeader title="Ready to Serve" count={filterKOTs(readyKOTs).length} color="green" />
           <div className="flex-1 overflow-y-auto space-y-3 pr-1">
             {filterKOTs(readyKOTs).length === 0

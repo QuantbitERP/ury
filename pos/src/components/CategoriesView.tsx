@@ -265,6 +265,7 @@ const CategoriesView: React.FC<CategoriesViewProps> = ({ onNavigateBack }) => {
                         <button
                             onClick={onNavigateBack}
                             className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2"
+                            data-tour="back-button"
                         >
                             ← Back to Stock Items
                         </button>
@@ -285,6 +286,7 @@ const CategoriesView: React.FC<CategoriesViewProps> = ({ onNavigateBack }) => {
                                 <button
                                     onClick={() => setShowAddModal(true)}
                                     className="justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 flex items-center gap-2"
+                                    data-tour="add-category"
                                 >
                                     <Plus className="h-4 w-4" />
                                     Add Category
@@ -292,6 +294,7 @@ const CategoriesView: React.FC<CategoriesViewProps> = ({ onNavigateBack }) => {
                                 <button
                                     onClick={fetchCategories}
                                     className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2"
+                                    data-tour="refresh-button"
                                 >
                                     Refresh
                                 </button>
@@ -306,6 +309,7 @@ const CategoriesView: React.FC<CategoriesViewProps> = ({ onNavigateBack }) => {
                                     placeholder="Search categories..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
+                                    data-tour="search-bar"
                                 />
                             </div>
                         </div>
@@ -421,6 +425,7 @@ const CategoriesView: React.FC<CategoriesViewProps> = ({ onNavigateBack }) => {
                                     onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
                                     placeholder="e.g., Beverages, Dry Goods, Frozen Items"
                                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+                                    data-tour="category-name"
                                 />
                             </div>
 
@@ -433,6 +438,7 @@ const CategoriesView: React.FC<CategoriesViewProps> = ({ onNavigateBack }) => {
                                     onChange={(e) => setNewCategory({ ...newCategory, item_group_name: e.target.value })}
                                     placeholder="Display name for this category"
                                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+                                    data-tour="display-name"
                                 />
                             </div>
 
@@ -445,6 +451,7 @@ const CategoriesView: React.FC<CategoriesViewProps> = ({ onNavigateBack }) => {
                                     onChange={(e) => setNewCategory({ ...newCategory, description: e.target.value })}
                                     placeholder="Optional description for this category"
                                     className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                    data-tour="category-description"
                                 />
                             </div>
 
@@ -455,6 +462,7 @@ const CategoriesView: React.FC<CategoriesViewProps> = ({ onNavigateBack }) => {
                                     value={newCategory.parent_item_group}
                                     onChange={(e) => setNewCategory({ ...newCategory, parent_item_group: e.target.value })}
                                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                    data-tour="parent-category"
                                 >
                                     <option value="">None (Root Category)</option>
                                     {categories.filter(c => !c.parent_item_group).map(c => (
@@ -470,6 +478,7 @@ const CategoriesView: React.FC<CategoriesViewProps> = ({ onNavigateBack }) => {
                                     checked={newCategory.is_group}
                                     onChange={(e) => setNewCategory({ ...newCategory, is_group: e.target.checked })}
                                     className="h-4 w-4 rounded border border-input bg-background text-primary focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                    data-tour="is-group"
                                 />
                                 <label htmlFor="is_group" className="text-sm font-medium leading-none">
                                     This is a group category (can have sub-categories)
@@ -488,6 +497,7 @@ const CategoriesView: React.FC<CategoriesViewProps> = ({ onNavigateBack }) => {
                                     type="submit"
                                     disabled={isSubmitting}
                                     className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2"
+                                    data-tour="save-category"
                                 >
                                     {isSubmitting ? 'Adding...' : 'Add Category'}
                                 </button>

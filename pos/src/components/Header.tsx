@@ -15,7 +15,8 @@ import {
   Table,
   Clock,
   Settings,
-  Globe,
+  BookOpen,
+  MapPin,
 } from 'lucide-react';
 import { Button, Input } from './ui';
 import { useRootStore } from '../store/root-store';
@@ -23,11 +24,73 @@ import { usePOSStore } from '../store/pos-store';
 import type { RootState } from '../store/root-store';
 import { logout } from '../lib/auth-api';
 import { showToast } from './ui/toast';
+import POSDocumentation from './POSDocumentation';
+import POSTour from './POSTour';
+import KOTDocumentation from './KOTDocumentation';
+import KOTTour from './KOTTour';
+import OrdersDocumentation from './OrdersDocumentation';
+import OrdersTour from './OrdersTour';
+import MenuManagementDocumentation from './MenuManagementDocumentation';
+import MenuManagementTour from './MenuManagementTour';
+import RecipeManagementDocumentation from './RecipeManagementDocumentation';
+import RecipeManagementTour from './RecipeManagementTour';
+import ManufacturingDocumentation from './ManufacturingDocumentation';
+import ManufacturingTour from './ManufacturingTour';
+import ReservationsDocumentation from './ReservationsDocumentation';
+import ReservationsTour from './ReservationsTour';
+import InventoryManagementStockItemsDocumentation from './InventoryManagementStockItemsDocumentation';
+import InventoryManagementStockItemsTour from './InventoryManagementStockItemsTour';
+import InventoryManagementCategoriesDocumentation from './InventoryManagementCategoriesDocumentation';
+import InventoryManagementCategoriesTour from './InventoryManagementCategoriesTour';
+import InventoryManagementUnitsDocumentation from './InventoryManagementUnitsDocumentation';
+import InventoryManagementSuppliersDocumentation from './InventoryManagementSuppliersDocumentation';
+import InventoryManagementSuppliersTour from './InventoryManagementSuppliersTour';
+import InventoryManagementPurchaseOrdersDocumentation from './InventoryManagementPurchaseOrdersDocumentation';
+import InventoryManagementPurchaseOrdersTour from './InventoryManagementPurchaseOrdersTour';
+import InventoryManagementGoodsReceiptsDocumentation from './InventoryManagementGoodsReceiptsDocumentation';
+import InventoryManagementGoodsReceiptsTour from './InventoryManagementGoodsReceiptsTour';
+import HRDocumentation from './HRDocumentation';
+import HRTour from './HRTour';
+import StaffManagementDocumentation from './StaffManagementDocumentation';
+import StaffManagementTour from './StaffManagementTour';
+import WorkspaceManagementDocumentation from './WorkspaceManagementDocumentation';
+import WorkspaceManagementTour from './WorkspaceManagementTour';
 
 const Header = () => {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showClockSettings, setShowClockSettings] = useState(false);
   const [showClockPopup, setShowClockPopup] = useState(false);
+  const [showDocumentation, setShowDocumentation] = useState(false);
+  const [showTour, setShowTour] = useState(false);
+  const [showKOTDocumentation, setShowKOTDocumentation] = useState(false);
+  const [showKOTTour, setShowKOTTour] = useState(false);
+  const [showOrdersDocumentation, setShowOrdersDocumentation] = useState(false);
+  const [showOrdersTour, setShowOrdersTour] = useState(false);
+  const [showMenuManagementDocumentation, setShowMenuManagementDocumentation] = useState(false);
+  const [showMenuManagementTour, setShowMenuManagementTour] = useState(false);
+  const [showRecipeManagementDocumentation, setShowRecipeManagementDocumentation] = useState(false);
+  const [showRecipeManagementTour, setShowRecipeManagementTour] = useState(false);
+  const [showManufacturingDocumentation, setShowManufacturingDocumentation] = useState(false);
+  const [showManufacturingTour, setShowManufacturingTour] = useState(false);
+  const [showReservationsDocumentation, setShowReservationsDocumentation] = useState(false);
+  const [showReservationsTour, setShowReservationsTour] = useState(false);
+  const [showInventoryStockItemsDocumentation, setShowInventoryStockItemsDocumentation] = useState(false);
+  const [showInventoryStockItemsTour, setShowInventoryStockItemsTour] = useState(false);
+  const [showInventoryCategoriesDocumentation, setShowInventoryCategoriesDocumentation] = useState(false);
+  const [showInventoryCategoriesTour, setShowInventoryCategoriesTour] = useState(false);
+  const [showInventoryUnitsDocumentation, setShowInventoryUnitsDocumentation] = useState(false);
+  const [showInventorySuppliersDocumentation, setShowInventorySuppliersDocumentation] = useState(false);
+  const [showInventorySuppliersTour, setShowInventorySuppliersTour] = useState(false);
+  const [showInventoryPurchaseOrdersDocumentation, setShowInventoryPurchaseOrdersDocumentation] = useState(false);
+  const [showInventoryPurchaseOrdersTour, setShowInventoryPurchaseOrdersTour] = useState(false);
+  const [showInventoryGoodsReceiptsDocumentation, setShowInventoryGoodsReceiptsDocumentation] = useState(false);
+  const [showInventoryGoodsReceiptsTour, setShowInventoryGoodsReceiptsTour] = useState(false);
+  const [showHRDocumentation, setShowHRDocumentation] = useState(false);
+  const [showHRTour, setShowHRTour] = useState(false);
+  const [showStaffManagementDocumentation, setShowStaffManagementDocumentation] = useState(false);
+  const [showStaffManagementTour, setShowStaffManagementTour] = useState(false);
+  const [showWorkspaceManagementDocumentation, setShowWorkspaceManagementDocumentation] = useState(false);
+  const [showWorkspaceManagementTour, setShowWorkspaceManagementTour] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const clockSettingsRef = useRef<HTMLDivElement>(null);
   const clockPopupRef = useRef<HTMLDivElement>(null);
@@ -35,7 +98,7 @@ const Header = () => {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const location = useLocation();
   const { searchQuery, setSearchQuery } = usePOSStore();
-  const { orderSearchQuery, setOrderSearchQuery } = useRootStore();
+  const { orderSearchQuery, setOrderSearchQuery, currentView: inventoryCurrentView } = useRootStore();
   const [orderSearchInput, setOrderSearchInput] = useState(orderSearchQuery);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [clockMode, setClockMode] = useState<'digital' | 'analog'>('digital');
@@ -225,7 +288,8 @@ const Header = () => {
   };
 
   return (
-    <header className="bg-white border-b border-gray-200">
+    <>
+      <header className="bg-white border-b border-gray-200">
       <div className="flex items-center justify-between h-16 px-6">
         {/* Logo and Navigation */}
         <div className="flex items-center space-x-6">
@@ -496,6 +560,91 @@ const Header = () => {
 
         {/* Right side actions */}
         <div className="flex items-center space-x-4">
+          {/* Documentation and Tour buttons - show on POS, KOT, Orders, MenuManagement, RecipeManagement, Manufacturing, Reservations, Inventory, HR, Staff Management, and Workspace Management pages */}
+          {(location.pathname === '/' || location.pathname === '/kot' || location.pathname === '/orders' || location.pathname === '/menu' || location.pathname === '/recipes' || location.pathname === '/manufacturing' || location.pathname === '/reservations' || location.pathname === '/inventory' || location.pathname === '/hr' || location.pathname === '/staff-management' || location.pathname === '/workspace-management') && (
+            <>
+              <Button
+                onClick={() => {
+                  if (location.pathname === '/') setShowDocumentation(true);
+                  else if (location.pathname === '/kot') setShowKOTDocumentation(true);
+                  else if (location.pathname === '/orders') setShowOrdersDocumentation(true);
+                  else if (location.pathname === '/menu') setShowMenuManagementDocumentation(true);
+                  else if (location.pathname === '/recipes') setShowRecipeManagementDocumentation(true);
+                  else if (location.pathname === '/manufacturing') setShowManufacturingDocumentation(true);
+                  else if (location.pathname === '/reservations') setShowReservationsDocumentation(true);
+                  else if (location.pathname === '/inventory') {
+                    // Show documentation based on current inventory view
+                    if (inventoryCurrentView === 'categories') {
+                      setShowInventoryCategoriesDocumentation(true);
+                    } else if (inventoryCurrentView === 'units') {
+                      setShowInventoryUnitsDocumentation(true);
+                    } else if (inventoryCurrentView === 'suppliers') {
+                      setShowInventorySuppliersDocumentation(true);
+                    } else if (inventoryCurrentView === 'purchase-orders') {
+                      setShowInventoryPurchaseOrdersDocumentation(true);
+                    } else if (inventoryCurrentView === 'goods-receipts') {
+                      setShowInventoryGoodsReceiptsDocumentation(true);
+                    } else {
+                      setShowInventoryStockItemsDocumentation(true);
+                    }
+                  } else if (location.pathname === '/hr') {
+                    setShowHRDocumentation(true);
+                  } else if (location.pathname === '/staff-management') {
+                    setShowStaffManagementDocumentation(true);
+                  } else if (location.pathname === '/workspace-management') {
+                    setShowWorkspaceManagementDocumentation(true);
+                  }
+                }}
+                variant="ghost"
+                className="flex items-center space-x-2 text-gray-600 hover:text-gray-900"
+                title="View Documentation"
+              >
+                <BookOpen className="w-4 h-4" />
+                <span className="text-sm font-medium hidden md:inline">Docs</span>
+              </Button>
+              <Button
+                onClick={() => {
+                  if (location.pathname === '/') setShowTour(true);
+                  else if (location.pathname === '/kot') setShowKOTTour(true);
+                  else if (location.pathname === '/orders') setShowOrdersTour(true);
+                  else if (location.pathname === '/menu') setShowMenuManagementTour(true);
+                  else if (location.pathname === '/recipes') setShowRecipeManagementTour(true);
+                  else if (location.pathname === '/manufacturing') setShowManufacturingTour(true);
+                  else if (location.pathname === '/reservations') setShowReservationsTour(true);
+                  else if (location.pathname === '/inventory') {
+                    // Show tour based on current inventory view
+                    if (inventoryCurrentView === 'categories') {
+                      setShowInventoryCategoriesTour(true);
+                    } else if (inventoryCurrentView === 'units') {
+                      // No tour for units
+                      setShowInventoryStockItemsTour(true);
+                    } else if (inventoryCurrentView === 'suppliers') {
+                      setShowInventorySuppliersTour(true);
+                    } else if (inventoryCurrentView === 'purchase-orders') {
+                      setShowInventoryPurchaseOrdersTour(true);
+                    } else if (inventoryCurrentView === 'goods-receipts') {
+                      setShowInventoryGoodsReceiptsTour(true);
+                    } else {
+                      setShowInventoryStockItemsTour(true);
+                    }
+                  } else if (location.pathname === '/hr') {
+                    setShowHRTour(true);
+                  } else if (location.pathname === '/staff-management') {
+                    setShowStaffManagementTour(true);
+                  } else if (location.pathname === '/workspace-management') {
+                    setShowWorkspaceManagementTour(true);
+                  }
+                }}
+                variant="ghost"
+                className="flex items-center space-x-2 text-gray-600 hover:text-gray-900"
+                title="Take a Tour"
+              >
+                <MapPin className="w-4 h-4" />
+                <span className="text-sm font-medium hidden md:inline">Tour</span>
+              </Button>
+            </>
+          )}
+
           {/* User menu */}
           <div className="relative" ref={userMenuRef}>
             <Button
@@ -589,6 +738,208 @@ const Header = () => {
         </div>
       </div>
     </header>
+
+    {/* Documentation Modal */}
+    <POSDocumentation
+      isOpen={showDocumentation}
+      onClose={() => setShowDocumentation(false)}
+    />
+
+    {/* Tour Modal */}
+    <POSTour
+      isOpen={showTour}
+      onClose={() => setShowTour(false)}
+      onComplete={() => setShowTour(false)}
+    />
+
+    {/* KOT Documentation Modal */}
+    <KOTDocumentation
+      isOpen={showKOTDocumentation}
+      onClose={() => setShowKOTDocumentation(false)}
+    />
+
+    {/* KOT Tour Modal */}
+    <KOTTour
+      isOpen={showKOTTour}
+      onClose={() => setShowKOTTour(false)}
+      onComplete={() => setShowKOTTour(false)}
+    />
+
+    {/* Orders Documentation Modal */}
+    <OrdersDocumentation
+      isOpen={showOrdersDocumentation}
+      onClose={() => setShowOrdersDocumentation(false)}
+    />
+
+    {/* Orders Tour Modal */}
+    <OrdersTour
+      isOpen={showOrdersTour}
+      onClose={() => setShowOrdersTour(false)}
+      onComplete={() => setShowOrdersTour(false)}
+    />
+
+    {/* MenuManagement Documentation Modal */}
+    <MenuManagementDocumentation
+      isOpen={showMenuManagementDocumentation}
+      onClose={() => setShowMenuManagementDocumentation(false)}
+    />
+
+    {/* MenuManagement Tour Modal */}
+    <MenuManagementTour
+      isOpen={showMenuManagementTour}
+      onClose={() => setShowMenuManagementTour(false)}
+      onComplete={() => setShowMenuManagementTour(false)}
+    />
+
+    {/* RecipeManagement Documentation Modal */}
+    <RecipeManagementDocumentation
+      isOpen={showRecipeManagementDocumentation}
+      onClose={() => setShowRecipeManagementDocumentation(false)}
+    />
+
+    {/* RecipeManagement Tour Modal */}
+    <RecipeManagementTour
+      isOpen={showRecipeManagementTour}
+      onClose={() => setShowRecipeManagementTour(false)}
+      onComplete={() => setShowRecipeManagementTour(false)}
+    />
+
+    {/* Manufacturing Documentation Modal */}
+    <ManufacturingDocumentation
+      isOpen={showManufacturingDocumentation}
+      onClose={() => setShowManufacturingDocumentation(false)}
+    />
+
+    {/* Manufacturing Tour Modal */}
+    <ManufacturingTour
+      isOpen={showManufacturingTour}
+      onClose={() => setShowManufacturingTour(false)}
+      onComplete={() => setShowManufacturingTour(false)}
+    />
+
+    {/* Reservations Documentation Modal */}
+    <ReservationsDocumentation
+      isOpen={showReservationsDocumentation}
+      onClose={() => setShowReservationsDocumentation(false)}
+    />
+
+    {/* Reservations Tour Modal */}
+    <ReservationsTour
+      isOpen={showReservationsTour}
+      onClose={() => setShowReservationsTour(false)}
+      onComplete={() => setShowReservationsTour(false)}
+    />
+
+    {/* Inventory Management Stock Items Documentation Modal */}
+    <InventoryManagementStockItemsDocumentation
+      isOpen={showInventoryStockItemsDocumentation}
+      onClose={() => setShowInventoryStockItemsDocumentation(false)}
+    />
+
+    {/* Inventory Management Stock Items Tour Modal */}
+    <InventoryManagementStockItemsTour
+      isOpen={showInventoryStockItemsTour}
+      onClose={() => setShowInventoryStockItemsTour(false)}
+      onComplete={() => setShowInventoryStockItemsTour(false)}
+    />
+
+    {/* Inventory Management Categories Documentation Modal */}
+    <InventoryManagementCategoriesDocumentation
+      isOpen={showInventoryCategoriesDocumentation}
+      onClose={() => setShowInventoryCategoriesDocumentation(false)}
+    />
+
+    {/* Inventory Management Categories Tour Modal */}
+    <InventoryManagementCategoriesTour
+      isOpen={showInventoryCategoriesTour}
+      onClose={() => setShowInventoryCategoriesTour(false)}
+      onComplete={() => setShowInventoryCategoriesTour(false)}
+    />
+
+    {/* Inventory Management Units Documentation Modal */}
+    <InventoryManagementUnitsDocumentation
+      isOpen={showInventoryUnitsDocumentation}
+      onClose={() => setShowInventoryUnitsDocumentation(false)}
+    />
+
+    {/* Inventory Management Suppliers Documentation Modal */}
+    <InventoryManagementSuppliersDocumentation
+      isOpen={showInventorySuppliersDocumentation}
+      onClose={() => setShowInventorySuppliersDocumentation(false)}
+    />
+
+    {/* Inventory Management Suppliers Tour Modal */}
+    <InventoryManagementSuppliersTour
+      isOpen={showInventorySuppliersTour}
+      onClose={() => setShowInventorySuppliersTour(false)}
+      onComplete={() => setShowInventorySuppliersTour(false)}
+    />
+
+    {/* Inventory Management Purchase Orders Documentation Modal */}
+    <InventoryManagementPurchaseOrdersDocumentation
+      isOpen={showInventoryPurchaseOrdersDocumentation}
+      onClose={() => setShowInventoryPurchaseOrdersDocumentation(false)}
+    />
+
+    {/* Inventory Management Purchase Orders Tour Modal */}
+    <InventoryManagementPurchaseOrdersTour
+      isOpen={showInventoryPurchaseOrdersTour}
+      onClose={() => setShowInventoryPurchaseOrdersTour(false)}
+      onComplete={() => setShowInventoryPurchaseOrdersTour(false)}
+    />
+
+    {/* Inventory Management Goods Receipts Documentation Modal */}
+    <InventoryManagementGoodsReceiptsDocumentation
+      isOpen={showInventoryGoodsReceiptsDocumentation}
+      onClose={() => setShowInventoryGoodsReceiptsDocumentation(false)}
+    />
+
+    {/* Inventory Management Goods Receipts Tour Modal */}
+    <InventoryManagementGoodsReceiptsTour
+      isOpen={showInventoryGoodsReceiptsTour}
+      onClose={() => setShowInventoryGoodsReceiptsTour(false)}
+      onComplete={() => setShowInventoryGoodsReceiptsTour(false)}
+    />
+
+    {/* HR Documentation Modal */}
+    <HRDocumentation
+      isOpen={showHRDocumentation}
+      onClose={() => setShowHRDocumentation(false)}
+    />
+
+    {/* HR Tour Modal */}
+    <HRTour
+      isOpen={showHRTour}
+      onClose={() => setShowHRTour(false)}
+      onComplete={() => setShowHRTour(false)}
+    />
+
+    {/* Staff Management Documentation Modal */}
+    <StaffManagementDocumentation
+      isOpen={showStaffManagementDocumentation}
+      onClose={() => setShowStaffManagementDocumentation(false)}
+    />
+
+    {/* Staff Management Tour Modal */}
+    <StaffManagementTour
+      isOpen={showStaffManagementTour}
+      onClose={() => setShowStaffManagementTour(false)}
+      onComplete={() => setShowStaffManagementTour(false)}
+    />
+
+    {/* Workspace Management Documentation Modal */}
+    <WorkspaceManagementDocumentation
+      isOpen={showWorkspaceManagementDocumentation}
+      onClose={() => setShowWorkspaceManagementDocumentation(false)}
+    />
+
+    {/* Workspace Management Tour Modal */}
+    <WorkspaceManagementTour
+      isOpen={showWorkspaceManagementTour}
+      onClose={() => setShowWorkspaceManagementTour(false)}
+      onComplete={() => setShowWorkspaceManagementTour(false)}
+    />
+    </>
   );
 };
 

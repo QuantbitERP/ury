@@ -564,7 +564,7 @@ const RestaurantSetup: React.FC = () => {
             <div className="p-4 border-t border-gray-200 bg-gray-50 flex-shrink-0">
               <Button
                 onClick={resetForm}
-                className="w-full bg-[#E4B315]/12 hover:bg-[#E4B315]/12 text-white h-10"
+                className="w-full bg-gradient-to-r from-[#E4B315] to-[#C69A11] hover:opacity-90 text-white h-10 shadow-md shadow-[#E4B315]/20"
                 variant={selectedRestaurant ? "outline" : "default"}
               >
                 <Plus className="w-4 h-4 mr-2" />
@@ -947,7 +947,7 @@ const RestaurantSetup: React.FC = () => {
                   <Button
                     onClick={saveRestaurant}
                     disabled={saving}
-                    className="bg-[#E4B315]/12 hover:bg-[#E4B315]/12 text-white flex items-center space-x-2"
+                    className="bg-gradient-to-r from-[#E4B315] to-[#C69A11] hover:opacity-90 text-white flex items-center space-x-2 shadow-md shadow-[#E4B315]/20"
                   >
                     <Save className="w-4 h-4" />
                     <span>{saving ? 'Saving...' : 'Save Restaurant'}</span>
