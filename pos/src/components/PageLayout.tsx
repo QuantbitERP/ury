@@ -167,8 +167,8 @@ function InlineSidebar({ collapsed }: InlineSidebarProps) {
     dashboard:['/dashboard'], pos:['/pos','/kot','/bar-display','/orders','/payment'],
     restaurant:['/menu','/recipes','/manufacturing','/reservations'],
     inventory:['/inventory','/stock-transfers','/stock-tracking','/suppliers','/purchase-orders'],
-    hr:['/hr','/staff-management','/workspace-management'],
-    finance:['/payroll','/finance','/bank-accounts','/bank-transactions'],
+    hr:['/hr','/staff-management','/workspace-management','/payroll'],
+    finance:['/finance','/bank-accounts','/bank-transactions'],
     reports:['/reports'], events:['/events'],
     setup:['/branch-setup', '/restaurant-setup', '/user-setup', '/room-setup', '/table-setup'],
   };
@@ -277,10 +277,10 @@ function InlineSidebar({ collapsed }: InlineSidebarProps) {
             <NavItem sectionId="hr" icon={<UsersRound className="h-3.5 w-3.5" />} label="HR Dashboard" href="/hr" collapsed={collapsed} />
             <NavItem sectionId="hr" icon={<Users className="h-3.5 w-3.5" />} label="Staff Management" href="/staff-management" collapsed={collapsed} />
             <NavItem sectionId="hr" icon={<Building className="h-3.5 w-3.5" />} label="Workspace Management" href="/workspace-management" collapsed={collapsed} />
+            <NavItem sectionId="hr" icon={<UsersRound className="h-3.5 w-3.5" />} label="Payroll" href="/payroll" collapsed={collapsed} />
           </Section>}
 
           {visibleSections.has('finance') && <Section id="finance" title="Finance & Accounting" Icon={Banknote} open={open.finance} onToggle={() => toggle('finance')} hasActiveChild={hasActive('finance')} collapsed={collapsed}>
-            <NavItem sectionId="finance" icon={<UsersRound className="h-3.5 w-3.5" />} label="Payroll" href="/payroll" collapsed={collapsed} />
             <NavItem sectionId="finance" icon={<BarChart3 className="h-3.5 w-3.5" />} label="Financial Accounting" href="/finance/accounting" collapsed={collapsed} />
             <NavItem sectionId="finance" icon={<Building className="h-3.5 w-3.5" />} label="Bank Accounts" href="/finance/accounting/bank-accounts" collapsed={collapsed} />
             <NavItem sectionId="finance" icon={<ArrowUpDown className="h-3.5 w-3.5" />} label="Bank Transactions" href="/finance/accounting/bank-transactions" collapsed={collapsed} />

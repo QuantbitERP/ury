@@ -427,6 +427,7 @@ export function AppSidebar() {
                 { icon: <UsersRound className="h-3.5 w-3.5" />, label: 'HR Dashboard', href: '/hr', sectionId: 'hr' },
                 { icon: <Users className="h-3.5 w-3.5" />, label: 'Staff Management', href: '/staff-management', sectionId: 'hr' },
                 { icon: <Building className="h-3.5 w-3.5" />, label: 'Workspace Management', href: '/workspace-management', sectionId: 'hr' },
+                { icon: <UsersRound className="h-3.5 w-3.5" />, label: 'Payroll', href: '/payroll', sectionId: 'hr' },
             ]
         },
         {
@@ -434,7 +435,6 @@ export function AppSidebar() {
             title: 'Finance & Accounting',
             Icon: Banknote,
             items: [
-                { icon: <UsersRound className="h-3.5 w-3.5" />, label: 'Payroll', href: '/payroll', sectionId: 'finance' },
                 { icon: <BarChart3 className="h-3.5 w-3.5" />, label: 'Financial Accounting', href: '/finance/accounting/financial-dashboard', sectionId: 'finance' },
                 { icon: <Building className="h-3.5 w-3.5" />, label: 'Bank Accounts', href: '/finance/accounting/bank-accounts', sectionId: 'finance' },
                 { icon: <ArrowUpDown className="h-3.5 w-3.5" />, label: 'Bank Transactions', href: '/finance/accounting/bank-transactions', sectionId: 'finance' },
@@ -642,8 +642,8 @@ export function AppSidebar() {
         pos: ['/pos', '/kot', '/bar-display', '/orders', '/payment'],
         restaurant: ['/menu', '/recipes', '/manufacturing', '/reservations'],
         inventory: ['/inventory', '/stock-transfers', '/stock-tracking', '/suppliers', '/purchase-orders'],
-        hr: ['/hr', '/staff-management', '/workspace-management'],
-        finance: ['/payroll', '/finance', '/bank-accounts', '/bank-transactions'],
+        hr: ['/hr', '/staff-management', '/workspace-management', '/payroll'],
+        finance: ['/finance', '/bank-accounts', '/bank-transactions'],
         reports: ['/reports'],
         events: ['/events'],
         setup: ['/setup', '/room-setup'],

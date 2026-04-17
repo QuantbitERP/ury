@@ -91,6 +91,7 @@ const RouteGuard: React.FC<Props> = ({ children }) => {
       '/hr',
       '/staff-management',
       '/workspace-management',
+      '/payroll',
     ];
 
     const salesOpsAllowedRoutes = [
@@ -156,6 +157,7 @@ const RouteGuard: React.FC<Props> = ({ children }) => {
       '/hr',
       '/staff-management',
       '/workspace-management',
+      '/payroll',
     ];
 
     const inventoryOnlyAllowedRoutes = [
@@ -170,7 +172,7 @@ const RouteGuard: React.FC<Props> = ({ children }) => {
 
     const nonUryAllowedRoutes = [
       '/',
-      ...(hasHRRoles ? ['/hr', '/staff-management', '/workspace-management'] : []),
+      ...(hasHRRoles ? ['/hr', '/staff-management', '/workspace-management', '/payroll'] : []),
       ...(hasFinanceOnlyRoles ? ['/finance', '/finance/accounting', '/payroll', '/bank-accounts', '/bank-transactions'] : []),
       ...(hasInventoryRoles ? ['/inventory', '/stock-transfers', '/stock-tracking', '/suppliers', '/purchase-orders', '/manufacturing'] : []),
     ];
