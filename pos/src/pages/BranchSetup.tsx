@@ -227,6 +227,29 @@ const BranchSetup: React.FC = () => {
         }
 
         fetchBranches(); // Refresh the list
+
+        // Re-fetch the branch data to get the latest timestamp
+        if (isUpdate && selectedBranch?.name) {
+          try {
+            const branchResponse = await fetch('/api/method/frappe.client.get', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                doctype: 'Branch',
+                name: selectedBranch.name
+              })
+            });
+            if (branchResponse.ok) {
+              const branchData = (await branchResponse.json()).message;
+              setSelectedBranch(branchData);
+              setFormData(branchData);
+            }
+          } catch (error) {
+            console.error('Error refreshing branch data:', error);
+          }
+        }
       } else {
         const errorData = await response.json();
         showToast.error(errorData.message || 'Failed to save branch');
@@ -241,10 +264,17 @@ const BranchSetup: React.FC = () => {
 
   // Handle form field changes
   const handleInputChange = (field: keyof Branch, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    setFormData(prev => {
+      const updated = {
+        ...prev,
+        [field]: value
+      };
+      // Auto-set custom_to_warehouse when custom_fg_warehouse changes
+      if (field === 'custom_fg_warehouse') {
+        updated.custom_to_warehouse = value;
+      }
+      return updated;
+    });
   };
 
   // Add aggregator setting
@@ -962,23 +992,6 @@ const BranchSetup: React.FC = () => {
                               onChange={(e) => handleInputChange('custom_from_warehouse', e.target.value)}
                             >
                               <option value="">Select From Warehouse</option>
-                              {warehouseOptions.map((warehouse) => (
-                                <option key={warehouse.name} value={warehouse.name}>
-                                  {warehouse.warehouse_name || warehouse.name}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                          <div>
-                            <label className="block text-xs font-bold uppercase tracking-wider text-[#C69A11] mb-2">
-                              To Warehouse
-                            </label>
-                            <select
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#E4B315]/40"
-                              value={formData.custom_to_warehouse || ''}
-                              onChange={(e) => handleInputChange('custom_to_warehouse', e.target.value)}
-                            >
-                              <option value="">Select To Warehouse</option>
                               {warehouseOptions.map((warehouse) => (
                                 <option key={warehouse.name} value={warehouse.name}>
                                   {warehouse.warehouse_name || warehouse.name}
