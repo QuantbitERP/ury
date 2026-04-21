@@ -374,6 +374,12 @@ const PayrollPage: React.FC = () => {
     const [creatingSalarySlips, setCreatingSalarySlips] = useState(false);
     const [salarySlipCreationResult, setSalarySlipCreationResult] = useState<string | null>(null);
     const [currentPayrollEntryName, setCurrentPayrollEntryName] = useState<string | null>(null);
+    
+    // Submit salary slips and cancel payroll operations
+    const [submittingSalarySlips, setSubmittingSalarySlips] = useState(false);
+    const [submitSalarySlipsResult, setSubmitSalarySlipsResult] = useState<string | null>(null);
+    const [cancellingPayroll, setCancellingPayroll] = useState(false);
+    const [cancelPayrollResult, setCancelPayrollResult] = useState<string | null>(null);
 
     // Dropdown options for payroll entry form
     const [companies, setCompanies] = useState<Array<{name: string, company_name: string, default_payroll_payable_account?: string}>>([]);
@@ -650,6 +656,7 @@ const PayrollPage: React.FC = () => {
                 if (data.success) {
                     setSalarySlipCreationResult(data.message);
                     fetchSalarySlips(); // Refresh salary slips list
+                    fetchPayrollEntries(); // Refresh payroll entries list
                     setTimeout(() => setSalarySlipCreationResult(null), 5000);
                 } else {
                     setSalarySlipCreationResult(data.message || 'Failed to create salary slips');
@@ -661,6 +668,76 @@ const PayrollPage: React.FC = () => {
             setSalarySlipCreationResult('An error occurred while creating salary slips');
         } finally {
             setCreatingSalarySlips(false);
+        }
+    };
+
+    const submitSalarySlipsForPayroll = async (payrollEntryName: string) => {
+        try {
+            setSubmittingSalarySlips(true);
+            setSubmitSalarySlipsResult(null);
+            
+            const res = await fetch(
+                '/api/method/quantbit_ury_customization.ury_customization.employee_api.submit_salary_slips_for_payroll',
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ payroll_entry_name: payrollEntryName }),
+                }
+            );
+            
+            if (res.ok) {
+                const result = await res.json();
+                const data = result.message || result;
+                if (data.success) {
+                    setSubmitSalarySlipsResult(data.message);
+                    fetchSalarySlips(); // Refresh salary slips list
+                    fetchPayrollEntries(); // Refresh payroll entries list
+                    setTimeout(() => setSubmitSalarySlipsResult(null), 5000);
+                } else {
+                    setSubmitSalarySlipsResult(data.message || 'Failed to submit salary slips');
+                }
+            } else {
+                setSubmitSalarySlipsResult('Failed to submit salary slips');
+            }
+        } catch (error) {
+            setSubmitSalarySlipsResult('An error occurred while submitting salary slips');
+        } finally {
+            setSubmittingSalarySlips(false);
+        }
+    };
+
+    const cancelPayrollEntry = async (payrollEntryName: string) => {
+        try {
+            setCancellingPayroll(true);
+            setCancelPayrollResult(null);
+            
+            const res = await fetch(
+                '/api/method/quantbit_ury_customization.ury_customization.employee_api.cancel_payroll_entry',
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ payroll_entry_name: payrollEntryName }),
+                }
+            );
+            
+            if (res.ok) {
+                const result = await res.json();
+                const data = result.message || result;
+                if (data.success) {
+                    setCancelPayrollResult(data.message);
+                    fetchSalarySlips(); // Refresh salary slips list
+                    fetchPayrollEntries(); // Refresh payroll entries list
+                    setTimeout(() => setCancelPayrollResult(null), 5000);
+                } else {
+                    setCancelPayrollResult(data.message || 'Failed to cancel payroll entry');
+                }
+            } else {
+                setCancelPayrollResult('Failed to cancel payroll entry');
+            }
+        } catch (error) {
+            setCancelPayrollResult('An error occurred while cancelling payroll entry');
+        } finally {
+            setCancellingPayroll(false);
         }
     };
 
@@ -1703,6 +1780,18 @@ const PayrollPage: React.FC = () => {
                     <span className="text-green-800 text-sm">{createAssignmentSuccess}</span>
                 </div>
             )}
+            {submitSalarySlipsResult && (
+                <div className={`flex items-center gap-2 p-4 border rounded-2xl ${submitSalarySlipsResult.includes('Failed') || submitSalarySlipsResult.includes('error') ? 'bg-red-50 border-red-100' : 'bg-green-50 border-green-100'}`}>
+                    {submitSalarySlipsResult.includes('Failed') || submitSalarySlipsResult.includes('error') ? <AlertCircle className="w-5 h-5 text-red-600 shrink-0" /> : <CheckCircle className="w-5 h-5 text-green-600 shrink-0" />}
+                    <span className={`text-sm ${submitSalarySlipsResult.includes('Failed') || submitSalarySlipsResult.includes('error') ? 'text-red-800' : 'text-green-800'}`}>{submitSalarySlipsResult}</span>
+                </div>
+            )}
+            {cancelPayrollResult && (
+                <div className={`flex items-center gap-2 p-4 border rounded-2xl ${cancelPayrollResult.includes('Failed') || cancelPayrollResult.includes('error') ? 'bg-red-50 border-red-100' : 'bg-green-50 border-green-100'}`}>
+                    {cancelPayrollResult.includes('Failed') || cancelPayrollResult.includes('error') ? <AlertCircle className="w-5 h-5 text-red-600 shrink-0" /> : <CheckCircle className="w-5 h-5 text-green-600 shrink-0" />}
+                    <span className={`text-sm ${cancelPayrollResult.includes('Failed') || cancelPayrollResult.includes('error') ? 'text-red-800' : 'text-green-800'}`}>{cancelPayrollResult}</span>
+                </div>
+            )}
 
             {/* Tab Navigation */}
             <div className="flex border-b border-border">
@@ -2715,7 +2804,43 @@ const PayrollPage: React.FC = () => {
                                                 <td className="px-4 py-3 text-sm">{formatDate(e.start_date)} – {formatDate(e.end_date)}</td>
                                                 <td className="px-4 py-3 text-sm">{e.number_of_employees}</td>
                                                 <td className="px-4 py-3 text-sm">{e.salary_slips_created}</td>
-                                                <td className="px-4 py-3 text-sm"><button onClick={() => fetchPayrollEntryDetails(e.name)} className="text-primary hover:text-primary/80"><Eye className="w-4 h-4" /></button></td>
+                                                <td className="px-4 py-3 text-sm">
+                                                    <div className="flex items-center gap-2">
+                                                        <button onClick={() => fetchPayrollEntryDetails(e.name)} className="text-primary hover:text-primary/80" title="View Details">
+                                                            <Eye className="w-4 h-4" />
+                                                        </button>
+                                                        {e.status === 'Draft' && (
+                                                            <button 
+                                                                onClick={() => createSalarySlipsForPayroll(e.name)}
+                                                                disabled={creatingSalarySlips}
+                                                                className="text-green-600 hover:text-green-800 disabled:opacity-50"
+                                                                title="Submit Payroll (creates salary slips)"
+                                                            >
+                                                                <Save className="w-4 h-4" />
+                                                            </button>
+                                                        )}
+                                                        {e.status === 'Submitted' && (
+                                                            <>
+                                                                <button 
+                                                                    onClick={() => submitSalarySlipsForPayroll(e.name)}
+                                                                    disabled={submittingSalarySlips}
+                                                                    className="text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                                                                    title="Submit Salary Slips (creates journal entries)"
+                                                                >
+                                                                    <CheckCircle className="w-4 h-4" />
+                                                                </button>
+                                                                <button 
+                                                                    onClick={() => cancelPayrollEntry(e.name)}
+                                                                    disabled={cancellingPayroll}
+                                                                    className="text-red-600 hover:text-red-800 disabled:opacity-50"
+                                                                    title="Cancel Payroll (deletes draft salary slips)"
+                                                                >
+                                                                    <X className="w-4 h-4" />
+                                                                </button>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                </td>
                                             </tr>
                                         ))}
                                     </tbody>
