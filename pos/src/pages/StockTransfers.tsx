@@ -129,8 +129,8 @@ const StockTransfers: React.FC = () => {
   const [items, setItems] = useState<Item[]>([]);
   const [saving, setSaving] = useState(false);
 
-  // Button constants for consistent blue theme
-  const BTN_P = 'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2';
+  // Button constants for consistent theme
+  const BTN_P = 'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-bold transition-all bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white shadow-md shadow-[#E4B315]/20 hover:opacity-90 hover:-translate-y-px h-10 px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed';
   const BTN_O = 'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2';
 
   // Fetch stock entries with Material Transfer type
@@ -781,7 +781,7 @@ const StockTransfers: React.FC = () => {
 
       {/* New Transfer Modal */}
       {showNewTransferModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/80 bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] overflow-hidden">
             <div className="p-6 border-b border-gray-200">
               <div className="flex items-center justify-between">
@@ -957,7 +957,7 @@ const StockTransfers: React.FC = () => {
                 </div>
                 <button
                   onClick={addTransferItem}
-                  className="mt-3 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors text-sm font-medium"
+                  className="mt-3 px-4 py-2 bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white rounded-xl hover:opacity-90 hover:-translate-y-px transition-all text-sm font-bold shadow-md shadow-[#E4B315]/20 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <PlusCircle className="h-4 w-4 inline-block mr-2" />
                   Add Item

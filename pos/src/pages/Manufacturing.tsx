@@ -187,7 +187,7 @@ const Manufacturing: React.FC = () => {
     const fgWarehouse = selectedBranch.custom_fg_warehouse || 'Finished Goods - QR';
     const wipWarehouse = selectedBranch.custom_wip_warehouse || 'Work In Progress - QR';
     const fromWarehouse = selectedBranch.custom_from_warehouse || 'Stores - QR';
-    const toWarehouse = selectedBranch.custom_to_warehouse || 'Work In Progress - QR';
+    const toWarehouse = selectedBranch.custom_to_warehouse || fgWarehouse;
     
     setCreatingOrder(true);
     try {
@@ -351,7 +351,7 @@ const Manufacturing: React.FC = () => {
                       <div>FG Warehouse: <span className="font-medium text-gray-700">{selectedBranch.custom_fg_warehouse || 'Not set'}</span></div>
                       <div>WIP Warehouse: <span className="font-medium text-gray-700">{selectedBranch.custom_wip_warehouse || 'Not set'}</span></div>
                       <div>From Warehouse: <span className="font-medium text-gray-700">{selectedBranch.custom_from_warehouse || 'Not set'}</span></div>
-                      <div>To Warehouse: <span className="font-medium text-gray-700">{selectedBranch.custom_to_warehouse || 'Not set'}</span></div>
+                      {/* <div>To Warehouse: <span className="font-medium text-gray-700">{selectedBranch.custom_to_warehouse || 'Not set'}</span></div> */}
                     </div>
                   )}
                 </div>

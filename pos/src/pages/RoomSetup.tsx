@@ -545,7 +545,7 @@ const RoomSetup: React.FC = () => {
             variant="outline"
             onClick={fetchRooms}
             disabled={loading}
-            className="flex items-center space-x-2"
+            className="flex items-center space-x-2 border-gray-200 text-gray-600 hover:border-[#E4B315]/40 hover:text-[#C69A11]"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             <span>Refresh</span>
@@ -555,7 +555,7 @@ const RoomSetup: React.FC = () => {
               resetForm();
               setShowCreateRoomForm(true);
             }}
-            className="flex items-center space-x-2"
+            className="flex items-center space-x-2 bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white font-bold rounded-xl shadow-md shadow-[#E4B315]/20 hover:opacity-90 transition-all"
           >
             <Plus className="w-4 h-4" />
             <span>Add New Room</span>
@@ -635,6 +635,7 @@ const RoomSetup: React.FC = () => {
                               variant="outline"
                               size="sm"
                               onClick={() => editRoom(room)}
+                              className="border-gray-200 text-gray-600 hover:border-[#E4B315]/40 hover:text-[#C69A11]"
                             >
                               <Edit className="w-3 h-3" />
                             </Button>
@@ -642,7 +643,7 @@ const RoomSetup: React.FC = () => {
                               variant="outline"
                               size="sm"
                               onClick={() => manageFacilities(room)}
-                              className="text-[#C69A11] hover:text-[#C69A11]"
+                              className="border-[#E4B315]/40 text-[#C69A11] hover:border-[#E4B315] hover:text-[#C69A11]"
                             >
                               <Plus className="w-3 h-3" />
                             </Button>
@@ -650,7 +651,7 @@ const RoomSetup: React.FC = () => {
                               variant="outline"
                               size="sm"
                               onClick={() => managePrinterSettings(room)}
-                              className="text-green-600 hover:text-green-700"
+                              className="text-green-600 hover:text-green-700 border-green-200 hover:border-green-300"
                             >
                               <Settings className="w-3 h-3" />
                             </Button>
@@ -658,7 +659,7 @@ const RoomSetup: React.FC = () => {
                               variant="outline"
                               size="sm"
                               onClick={() => deleteRoom(room.name!)}
-                              className="text-red-600 hover:text-red-700"
+                              className="text-red-600 hover:text-red-700 border-red-200 hover:border-red-300"
                             >
                               <Trash2 className="w-3 h-3" />
                             </Button>
@@ -804,7 +805,7 @@ const RoomSetup: React.FC = () => {
                     <Button
                       onClick={saveRoom}
                       disabled={saving}
-                      className="w-full flex items-center justify-center space-x-2"
+                      className="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white font-bold rounded-xl shadow-md shadow-[#E4B315]/20 hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Save className="w-4 h-4" />
                       <span>{saving ? 'Saving...' : (selectedRoom ? 'Update Room' : 'Create Room')}</span>
@@ -837,7 +838,7 @@ const RoomSetup: React.FC = () => {
               <div className="mb-4">
                 <Button
                   onClick={addFacility}
-                  className="flex items-center space-x-2"
+                  className="flex items-center space-x-2 bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white font-bold rounded-xl shadow-md shadow-[#E4B315]/20 hover:opacity-90 transition-all"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Add Facility</span>
@@ -873,7 +874,7 @@ const RoomSetup: React.FC = () => {
                 <Button
                   onClick={saveRoomDetails}
                   disabled={saving}
-                  className="flex items-center space-x-2"
+                  className="flex items-center space-x-2 bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white font-bold rounded-xl shadow-md shadow-[#E4B315]/20 hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Save className="w-4 h-4" />
                   <span>{saving ? 'Saving...' : 'Save Facilities'}</span>
@@ -929,7 +930,7 @@ const RoomSetup: React.FC = () => {
                 </Button>
                 <Button
                   onClick={confirmAddFacility}
-                  className="flex items-center space-x-2"
+                  className="flex items-center space-x-2 bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white font-bold rounded-xl shadow-md shadow-[#E4B315]/20 hover:opacity-90 transition-all"
                 >
                   <Save className="w-4 h-4" />
                   <span>Add Facility</span>

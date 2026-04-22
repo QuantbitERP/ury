@@ -555,7 +555,7 @@ const BankTransactionPage: React.FC = () => {
                 <div className="flex items-center gap-2">
                     <button
                         onClick={openCreateModal}
-                        className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white font-bold rounded-xl shadow-md shadow-[#E4B315]/20 hover:opacity-90 transition-all text-sm"
                     >
                         <Plus className="w-4 h-4" />
                         Add Transaction
@@ -1120,7 +1120,7 @@ const BankTransactionPage: React.FC = () => {
                                     <button
                                         type="button"
                                         onClick={addPaymentEntry}
-                                        className="flex items-center gap-1 px-3 py-1 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+                                        className="flex items-center gap-1 px-3 py-1 text-sm bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white font-bold rounded-xl shadow-md shadow-[#E4B315]/20 hover:opacity-90 transition-all"
                                     >
                                         <Plus className="w-3 h-3" />
                                         Add Payment Entry
@@ -1205,7 +1205,7 @@ const BankTransactionPage: React.FC = () => {
                             <button
                                 onClick={createBankTransaction}
                                 disabled={isSubmitting}
-                                className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50"
+                                className="px-4 py-2 bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white font-bold rounded-xl shadow-md shadow-[#E4B315]/20 hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {isSubmitting ? 'Creating...' : 'Create Transaction'}
                             </button>

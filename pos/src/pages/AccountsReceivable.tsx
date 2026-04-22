@@ -298,13 +298,16 @@ const AccountsReceivable: React.FC = () => {
   return (
     <>
       {/* Header Actions */}
-      <div className="flex gap-2 mb-4">
-        <button onClick={fetchInvoices} className={BTN_SEC}>
-          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin text-[#E4B315]' : ''}`} /> Refresh
-        </button>
-        <button onClick={openCreate} className={BTN_PRI}>
-          <Plus className="h-4 w-4" /> New Invoice
-        </button>
+      <div className="flex justify-between items-center mb-4">
+        <div className="text-lg font-semibold text-gray-900">Accounts Receivable</div>
+        <div className="flex gap-2">
+          <button onClick={fetchInvoices} className={BTN_SEC}>
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin text-[#E4B315]' : ''}`} /> Refresh
+          </button>
+          <button onClick={openCreate} className={BTN_PRI}>
+            <Plus className="h-4 w-4" /> New Invoice
+          </button>
+        </div>
       </div>
 
       <div className="overflow-auto px-6 py-5 space-y-5 h-full">

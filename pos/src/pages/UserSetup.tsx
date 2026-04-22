@@ -642,7 +642,7 @@ const UserSetup: React.FC = () => {
             variant="outline"
             onClick={activeTab === 'users' ? fetchUsers : fetchRoles}
             disabled={loading}
-            className="flex items-center space-x-2"
+            className="flex items-center space-x-2 border-gray-200 text-gray-600 hover:border-[#E4B315]/40 hover:text-[#C69A11]"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             <span>Refresh</span>
@@ -653,7 +653,7 @@ const UserSetup: React.FC = () => {
                 resetForm();
                 setShowPasswordForm(true);
               }}
-              className="flex items-center space-x-2"
+              className="flex items-center space-x-2 bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white font-bold rounded-xl shadow-md shadow-[#E4B315]/20 hover:opacity-90 transition-all"
             >
               <UserPlus className="w-4 h-4" />
               <span>Add New User</span>
@@ -741,6 +741,7 @@ const UserSetup: React.FC = () => {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => fetchUserDetails(user.name!)}
+                                className="border-gray-200 text-gray-600 hover:border-[#E4B315]/40 hover:text-[#C69A11]"
                               >
                                 <Edit className="w-3 h-3" />
                               </Button>
@@ -748,7 +749,7 @@ const UserSetup: React.FC = () => {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => deleteUser(user.name!)}
-                                className="text-red-600 hover:text-red-700"
+                                className="text-red-600 hover:text-red-700 border-red-200 hover:border-red-300"
                               >
                                 <Trash2 className="w-3 h-3" />
                               </Button>
@@ -950,7 +951,7 @@ const UserSetup: React.FC = () => {
                       <Button
                         onClick={saveUser}
                         disabled={saving}
-                        className="flex-1"
+                        className="flex-1 bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white font-bold rounded-xl shadow-md shadow-[#E4B315]/20 hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {saving ? (
                           <RefreshCw className="w-4 h-4 animate-spin mr-2" />
@@ -981,6 +982,7 @@ const UserSetup: React.FC = () => {
               <Button
                 onClick={() => setShowCreateRoleForm(true)}
                 size="sm"
+                className="bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white font-bold rounded-xl shadow-md shadow-[#E4B315]/20 hover:opacity-90 transition-all"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Create New Role
@@ -1147,7 +1149,7 @@ const UserSetup: React.FC = () => {
                         <Button
                           onClick={createRole}
                           disabled={saving || !newRole.role_name.trim()}
-                          className="flex-1"
+                          className="flex-1 bg-gradient-to-r from-[#E4B315] to-[#C69A11] text-white font-bold rounded-xl shadow-md shadow-[#E4B315]/20 hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {saving ? (
                             <RefreshCw className="w-4 h-4 animate-spin mr-2" />
